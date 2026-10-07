@@ -32,6 +32,13 @@ export default function App() {
 
   useEffect(() => {
     if (screen === "reveal") stopAmbient(); // let the gavel SFX land in near-silence
+    if (screen === "introCase") {
+      // Best-effort autoplay — not a real user gesture yet, so strict mobile
+      // browsers (notably iOS Safari) will silently block this. The later
+      // "Begin the case" tap is the guaranteed unlock; calling playAmbient()
+      // again there is a safe no-op if this already succeeded.
+      playAmbient();
+    }
   }, [screen]);
 
   if (screen === "introCase") {
@@ -50,7 +57,7 @@ export default function App() {
   }
 
   if (screen === "introCast") {
-    return <IntroSequence slides={CHARACTER_INTRO_SLIDES} onDone={() => setScreen("game")} />;
+    return <IntroSequence slides={CHARACTER_INTRO_SLIDES} slideMs={4400} onDone={() => setScreen("game")} />;
   }
 
   if (screen === "verdict") {
