@@ -190,3 +190,25 @@ instruction. Newest at the bottom.
 - Reveal screen's cinematic rebuild (text → portrait-led flashback
   sequence) was NOT done this round — still a text-based reveal. That's the
   next item on the list Oriol ranked, not yet started.
+
+## Intro feedback round (2026-10-08)
+- Oriol liked the intro, asked for it slower and to cover more — either
+  case + characters in one sequence, or two steps. Recommended two steps
+  (case hook → CaseHome as the breather → cast intro → game) over one
+  long reel: one continuous sequence covering the case and all 5 witnesses
+  would run 10+ slides before the player has any agency, even skippable.
+  Splitting it also reuses CaseHome's existing static charge-card instead
+  of needing to cram that content into timed slides too.
+- Refactored `IntroSequence.tsx` from a hardcoded 4-slide component into a
+  reusable one (`slides`/`slideMs` props, optional `eyebrow`/`title` for
+  the character-intro's name+role format). Slide content now lives in
+  `src/game/introSlides.ts`, not the component — same data/presentation
+  split as everywhere else in this codebase.
+- Slowed pacing: 2200ms → 3400ms per slide, 250ms → 450ms crossfade.
+- Case intro grew from 4 to 6 slides (adds a forensic beat and a
+  prosecution-case beat); new 6-slide character intro (5 witnesses + a
+  closing line) plays after "Begin the case," before the Hear tab. Both
+  reuse existing portrait/scene art — no new asset generation needed.
+- Character-intro hook lines are intentionally different wording from each
+  witness's `keyFacts` (used by the dossier) — avoids reading the same
+  three bullets twice in two different UI contexts.

@@ -198,3 +198,39 @@ Current limitations / next step
   to a 388KB MP3 before committing — same oversized-asset lesson as the
   images, now true for audio too.
 - Step 6 (real LLM dialogue) still unstarted, still needs `OPENAI_API_KEY`.
+
+---
+
+## 2026-10-08 — Intro: slower pacing, two-step case + cast sequence
+
+What changed
+- Oriol's feedback on the intro: loved it, wanted it slower and to cover
+  more — recommended and built a two-step structure instead of one long
+  reel: extended case-hook intro (now 6 slides, 3400ms each, 450ms
+  crossfade, both up from 2200ms/250ms) → CaseHome (unchanged, serves as
+  the breather) → new 6-slide character intro (one beat per witness, plays
+  right after "Begin the case") → into the Hear tab.
+- `IntroSequence.tsx` is now a reusable, prop-driven component (`slides`,
+  `slideMs`, optional per-slide `eyebrow`/`title`) instead of one hardcoded
+  sequence — both intros share it. Slide content lives in
+  `src/game/introSlides.ts`.
+
+Why
+- Direct product feedback from Oriol after playing it. The two-step
+  structure (vs. one combined sequence) was a judgment call — reasoning
+  captured in DECISIONS.md.
+
+Files
+- `src/components/IntroSequence.tsx` (refactored to be generic)
+- `src/game/introSlides.ts` (new — case + character slide content)
+- `src/App.tsx` (new `introCast` screen state between CaseHome and the game)
+
+How to test
+- `npm run dev`, or the live Vercel URL. Replay via "Play again" to see
+  both intros again from the top.
+- `npx tsx scripts/selftest.ts` → still 27/27 (no store-logic changes).
+
+Current limitations / next step
+- Same as last entry: cinematic reveal, living portraits, key-line voice
+  acting, transition polish (Oriol's ranked items 5–8), and Step 6
+  (LLM dialogue) are all still pending, unstarted this round.

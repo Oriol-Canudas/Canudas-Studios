@@ -14,12 +14,13 @@ import { useGameStore } from "./game/store";
 import { track } from "./game/analytics";
 import { playAmbient, stopAmbient } from "./game/audio";
 import { WITNESS_BY_ID } from "./game/caseData";
+import { CASE_INTRO_SLIDES, CHARACTER_INTRO_SLIDES } from "./game/introSlides";
 import type { WitnessId } from "./game/types";
 
-type Screen = "intro" | "home" | "game" | "verdict" | "reveal";
+type Screen = "introCase" | "home" | "introCast" | "game" | "verdict" | "reveal";
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("intro");
+  const [screen, setScreen] = useState<Screen>("introCase");
   const [tab, setTab] = useState<TabId>("hear");
   const [activeWitness, setActiveWitness] = useState<WitnessId | null>(null);
   const [dossierWitness, setDossierWitness] = useState<WitnessId | null>(null);
@@ -33,8 +34,8 @@ export default function App() {
     if (screen === "reveal") stopAmbient(); // let the gavel SFX land in near-silence
   }, [screen]);
 
-  if (screen === "intro") {
-    return <IntroSequence onDone={() => setScreen("home")} />;
+  if (screen === "introCase") {
+    return <IntroSequence slides={CASE_INTRO_SLIDES} onDone={() => setScreen("home")} />;
   }
 
   if (screen === "home") {
@@ -42,10 +43,14 @@ export default function App() {
       <CaseHome
         onBegin={() => {
           playAmbient(); // real user gesture — satisfies mobile autoplay rules
-          setScreen("game");
+          setScreen("introCast");
         }}
       />
     );
+  }
+
+  if (screen === "introCast") {
+    return <IntroSequence slides={CHARACTER_INTRO_SLIDES} onDone={() => setScreen("game")} />;
   }
 
   if (screen === "verdict") {
@@ -67,7 +72,7 @@ export default function App() {
             setActiveWitness(null);
             setDossierWitness(null);
             setTab("hear");
-            setScreen("intro");
+            setScreen("introCase");
           }}
         />
       </>

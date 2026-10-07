@@ -40,10 +40,12 @@ Primary validation questions (from the original brief, H1–H8):
 ## Current build stage
 
 **Stage:** Deterministic vertical slice complete, self-tested, deployed and
-playable, plus two visual/UX passes: (1) portraits, scene art, paced dialogue
-reveal, demeanor states, Case Clarity meter, cross-witness reactions; (2)
-tap-to-inspect character dossiers, an animated cold-open intro, a text-density
-pass, and ambient/SFX sound. Real LLM-driven witness dialogue (Step 6) is
+playable, plus three visual/UX passes: (1) portraits, scene art, paced
+dialogue reveal, demeanor states, Case Clarity meter, cross-witness
+reactions; (2) tap-to-inspect character dossiers, an animated cold-open
+intro, a text-density pass, and ambient/SFX sound; (3) intro expanded into
+two slower steps — case hook, then a dedicated cast-introduction sequence
+after "Begin the case." Real LLM-driven witness dialogue (Step 6) is
 designed for but not yet implemented.
 
 **Explicit scope call (Oriol, 2026-10-07):** go deep on this one case before
