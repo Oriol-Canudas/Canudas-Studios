@@ -211,8 +211,10 @@ export const WITNESSES: WitnessConfig[] = [
     context:
       "Together with Daniel for roughly six years. He called it a breakup about eight months ago — but Elena says it was never that simple. She admits visiting that night, arguing with Daniel, and touching the knife earlier in the evening. She denies killing him.",
     portraitPrompt:
-      "Woman, early 30s, tired and guarded expression, sitting in a courtroom witness chair, cinematic dark lighting",
+      "Black woman, mid-30s, tired and guarded expression, cinematic dark lighting",
+    portraitImage: "/portraits/elena.jpg",
     accentColor: "#c084fc",
+    baselineDemeanor: "guarded",
     deflections: [
       "I've already told you what happened. I didn't kill him.",
       "I know how this looks. I know. But that's not what happened.",
@@ -226,6 +228,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "We were together almost six years. He called it a breakup eight months ago, but it was never clean — we kept talking, kept meeting. We slept together more than once after he supposedly ended it. He'd tell me things with Sofia were uncertain, that maybe we'd ended too fast. I believed him, more fool me.",
+            demeanor: "guarded",
             addsBoardEntries: [
               { type: "claim", text: "Elena: the “breakup” eight months ago was never clean — she and Daniel stayed involved.", source: "elena" },
             ],
@@ -239,6 +242,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "He called me around 10:40. He sounded strange — said he needed to “tell me the truth.” I went over. I got there a little after that.",
+            demeanor: "guarded",
             addsBoardEntries: [
               { type: "claim", text: "Elena: Daniel called her and said he needed to “tell her the truth” before she came over.", source: "elena", timestamp: "22:38" },
             ],
@@ -252,10 +256,12 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "We argued. He admitted some of it — that he'd been telling Sofia I was ancient history while telling me the opposite. I was angry. There might have been some contact, nothing serious.",
+            demeanor: "defensive",
           },
           {
             text: "Fine — I shoved him. He blocked the doorway when I tried to leave and I shoved his shoulder to get past. That's it. That's all it was. I did not pick up a knife and I did not stab him.",
             minAskCount: 2,
+            demeanor: "defensive",
             addsBoardEntries: [
               { type: "claim", text: "Elena admits: she shoved Daniel's shoulder when he blocked her path. Denies anything further.", source: "elena" },
             ],
@@ -270,6 +276,7 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "I used it earlier — cutting lime for a drink, I think. Before things got bad. I didn't touch it again after that.",
             requiresEvidence: ["E01_knife"],
+            demeanor: "guarded",
             addsBoardEntries: [
               { type: "claim", text: "Elena: touched the knife earlier in the evening for an unrelated reason, before the argument escalated.", source: "elena" },
             ],
@@ -283,6 +290,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "I left before midnight. He was alive — angry, upset, but alive and standing in his kitchen when I walked out. I went straight home.",
+            demeanor: "composed",
             addsBoardEntries: [
               { type: "claim", text: "Elena: left before midnight, Daniel alive and standing when she left.", source: "elena", timestamp: "23:52" },
             ],
@@ -296,6 +304,22 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "No. I have no idea what happened after I left. I didn't see either of them.",
+            demeanor: "composed",
+          },
+        ],
+      },
+      {
+        id: "others_returned",
+        chipLabel: "Did you know Sofia and Tom both went back that night?",
+        keywords: ["sofia", "tom", "both went back", "came back", "returned", "after you"],
+        stages: [
+          {
+            text: "What? No — I had no idea anyone else went back there. I just left. I thought that was the end of it for the night. If someone else was there after me, that's... that changes things, doesn't it?",
+            requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
+            demeanor: "shaken",
+            addsBoardEntries: [
+              { type: "claim", text: "Elena, told Tom also returned that night: genuinely surprised, had no knowledge of it.", source: "elena" },
+            ],
           },
         ],
       },
@@ -310,8 +334,10 @@ export const WITNESSES: WitnessConfig[] = [
     context:
       "Daniel told Sofia that he and Elena broke up months before she came into the picture, and that Elena was struggling to let go. Sofia initially presents herself as having had no contact with Daniel after his 23:06 text to her.",
     portraitPrompt:
-      "Woman, late 20s, composed but tense expression, courtroom witness chair, cinematic dark lighting",
+      "South Asian woman, late 20s, composed but tense expression, cinematic dark lighting",
+    portraitImage: "/portraits/sofia.jpg",
     accentColor: "#f472b6",
+    baselineDemeanor: "composed",
     deflections: [
       "I've told you everything I know.",
       "I don't see why that matters.",
@@ -325,6 +351,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "He told me they'd broken up three months before we got together, and that Elena was having trouble accepting it — that she was unstable, honestly. I believed him.",
+            demeanor: "composed",
             addsBoardEntries: [
               { type: "claim", text: "Sofia: Daniel told her Elena was firmly in the past and “unstable.”", source: "sofia" },
             ],
@@ -338,10 +365,12 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "No. That text at 23:06 was the last I heard from him that night.",
+            demeanor: "composed",
           },
           {
             text: "...He called me back. Fine. At 23:50. We spoke for maybe half a minute. He said Elena was leaving, and that there was something he should have told me months ago.",
             requiresEvidence: ["E05_daniel_phone_records"],
+            demeanor: "defensive",
             addsBoardEntries: [
               { type: "contradiction", text: "Sofia initially denied any contact after 23:06 — phone records show a 36-second call at 23:50.", source: "sofia", timestamp: "23:50" },
             ],
@@ -355,11 +384,13 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "No, I was home all night.",
+            demeanor: "defensive",
           },
           {
             text: "...Yes. I went over. I came up through the garage — I didn't want to run into Elena on her way out.",
             requiresEvidence: ["E08_garage_access_log"],
             requiresWitnessStage: { witness: "sofia", topic: "contact_after_text", minStage: 1 },
+            demeanor: "nervous",
             addsBoardEntries: [
               { type: "claim", text: "Sofia admits she went to the apartment that night, entering via the underground garage.", source: "sofia", timestamp: "23:53" },
             ],
@@ -374,13 +405,30 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "We talked.",
             requiresWitnessStage: { witness: "sofia", topic: "went_to_apartment", minStage: 1 },
+            demeanor: "nervous",
           },
           {
             text: "He told me the truth — that he and Elena never really stopped, that he'd been lying to both of us. I was furious. I grabbed his shirt, I think I threw his phone onto the sofa. I shouted at him. Then I left. He was fine — upset, but fine, standing right there when I walked out.",
             requiresWitnessStage: { witness: "sofia", topic: "went_to_apartment", minStage: 1 },
             minAskCount: 2,
+            demeanor: "shaken",
             addsBoardEntries: [
               { type: "claim", text: "Sofia: Daniel admitted the truth about Elena; Sofia got physical (grabbed his shirt) but left him alive and standing at 23:57.", source: "sofia", timestamp: "23:57" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "tom_reaction",
+        chipLabel: "Tom says he came back to the apartment too, after you left",
+        keywords: ["tom", "came back", "returned", "after you left", "also went back"],
+        stages: [
+          {
+            text: "Tom? He went back? ...I didn't know that. I swear, when I left, Daniel was fine — upset, but fine. If Tom went up there after me, I have no idea what happened once I was gone.",
+            requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
+            demeanor: "shaken",
+            addsBoardEntries: [
+              { type: "claim", text: "Sofia, told Tom also returned that night: genuinely surprised, reaffirms Daniel was alive and fine when she left.", source: "sofia" },
             ],
           },
         ],
@@ -396,8 +444,10 @@ export const WITNESSES: WitnessConfig[] = [
     context:
       "Knows both Elena and Sofia. Repeatedly warned Daniel he was manipulating both women. Claims he visited Daniel earlier in the evening and then went straight home.",
     portraitPrompt:
-      "Man, mid-30s, uneasy and guarded expression, courtroom witness chair, cinematic dark lighting",
+      "White man, mid-30s, uneasy and guarded expression, cinematic dark lighting",
+    portraitImage: "/portraits/tom.jpg",
     accentColor: "#60a5fa",
+    baselineDemeanor: "guarded",
     deflections: [
       "I already told you — I went home.",
       "I don't know what else you want from me.",
@@ -411,6 +461,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "I went over around 7:30. I told him — again — that he needed to stop giving Elena and Sofia two different stories. He said he knew. I told him to fix it that night, one way or another.",
+            demeanor: "guarded",
             addsBoardEntries: [
               { type: "claim", text: "Tom: warned Daniel earlier that evening to stop lying to both women and “fix it tonight.”", source: "tom", timestamp: "19:32" },
             ],
@@ -424,10 +475,12 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "I went home. I didn't go back.",
+            demeanor: "guarded",
           },
           {
             text: "...Alright. I went back. Around midnight. I was worried about how the night was going to go.",
             requiresEvidence: ["E07_tom_phone_records"],
+            demeanor: "defensive",
             addsBoardEntries: [
               { type: "contradiction", text: "Tom initially claimed he went straight home — phone and garage records show he returned around midnight.", source: "tom", timestamp: "23:59" },
             ],
@@ -442,11 +495,13 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "I don't remember.",
             requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
+            demeanor: "defensive",
           },
           {
             text: "I saw Sofia leaving as I was coming in through the garage. We didn't really speak.",
             requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
             requiresEvidence: ["E08_garage_access_log"],
+            demeanor: "nervous",
             addsBoardEntries: [
               { type: "claim", text: "Tom admits he saw Sofia leaving as he entered the garage around midnight.", source: "tom", timestamp: "23:59" },
             ],
@@ -461,6 +516,7 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "I needed to talk to him. Yes, I went up.",
             requiresWitnessStage: { witness: "tom", topic: "saw_sofia", minStage: 1 },
+            demeanor: "nervous",
             addsBoardEntries: [
               { type: "claim", text: "Tom admits he went up to Daniel's apartment after seeing Sofia leave.", source: "tom", timestamp: "00:00" },
             ],
@@ -476,6 +532,7 @@ export const WITNESSES: WitnessConfig[] = [
             text: "We argued. He said I'd made things worse by interfering, by talking to both of them. It got heated. I shoved him, he shoved me back.",
             requiresWitnessStage: { witness: "tom", topic: "went_up", minStage: 0 },
             minAskCount: 1,
+            demeanor: "defensive",
             addsBoardEntries: [
               { type: "claim", text: "Tom admits a physical shoving match with Daniel over Tom “interfering.”", source: "tom" },
             ],
@@ -490,12 +547,14 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "I don't know what you're asking me.",
             requiresWitnessStage: { witness: "tom", topic: "the_argument", minStage: 0 },
+            demeanor: "nervous",
           },
           {
             text: "He grabbed the knife off the counter — he was pointing at me with it, shouting at me to get out. I tried to push past him, get the door. We were tangled up for a second and… he had the knife. It went into him. I didn't stab him. I didn't touch that knife. I swear to you, I didn't mean for any of it.",
             requiresWitnessStage: { witness: "tom", topic: "the_argument", minStage: 0 },
             requiresEvidence: ["E01_knife", "E04_forensic_prelim"],
             minAskCount: 1,
+            demeanor: "panicking",
             addsBoardEntries: [
               { type: "fact", text: "Tom's final account: Daniel grabbed the knife himself; it entered him accidentally during the struggle as Tom tried to get past him.", source: "tom", timestamp: "~00:02" },
             ],
@@ -505,6 +564,7 @@ export const WITNESSES: WitnessConfig[] = [
             requiresWitnessStage: { witness: "tom", topic: "the_argument", minStage: 0 },
             requiresEvidence: ["E01_knife", "E04_forensic_prelim"],
             minAskCount: 2,
+            demeanor: "resigned",
           },
         ],
       },
@@ -516,6 +576,7 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "I panicked. I know how that sounds. I know I should have. I've never been more scared in my life and I ran, and I will regret that forever.",
             requiresWitnessStage: { witness: "tom", topic: "the_knife", minStage: 1 },
+            demeanor: "resigned",
           },
         ],
       },
@@ -530,8 +591,10 @@ export const WITNESSES: WitnessConfig[] = [
     context:
       "Knew Daniel's personality better than anyone — someone who hated confrontation and kept incompatible stories alive rather than face either woman honestly. Spoke to Daniel on the phone the night he died.",
     portraitPrompt:
-      "Man, early 40s, grieving but composed, courtroom witness chair, cinematic dark lighting",
+      "Middle Eastern man, early 40s, grieving but composed, cinematic dark lighting",
+    portraitImage: "/portraits/marco.jpg",
     accentColor: "#fbbf24",
+    baselineDemeanor: "composed",
     deflections: [
       "I wasn't there. I can only tell you what I know about my brother.",
       "I've told you what I know.",
@@ -544,6 +607,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "Daniel hated confrontation more than almost anyone I've known. If telling someone the truth meant a fight, he'd rather tell them whatever kept the peace — even if it meant two completely different stories to two different people. It wasn't cruelty. It was cowardice, mostly.",
+            demeanor: "composed",
             addsBoardEntries: [
               { type: "claim", text: "Marco: Daniel habitually avoided confrontation by telling people whatever kept the peace.", source: "marco" },
             ],
@@ -557,6 +621,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "About a week before he died he called me, sounding rattled. He said, ‘I've lied to both of them.’ I didn't push for details — I assumed it would sort itself out, the way it always did with him.",
+            demeanor: "composed",
             addsBoardEntries: [
               { type: "claim", text: "Marco: Daniel told him “I've lied to both of them” about a week before he died.", source: "marco" },
             ],
@@ -571,8 +636,24 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "He called me around 11:30. He sounded stressed — said something like ‘I have to stop lying to people tonight.’ I told him to just talk to them calmly. I had no idea it was that night, with Elena right there.",
             requiresEvidence: ["E05_daniel_phone_records"],
+            demeanor: "composed",
             addsBoardEntries: [
               { type: "claim", text: "Marco: Daniel called him at 23:34, stressed, saying he had to “stop lying to people tonight.”", source: "marco", timestamp: "23:34" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "tom_confession_reaction",
+        chipLabel: "Tom says it was an accident during a struggle with Daniel",
+        keywords: ["tom", "accident", "struggle", "what tom said", "confession", "knife"],
+        stages: [
+          {
+            text: "Tom... he was practically family to us. If that's true — if it was an accident — God. I don't know what to do with that. But it doesn't surprise me that Daniel grabbed a knife mid-argument. He always had to be holding something when he felt cornered. Never knew what to do with his hands when he was scared.",
+            requiresWitnessStage: { witness: "tom", topic: "the_knife", minStage: 1 },
+            demeanor: "shaken",
+            addsBoardEntries: [
+              { type: "claim", text: "Marco, told Tom's account: devastated but not surprised Daniel would grab something when cornered in an argument.", source: "marco" },
             ],
           },
         ],
@@ -588,8 +669,10 @@ export const WITNESSES: WitnessConfig[] = [
     context:
       "Heard fragments of arguments and doors that night. Her account is partly reliable, partly interpretive — she didn't see everything clearly, and she's filled in some gaps herself.",
     portraitPrompt:
-      "Woman, 60s, curious and talkative expression, standing in an apartment hallway, cinematic dark lighting",
+      "East Asian woman, 60s, curious and talkative expression, standing in an apartment hallway, cinematic dark lighting",
+    portraitImage: "/portraits/julia.jpg",
     accentColor: "#34d399",
+    baselineDemeanor: "composed",
     deflections: [
       "Oh — I'm not sure about that one.",
       "I really couldn't say for certain.",
@@ -602,6 +685,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "Raised voices, more than once that night. Doors. The usual things you hear through a wall you shouldn't be able to hear through.",
+            demeanor: "composed",
             addsBoardEntries: [
               { type: "claim", text: "Julia: heard multiple episodes of raised voices and doors that night.", source: "julia" },
             ],
@@ -615,6 +699,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "I saw a woman leaving, in a dark coat — around midnight, I think, give or take. She was holding something small, I couldn't tell you what. She looked back toward his door before she went. I couldn't see her face properly, the hallway light's been out for weeks.",
+            demeanor: "composed",
             addsBoardEntries: [
               { type: "claim", text: "Julia: saw a woman in a dark coat leave “around midnight, give or take,” holding something small, face not clearly seen.", source: "julia", timestamp: "~midnight (imprecise)" },
             ],
@@ -629,6 +714,7 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "Not very, if I'm honest. I wasn't looking at a clock. “Around midnight” is the best I can give you — it could have been a bit before, a bit after. I wouldn't swear to the minute.",
             requiresWitnessStage: { witness: "julia", topic: "the_woman", minStage: 0 },
+            demeanor: "composed",
             addsBoardEntries: [
               { type: "claim", text: "Julia, pressed: admits her “around midnight” sighting is an estimate, not a precise time.", source: "julia" },
             ],

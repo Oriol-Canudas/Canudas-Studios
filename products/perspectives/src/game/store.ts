@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { EVIDENCE, EVIDENCE_BY_ID, WITNESS_BY_ID, WITNESSES } from "./caseData";
 import { track } from "./analytics";
 import { getDeflection, matchTopic, resolveStage, type AllWitnessStages } from "./witnessEngine";
-import type { BoardEntry, EvidenceId, PlayerVerdict, WitnessId } from "./types";
+import type { BoardEntry, Demeanor, EvidenceId, PlayerVerdict, WitnessId } from "./types";
 
 export interface ChatMessage {
   role: "player" | "witness";
@@ -15,6 +15,7 @@ interface GameState {
   witnessStages: AllWitnessStages;
   askCounts: Record<WitnessId, Record<string, number>>;
   chatHistory: Record<WitnessId, ChatMessage[]>;
+  demeanor: Record<WitnessId, Demeanor>;
   board: BoardEntry[];
   verdict: PlayerVerdict | null;
   revealed: boolean;
@@ -25,6 +26,12 @@ interface GameState {
   askWitness: (id: WitnessId, questionText: string, topicIdHint?: string) => void;
   submitVerdict: (v: PlayerVerdict) => void;
   reset: () => void;
+}
+
+function initialDemeanor(): Record<WitnessId, Demeanor> {
+  const out = {} as Record<WitnessId, Demeanor>;
+  for (const w of WITNESSES) out[w.id] = w.baselineDemeanor;
+  return out;
 }
 
 function emptyWitnessStages(): AllWitnessStages {
@@ -57,6 +64,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   witnessStages: emptyWitnessStages(),
   askCounts: emptyAskCounts(),
   chatHistory: emptyChatHistory(),
+  demeanor: initialDemeanor(),
   board: [],
   verdict: null,
   revealed: false,
@@ -164,6 +172,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       [id]: { ...state.witnessStages[id], [topic.id]: newStage },
     };
 
+    const nextDemeanor =
+      advanced && stageData.demeanor && stageData.demeanor !== state.demeanor[id]
+        ? { ...state.demeanor, [id]: stageData.demeanor }
+        : state.demeanor;
+
     set({
       witnessStages: updatedWitnessStages,
       askCounts: { ...state.askCounts, [id]: { ...state.askCounts[id], [topic.id]: newAskCount } },
@@ -171,6 +184,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       board: nextBoard,
       boardEntryKeys: nextKeys,
       discoveredEvidence: nextDiscovered,
+      demeanor: nextDemeanor,
     });
   },
 
@@ -187,6 +201,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       witnessStages: emptyWitnessStages(),
       askCounts: emptyAskCounts(),
       chatHistory: emptyChatHistory(),
+      demeanor: initialDemeanor(),
       board: [],
       verdict: null,
       revealed: false,

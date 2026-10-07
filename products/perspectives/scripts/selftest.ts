@@ -154,5 +154,65 @@ console.log("\n=== Playthrough 7: reset clears state, ground truth untouched ===
   assert(s.discoveredEvidence.size === 4, "Reset restores exactly the 4 initial evidence items");
 }
 
+// ── Playthrough 8: demeanor tracks testimony pressure ────────────────────
+console.log("\n=== Playthrough 8: demeanor ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness, discoverEvidence } = useGameStore.getState();
+
+  assert(
+    useGameStore.getState().demeanor.tom === "guarded",
+    "Tom starts at his authored baseline demeanor (guarded)"
+  );
+
+  discoverEvidence("E07_tom_phone_records");
+  discoverEvidence("E08_garage_access_log");
+  discoverEvidence("E01_knife");
+  discoverEvidence("E04_forensic_prelim");
+  askWitness("tom", "what did you do after you left"); // -> defensive
+  assert(useGameStore.getState().demeanor.tom === "defensive", "Tom's demeanor updates to defensive once he admits returning");
+
+  askWitness("tom", "did you see anyone when you got there");
+  askWitness("tom", "did you go up to his apartment");
+  askWitness("tom", "what happened between you and daniel");
+  askWitness("tom", "what really happened with the knife"); // confession stage
+  assert(useGameStore.getState().demeanor.tom === "panicking", "Tom's demeanor hits panicking at the confession stage");
+}
+
+// ── Playthrough 9: cross-witness reactions (item 6) ───────────────────────
+console.log("\n=== Playthrough 9: cross-witness reactions ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness, discoverEvidence } = useGameStore.getState();
+
+  // Elena shouldn't be able to react to Tom's return before Tom has admitted it.
+  askWitness("elena", "did you know sofia and tom both went back that night");
+  assert(
+    !lastWitnessLine("elena").includes("had no idea anyone else"),
+    "Elena cannot react to Tom's return before Tom has actually admitted it"
+  );
+
+  // Now establish Tom's return.
+  discoverEvidence("E07_tom_phone_records");
+  askWitness("tom", "what did you do after you left");
+  assert(lastWitnessLine("tom").includes("Alright"), "Tom admits returning once phone records exist");
+
+  // Elena's reactive line should now be reachable, carried by the player
+  // (the Judge), not by Elena magically knowing something she couldn't.
+  askWitness("elena", "did you know sofia and tom both went back that night");
+  assert(
+    lastWitnessLine("elena").includes("had no idea anyone else"),
+    "Elena reacts to being told (by the Judge) that Tom also returned that night"
+  );
+  assert(useGameStore.getState().demeanor.elena === "shaken", "Elena's demeanor shifts to shaken on that reveal");
+
+  // Sofia should react the same way, independently.
+  askWitness("sofia", "tom says he came back to the apartment too, after you left");
+  assert(
+    lastWitnessLine("sofia").includes("I didn't know that"),
+    "Sofia reacts to being told Tom also returned, independently of Elena's reaction"
+  );
+}
+
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

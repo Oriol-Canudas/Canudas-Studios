@@ -40,8 +40,9 @@ Primary validation questions (from the original brief, H1–H8):
 ## Current build stage
 
 **Stage:** Deterministic vertical slice complete, self-tested, deployed and
-playable. Real LLM-driven witness dialogue (Step 6) is designed for but not
-yet implemented.
+playable, plus a full visual/UX pass (portraits, scene art, paced dialogue
+reveal, demeanor states, Case Clarity meter, cross-witness reactions). Real
+LLM-driven witness dialogue (Step 6) is designed for but not yet implemented.
 
 ## What is decided
 
@@ -61,6 +62,15 @@ yet implemented.
   project's Root Directory setting must be `products/perspectives`** for
   that to work — confirm this is set in Project Settings → Build &
   Deployment.
+- No hard energy/turn-limit mechanic — the player may ask as much or as
+  little as they want, per the brief. Progression is communicated instead
+  via a soft **Case Clarity** % (`src/game/clarity.ts`), gating nothing.
+- Witness emotional state (**demeanor**) is authored per testimony stage,
+  not computed from a generic formula — keeps each witness's arc intentional.
+- Cross-witness awareness is implemented as new topics on the existing
+  cross-witness gating mechanism, narratively framed as the Judge (player)
+  relaying testimony between witnesses — no witness ever "just knows"
+  something they couldn't plausibly know.
 
 ## What is NOT being built yet
 
@@ -68,13 +78,11 @@ yet implemented.
 - Authentication, payments, multiplayer, persistence/database.
 - Generalized case-authoring system (only Case 002 exists; it's hand-authored
   data, not a generator).
-- Portrait art (placeholder initial-avatars only; `portraitPrompt` fields
-  exist on each witness in `caseData.ts` for when real art is generated).
 
 ## Current runnable state
 
 - `npm install && npm run dev` → http://localhost:5173
-- `npx tsx scripts/selftest.ts` → 19/19 assertions pass
+- `npx tsx scripts/selftest.ts` → 27/27 assertions pass
 - Live on Vercel (ask Oriol or check the Vercel dashboard for the current
   production URL under this project).
 
@@ -106,8 +114,12 @@ and must stay that way to avoid spoiling the case.
   needing Oriol's approval, plus what Step 6 needs from him.
 - `src/game/caseData.ts` — the only place "what happened" is allowed to live.
 - `src/game/witnessEngine.ts` — the consistency-enforcing layer.
-- `scripts/selftest.ts` — regression harness; run this after any change to
-  `caseData.ts` or `witnessEngine.ts`.
+- `src/game/clarity.ts` — Case Clarity %; `src/game/demeanor.ts` — demeanor
+  display styling.
+- `public/portraits/*.jpg`, `public/scenes/*.jpg` — generated art assets
+  (keep these small — see DECISIONS.md, they were 26MB before resizing).
+- `scripts/selftest.ts` — regression harness (27 assertions); run this after
+  any change to `caseData.ts`, `witnessEngine.ts`, or `store.ts`.
 
 ## Open product questions
 

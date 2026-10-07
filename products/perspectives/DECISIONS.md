@@ -110,3 +110,43 @@ instruction. Newest at the bottom.
   been discovered so far, produce an utterance — never a new fact. The
   deterministic stage text remains the authored fallback and the ground
   truth for what the model is allowed to reveal.
+
+## Visual/UX pass (2026-10-07)
+- **Portraits + scene art**: generated via Magnific (5 witness portraits,
+  deliberately multicultural; 3 scene banners for Home/Evidence/Verdict).
+  First pass came back as 1536×1536 / 2048×1152 PNGs mislabeled `.jpg`,
+  totaling 26MB — resized and re-encoded as real JPEGs (portraits 500×500,
+  scenes 1280×720) via ffmpeg before committing, down to 268KB total. Always
+  check actual file size/format on generated images before wiring them into
+  a mobile build, not just that they rendered.
+- **"Organic" reply pacing**: implemented as a typing-indicator beat (~450ms)
+  followed by a character-reveal animation scaled to length (16ms/char,
+  clamped 350–2600ms total so long confessions don't drag). Tap-to-skip.
+  Only the single freshest witness line animates — history and the
+  player's own messages render instantly, tracked via a local ref of
+  previous message count rather than new store state, to avoid replaying
+  the animation every time a witness screen remounts.
+- **Gamification mechanic (your open question)**: recommended against
+  hard energy/turn limits since the brief explicitly argues against forcing
+  completion or punishing exploration. Built **Case Clarity** instead — a
+  soft 0–100% readout (`src/game/clarity.ts`) blending evidence discovered
+  (35%) and testimony topics pressed to their end (65%), shown on the
+  Reason tab and at the verdict moment. Purely informational, gates nothing.
+- **Demeanor** (`Demeanor` type in `types.ts`, `demeanor.ts` for display
+  styling): authored per-stage on witnesses already, not computed generically
+  — kept each witness's emotional arc intentional (e.g. Tom guarded →
+  defensive → panicking → resigned) rather than deriving a label from a
+  formula. Tracked as current-state-per-witness in the store, updated only
+  when a stage genuinely advances.
+- **Cross-witness awareness (item 6)**: implemented as new topics using the
+  *existing* `requiresWitnessStage` cross-witness gating — no new engine
+  mechanism needed. Framed narratively as the Judge (the player) relaying
+  what one witness said to another during cross-examination, which is both
+  how real interrogation works and keeps the "characters can't know things
+  they couldn't plausibly know" rule intact — nobody secretly knows another
+  witness's private testimony, the player is the vector. Four new topics:
+  Elena & Sofia react to learning Tom returned; Marco reacts to Tom's
+  confession.
+- Extended `scripts/selftest.ts` to 27 assertions covering both new
+  mechanics (demeanor transitions, cross-witness topics correctly gated and
+  ungated) rather than trusting them unverified.

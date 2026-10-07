@@ -1,4 +1,5 @@
 import { useGameStore } from "../game/store";
+import { clarityCopy, computeClarity } from "../game/clarity";
 import type { BoardEntry, BoardEntryType } from "../game/types";
 
 const TYPE_STYLE: Record<BoardEntryType, { label: string; dot: string; text: string }> = {
@@ -23,20 +24,20 @@ function Section({ title, entries }: { title: string; entries: BoardEntry[] }) {
   if (entries.length === 0) return null;
   return (
     <div className="mt-5">
-      <p className="mb-2 text-sm font-medium text-white/60">{title}</p>
+      <p className="mb-2 text-base font-medium text-white/60">{title}</p>
       <div className="space-y-2">
         {entries.map((e) => {
           const style = TYPE_STYLE[e.type];
           return (
-            <div key={e.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <div key={e.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5">
               <div className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
-                <span className={`text-[11px] font-medium uppercase tracking-wide ${style.text}`}>
+                <span className={`text-xs font-medium uppercase tracking-wide ${style.text}`}>
                   {style.label}
                   {e.timestamp ? ` · ${e.timestamp}` : ""}
                 </span>
               </div>
-              <p className="mt-1.5 text-[15px] leading-relaxed text-white/85">{e.text}</p>
+              <p className="mt-1.5 text-[17px] leading-relaxed text-white/85">{e.text}</p>
             </div>
           );
         })}
@@ -47,6 +48,10 @@ function Section({ title, entries }: { title: string; entries: BoardEntry[] }) {
 
 export default function CaseBoard() {
   const board = useGameStore((s) => s.board);
+  const discoveredEvidence = useGameStore((s) => s.discoveredEvidence);
+  const witnessStages = useGameStore((s) => s.witnessStages);
+
+  const clarity = computeClarity(discoveredEvidence, witnessStages);
 
   const timestamped = [...board]
     .filter((e) => e.timestamp)
@@ -58,20 +63,34 @@ export default function CaseBoard() {
 
   return (
     <div className="px-5 pb-28 pt-6">
-      <h2 className="text-xl font-semibold text-white">Case board</h2>
-      <p className="mt-1 text-sm text-white/55">
+      <h2 className="text-2xl font-semibold text-white">Case board</h2>
+      <p className="mt-1 text-base text-white/55">
         What you've actually established so far — nothing more.
       </p>
 
+      <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="flex items-baseline justify-between">
+          <p className="text-sm font-medium uppercase tracking-wide text-white/60">Case clarity</p>
+          <p className="text-lg font-semibold text-amber-300">{clarity}%</p>
+        </div>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-300 transition-all duration-500"
+            style={{ width: `${clarity}%` }}
+          />
+        </div>
+        <p className="mt-2 text-base text-white/60">{clarityCopy(clarity)}</p>
+      </div>
+
       {board.length === 0 && (
-        <div className="mt-8 rounded-2xl border border-dashed border-white/15 p-6 text-center text-sm text-white/45">
+        <div className="mt-8 rounded-2xl border border-dashed border-white/15 p-6 text-center text-base text-white/45">
           Nothing pinned yet. Question witnesses and examine evidence — what you learn shows up here.
         </div>
       )}
 
       {timestamped.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-sm font-medium text-white/60">Your timeline</p>
+          <p className="mb-2 text-base font-medium text-white/60">Your timeline</p>
           <div className="space-y-0">
             {timestamped.map((e, i) => (
               <div key={e.id} className="flex gap-3">
@@ -80,8 +99,8 @@ export default function CaseBoard() {
                   {i < timestamped.length - 1 && <span className="w-px flex-1 bg-white/10" />}
                 </div>
                 <div className="pb-4">
-                  <p className="text-xs font-mono text-amber-300/80">{e.timestamp}</p>
-                  <p className="mt-0.5 text-[15px] leading-snug text-white/85">{e.text}</p>
+                  <p className="text-sm font-mono text-amber-300/80">{e.timestamp}</p>
+                  <p className="mt-0.5 text-[17px] leading-snug text-white/85">{e.text}</p>
                 </div>
               </div>
             ))}

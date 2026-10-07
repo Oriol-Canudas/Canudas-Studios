@@ -88,3 +88,61 @@ Current limitations / next step
 - No automated visual/UX QA pass was possible in this build environment
   (no connected browser tool) — first real visual check is Oriol playing it
   on his phone.
+
+---
+
+## 2026-10-07 — Visual/UX pass: portraits, scene art, pacing, demeanor, Case Clarity, cross-witness reactions
+
+What changed
+- Generated and wired in real character portraits (5 witnesses, deliberately
+  multicultural) and 3 cinematic scene banners (Home/Evidence/Verdict),
+  replacing initials-only avatars and flat screens.
+- Witness replies now reveal at a human reading/typing pace (brief "typing…"
+  beat, then a scaled character-by-character reveal, tap to skip) instead of
+  appearing instantly.
+- Bumped body text sizes app-wide (15px → 17px chat/evidence/board text,
+  proportional bumps elsewhere) in response to "too text-heavy."
+- Added a **Case Clarity** meter (`src/game/clarity.ts`) — a soft 0–100%
+  read on how resolved the player's understanding is (evidence found +
+  testimony topics pressed to their end), shown on the Reason tab and at
+  the verdict moment. Deliberately not a hard energy/turn-limit mechanic —
+  see DECISIONS.md for why.
+- Added a **demeanor** system: each witness now has a visible emotional
+  state (Composed/Guarded/Defensive/Nervous/Shaken/Panicking/Resigned)
+  authored per testimony stage, shown as a badge on the witness list and in
+  the chat header.
+- Added **cross-witness reactions**: 4 new topics (Elena & Sofia react to
+  learning Tom returned that night; Marco reacts to Tom's confession),
+  built on the existing cross-witness `requiresWitnessStage` gating — no
+  new engine mechanism needed.
+- Extended the self-test harness from 19 to 27 assertions to cover the two
+  new mechanics.
+
+Why
+- Oriol's direct feedback after playing the deterministic build: wanted
+  portraits, organic-feeling dialogue, bigger text, more visual variety,
+  a clearer sense of character emotional state, and testimony that doesn't
+  feel siloed per-witness.
+
+Files
+- `src/game/clarity.ts`, `src/game/demeanor.ts` (new)
+- `src/game/types.ts`, `src/game/caseData.ts`, `src/game/store.ts` (demeanor
+  + portrait fields, 4 new topics)
+- `src/components/TypewriterText.tsx`, `TypingIndicator.tsx`,
+  `DemeanorBadge.tsx` (new); `Portrait.tsx`, `WitnessChat.tsx`,
+  `HearScreen.tsx`, `CaseHome.tsx`, `EvidenceScreen.tsx`,
+  `VerdictScreen.tsx`, `CaseBoard.tsx`, `RevealScreen.tsx`, `TabBar.tsx`
+  (updated)
+- `public/portraits/*.jpg`, `public/scenes/*.jpg` (new assets)
+- `scripts/selftest.ts` (8 new assertions)
+
+How to test
+- `npm run dev` → http://localhost:5173, or the live Vercel URL.
+- `npx tsx scripts/selftest.ts` → 27/27 should pass.
+
+Current limitations / next step
+- Step 6 (real LLM-driven dialogue) still not wired — unchanged from last
+  entry, still blocked on `OPENAI_API_KEY` as a Vercel env var.
+- Portrait/scene images were generated oversized (26MB total, PNGs
+  mislabeled `.jpg`) and had to be resized/re-encoded before committing —
+  worth remembering for any future asset generation in this project.

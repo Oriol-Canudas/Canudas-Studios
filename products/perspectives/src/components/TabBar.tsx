@@ -21,11 +21,11 @@ export default function TabBar({ active, onChange, onVerdict, boardCount }: TabB
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 text-xs transition-colors ${
+            className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[13px] transition-colors ${
               active === tab.id ? "text-amber-300" : "text-white/50"
             }`}
           >
-            <span className="text-lg leading-none">{tab.icon}</span>
+            <span className="text-xl leading-none">{tab.icon}</span>
             {tab.label}
             {tab.id === "reason" && boardCount > 0 && (
               <span className="absolute right-6 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-black">
@@ -36,9 +36,9 @@ export default function TabBar({ active, onChange, onVerdict, boardCount }: TabB
         ))}
         <button
           onClick={onVerdict}
-          className="flex flex-1 flex-col items-center gap-1 py-2.5 text-xs font-semibold text-red-300"
+          className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[13px] font-semibold text-red-300"
         >
-          <span className="text-lg leading-none">{"⚖️"}</span>
+          <span className="text-xl leading-none">{"⚖️"}</span>
           Verdict
         </button>
       </div>

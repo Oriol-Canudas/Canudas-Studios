@@ -9,6 +9,21 @@
 
 export type WitnessId = "elena" | "sofia" | "tom" | "marco" | "julia";
 
+/**
+ * Fixed vocabulary so the UI can style these consistently. Roughly ordered
+ * by escalating pressure, but witnesses don't have to move monotonically
+ * through it — it reflects their state after the most recent testimony
+ * advance, authored per-stage in caseData.ts.
+ */
+export type Demeanor =
+  | "composed"
+  | "guarded"
+  | "defensive"
+  | "nervous"
+  | "shaken"
+  | "panicking"
+  | "resigned";
+
 export type EvidenceId =
   | "E01_knife"
   | "E02_msg_sofia_2306"
@@ -56,6 +71,8 @@ export interface TestimonyStage {
   addsBoardEntries?: Omit<BoardEntry, "id">[];
   /** Evidence this stage newly unlocks (e.g. a witness points you to a record). */
   unlocksEvidence?: EvidenceId[];
+  /** If set, the witness's displayed demeanor updates to this once this stage is (newly) reached. */
+  demeanor?: Demeanor;
 }
 
 export interface TestimonyTopic {
@@ -73,8 +90,10 @@ export interface WitnessConfig {
   role: string;
   age?: number;
   context: string; // short intro paragraph shown at top of witness screen
-  portraitPrompt: string; // used if/when we generate real portraits
+  portraitPrompt: string; // the brief used to generate portraitImage
+  portraitImage: string; // public/ path to the generated portrait
   accentColor: string; // tailwind-ish hex for their theme tint
+  baselineDemeanor: Demeanor;
   topics: TestimonyTopic[];
   /** Line used when the player's question doesn't match any topic. Rotates. */
   deflections: string[];
