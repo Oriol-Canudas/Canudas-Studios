@@ -11,8 +11,15 @@ const CATEGORY_ICON: Record<string, string> = {
   records: "\u{1F4C4}",
 };
 
+const STATUS_BADGE: Record<"locked" | "new" | "read", { label: string; className: string }> = {
+  locked: { label: "\u{1F512} Locked", className: "bg-black/50 text-white/50 border border-white/10" },
+  new: { label: "● New", className: "bg-amber-400 text-black" },
+  read: { label: "✓ Read", className: "bg-white/10 text-white/60 border border-white/10" },
+};
+
 export default function EvidenceScreen() {
   const discovered = useGameStore((s) => s.discoveredEvidence);
+  const inspected = useGameStore((s) => s.inspectedEvidence);
   const discoverEvidence = useGameStore((s) => s.discoverEvidence);
   const inspectEvidence = useGameStore((s) => s.inspectEvidence);
   const [open, setOpen] = useState<EvidenceId | null>(null);
@@ -35,28 +42,38 @@ export default function EvidenceScreen() {
       <div className="px-5 pt-5">
         <h2 className="text-2xl font-semibold text-white">Evidence</h2>
         <p className="mt-1 text-base text-white/55">
-          Tap a dashed card to request it from the record.
+          Locked cards haven't been requested yet — tap to pull them from the record.
         </p>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           {EVIDENCE.map((e) => {
             const isDiscovered = discovered.has(e.id);
+            const isInspected = inspected.has(e.id);
+            const status = !isDiscovered ? "locked" : isInspected ? "read" : "new";
+            const badge = STATUS_BADGE[status];
             return (
               <button
                 key={e.id}
                 onClick={() => handleOpen(e.id)}
-                className={`flex flex-col items-start gap-2 rounded-2xl border p-4 text-left active:scale-[0.98] transition-transform ${
-                  isDiscovered
-                    ? "border-white/10 bg-white/[0.04]"
-                    : "border-dashed border-white/15 bg-white/[0.015]"
+                className={`relative flex flex-col items-start gap-2 rounded-2xl border p-4 text-left active:scale-[0.98] transition-transform ${
+                  status === "locked"
+                    ? "border-dashed border-white/15 bg-white/[0.015] opacity-70"
+                    : status === "new"
+                      ? "border-amber-300/40 bg-amber-300/[0.06]"
+                      : "border-white/10 bg-white/[0.04]"
                 }`}
               >
-                <span className="text-2xl">{CATEGORY_ICON[e.category]}</span>
-                <span className="text-base font-medium text-white">{e.title}</span>
+                <span
+                  className={`absolute right-2.5 top-2.5 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${badge.className}`}
+                >
+                  {badge.label}
+                </span>
+                <span className={`text-2xl ${status === "locked" ? "opacity-40" : ""}`}>{CATEGORY_ICON[e.category]}</span>
+                <span className="pr-14 text-base font-medium text-white">{e.title}</span>
                 {isDiscovered ? (
                   <span className="text-sm text-white/50">{e.summary}</span>
                 ) : (
-                  <span className="text-sm font-medium text-amber-300/80">Tap to request</span>
+                  <span className="text-sm font-medium text-white/40">Tap to request</span>
                 )}
               </button>
             );

@@ -45,25 +45,28 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
       <img
         src={slide.image}
         alt=""
-        className={`h-full w-full object-cover object-top transition-opacity ease-in-out ${visible ? "opacity-60" : "opacity-0"}`}
+        className={`h-full w-full object-cover object-top transition-opacity ease-in-out ${visible ? "opacity-70" : "opacity-0"}`}
         style={{ transitionDuration: `${FADE_MS}ms` }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/70" />
-      <div className="absolute inset-0 flex items-center justify-center px-10">
+      {/* Darken only the lower band the caption sits in, plus a light top
+          scrim for the skip label — the face (upper ~60% of a portrait
+          crop) stays clear. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/85" />
+      <div className="absolute inset-x-0 bottom-16 flex justify-center px-8">
         <div
           className={`text-center transition-opacity ease-in-out ${visible ? "opacity-100" : "opacity-0"}`}
           style={{ transitionDuration: `${FADE_MS}ms` }}
         >
           {slide.eyebrow && (
-            <p className="mb-2 text-xs uppercase tracking-[0.3em] text-amber-300/90">{slide.eyebrow}</p>
+            <p className="mb-1.5 text-xs uppercase tracking-[0.3em] text-amber-300/90">{slide.eyebrow}</p>
           )}
           {slide.title && (
-            <p className="mb-1.5 text-3xl font-semibold text-white drop-shadow-lg">{slide.title}</p>
+            <p className="mb-1 text-2xl font-semibold text-white drop-shadow-lg">{slide.title}</p>
           )}
-          <p className="text-center text-2xl font-medium leading-snug text-white drop-shadow-lg">{slide.line}</p>
+          <p className="text-center text-lg font-medium leading-snug text-white drop-shadow-lg">{slide.line}</p>
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-10 flex justify-center gap-1.5">
+      <div className="absolute inset-x-0 bottom-6 flex justify-center gap-1.5">
         {slides.map((_, i) => (
           <span key={i} className={`h-1 w-5 rounded-full ${i === index ? "bg-amber-300" : "bg-white/20"}`} />
         ))}

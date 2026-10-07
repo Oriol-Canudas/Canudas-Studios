@@ -297,6 +297,34 @@ reflected below.
   progressive hints were explicitly deprioritized by Oriol in this same
   approval — "before expanding the comparison and hint features" — and
   are not implemented this round. Backlogged, not forgotten.
+## Question tone: cosmetic, not mechanical (2026-10-08)
+
+Oriol asked explicitly for a judgment call: should soft/neutral/accusative
+question tone have a real gameplay effect (e.g. accusative questions
+provoke faster defensiveness or shut a witness down, soft questions build
+trust toward a confession)? Recommendation, implemented as stated: **keep
+it cosmetic this round** — a color-coded chip tag plus sharper wording for
+the clearly confrontational topics, with zero effect on `resolveStage`,
+pressure, or demeanor. Reasons:
+- Codex's `REVIEW_HANDOFF.md` explicitly lists "charisma dice" and
+  "metagame" as out of scope for the current iteration sequence. A real
+  tone-affects-outcome mechanic is exactly that shape of feature, even if
+  framed differently — safer to not cross that line without a direct
+  conversation with both collaborators first.
+- It would require re-authoring every multi-stage topic's gating to
+  define what each tone actually *does* (skip a stage? change which
+  `presentedText` fires? shift demeanor an extra step?) — a meaningfully
+  bigger scope than "3 chips read as more varied."
+- The cosmetic version still delivers what was actually asked — the
+  suggestion row feels less flat and more deliberate to pick from —
+  without a new system to design, author for all 5 witnesses, and test.
+
+If Oriol wants the mechanical version later, the natural seam is
+`TestimonyStage` gaining a tone-specific override (e.g. an accusative ask
+could force an earlier `demeanor` jump, a soft ask could lower a
+`minAskCount` threshold) — scoped as its own small iteration, not bundled
+into a UI pass.
+
 - **Validation**: extended `scripts/selftest.ts` from 27 to 47 assertions
   covering every item above (chip reachability, loosened question order,
   Marco's split stage, presenting evidence in-chat, the new grading

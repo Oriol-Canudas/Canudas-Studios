@@ -279,6 +279,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "relationship",
         chipLabel: "What was your relationship with Daniel?",
+        tone: "neutral",
         keywords: ["relationship", "together", "breakup", "broke up", "dating", "together six years", "exes", "ex", "past"],
         stages: [
           {
@@ -293,6 +294,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "that_night",
         chipLabel: "Why did you go there that night?",
+        tone: "soft",
         keywords: ["that night", "why did you go", "visit", "called you", "invited"],
         stages: [
           {
@@ -306,7 +308,8 @@ export const WITNESSES: WitnessConfig[] = [
       },
       {
         id: "argument",
-        chipLabel: "What happened during the argument?",
+        chipLabel: "What really happened once that argument turned physical?",
+        tone: "accusative",
         keywords: ["argument", "argue", "fight", "contact", "physical", "touch", "push", "shove", "hit"],
         stages: [
           {
@@ -325,7 +328,8 @@ export const WITNESSES: WitnessConfig[] = [
       },
       {
         id: "knife",
-        chipLabel: "Why are your prints on the knife?",
+        chipLabel: "Why are your prints on the murder weapon, Elena?",
+        tone: "accusative",
         keywords: ["knife", "prints", "fingerprint"],
         stages: [
           {
@@ -341,6 +345,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "leaving",
         chipLabel: "What time did you leave?",
+        tone: "soft",
         keywords: ["leave", "left", "when did you go", "what time"],
         stages: [
           {
@@ -355,6 +360,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "sofia_tom_after",
         chipLabel: "Did you see Sofia or Tom that night?",
+        tone: "neutral",
         keywords: ["sofia", "tom", "see anyone", "after you left"],
         stages: [
           {
@@ -366,6 +372,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "others_returned",
         chipLabel: "Did you know Sofia and Tom both went back that night?",
+        tone: "accusative",
         keywords: ["sofia", "tom", "both went back", "came back", "returned", "after you"],
         stages: [
           {
@@ -407,6 +414,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "relationship",
         chipLabel: "What did Daniel tell you about Elena?",
+        tone: "neutral",
         keywords: ["elena", "relationship", "told you about", "ex"],
         stages: [
           {
@@ -420,7 +428,8 @@ export const WITNESSES: WitnessConfig[] = [
       },
       {
         id: "contact_after_text",
-        chipLabel: "Did Daniel contact you after his 23:06 text?",
+        chipLabel: "Are you sure Daniel never contacted you again that night?",
+        tone: "accusative",
         keywords: ["after", "call", "contact", "that night", "later", "23:06", "text"],
         stages: [
           {
@@ -441,6 +450,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "went_to_apartment",
         chipLabel: "Did you go to the apartment that night?",
+        tone: "accusative",
         keywords: ["go to the apartment", "were you there", "visit", "garage"],
         stages: [
           {
@@ -460,7 +470,8 @@ export const WITNESSES: WitnessConfig[] = [
       },
       {
         id: "what_happened_there",
-        chipLabel: "What happened when you got there?",
+        chipLabel: "What actually happened once you got up there?",
+        tone: "accusative",
         keywords: ["happened", "what did he say", "angry", "fight", "shirt", "grab"],
         stages: [
           {
@@ -482,6 +493,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "tom_reaction",
         chipLabel: "Tom says he came back to the apartment too, after you left",
+        tone: "neutral",
         keywords: ["tom", "came back", "returned", "after you left", "also went back"],
         stages: [
           {
@@ -523,6 +535,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "earlier_visit",
         chipLabel: "What did you talk about earlier that evening?",
+        tone: "neutral",
         keywords: ["earlier", "visit", "talk about", "7pm", "19:32", "warn"],
         stages: [
           {
@@ -536,7 +549,8 @@ export const WITNESSES: WitnessConfig[] = [
       },
       {
         id: "after_that",
-        chipLabel: "What did you do after you left?",
+        chipLabel: "Where did you really go after you left, Tom?",
+        tone: "accusative",
         keywords: ["after", "went home", "later that night", "where were you", "midnight"],
         stages: [
           {
@@ -557,6 +571,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "saw_sofia",
         chipLabel: "Did you see anyone when you got there?",
+        tone: "soft",
         keywords: ["see anyone", "sofia", "saw someone", "garage"],
         stages: [
           {
@@ -578,6 +593,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "went_up",
         chipLabel: "Did you go up to his apartment?",
+        tone: "neutral",
         keywords: ["go up", "apartment", "floor", "lift", "elevator"],
         stages: [
           {
@@ -592,7 +608,8 @@ export const WITNESSES: WitnessConfig[] = [
       },
       {
         id: "the_argument",
-        chipLabel: "What happened between you and Daniel?",
+        chipLabel: "What really happened between you two up there?",
+        tone: "accusative",
         keywords: ["argument", "fight", "argue", "shove", "happened between"],
         stages: [
           {
@@ -608,7 +625,8 @@ export const WITNESSES: WitnessConfig[] = [
       },
       {
         id: "the_knife",
-        chipLabel: "What really happened with the knife?",
+        chipLabel: "Did you kill him, Tom?",
+        tone: "accusative",
         keywords: ["knife", "stab", "kill", "truth", "what really happened", "weapon"],
         stages: [
           {
@@ -639,6 +657,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "why_no_help",
         chipLabel: "Why didn't you call for help?",
+        tone: "soft",
         keywords: ["help", "ambulance", "emergency", "call someone", "why didn't you"],
         stages: [
           {
@@ -676,6 +695,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "daniels_personality",
         chipLabel: "What was Daniel like?",
+        tone: "soft",
         keywords: ["personality", "like", "character", "daniel was"],
         stages: [
           {
@@ -690,6 +710,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_lies",
         chipLabel: "Did Daniel ever talk to you about Elena and Sofia?",
+        tone: "neutral",
         keywords: ["elena", "sofia", "both of them", "lied", "lying"],
         stages: [
           {
@@ -704,6 +725,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "that_night_call",
         chipLabel: "Did you speak to Daniel that night?",
+        tone: "neutral",
         keywords: ["that night", "call", "phone", "speak to him", "23:34", "talked to", "spoke", "did you talk"],
         stages: [
           {
@@ -724,6 +746,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "tom_confession_reaction",
         chipLabel: "Tom says it was an accident during a struggle with Daniel",
+        tone: "soft",
         keywords: ["tom", "accident", "struggle", "what tom said", "confession", "knife"],
         stages: [
           {
@@ -764,6 +787,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "what_heard",
         chipLabel: "What did you hear that night?",
+        tone: "neutral",
         keywords: ["hear", "heard", "argument", "noise", "sound", "shouting", "yelling", "fighting", "scream", "through the wall"],
         stages: [
           {
@@ -778,6 +802,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_woman",
         chipLabel: "Did you see anyone leave?",
+        tone: "neutral",
         keywords: ["see anyone", "leave", "woman", "coat", "midnight", "see", "describe", "what did you see", "saw", "exit", "walked out", "front door"],
         stages: [
           {
@@ -792,6 +817,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "sure_about_time",
         chipLabel: "How sure are you about the time?",
+        tone: "soft",
         keywords: ["sure", "certain", "exact time", "precise", "positive", "accurate", "clock", "really midnight", "how sure"],
         stages: [
           {

@@ -341,3 +341,50 @@ Current limitations / next step
   unbuilt, deprioritized behind this integrity pass.
 - Cinematic reveal, living portraits, key-line voice acting, transition
   polish, and Step 6 (LLM dialogue) are all still unstarted.
+
+---
+
+## 2026-10-08 — UX polish: intro layout, chip cap + tone, evidence status
+
+What changed
+- **Character-intro layout**: caption moved from dead-center to a lower-
+  third band (`IntroSequence.tsx`) so the portrait's face is no longer
+  covered by text; gradient now only darkens the bottom band instead of
+  the whole frame. Applies to both intro sequences (shared component).
+- **Suggestion chips capped at 3** (`WitnessChat.tsx`): not-yet-asked
+  topics are prioritized in authored order and sliced to 3; asking one
+  sinks it behind the others, surfacing the next reachable topic — no
+  new state needed, purely derived from existing stage data.
+- **Question tone** (`QuestionTone` in `types.ts`): every topic now
+  carries a cosmetic `soft` / `neutral` / `accusative` tag, color-coding
+  its chip, and several confrontational chip labels were reworded sharper
+  (e.g. Tom's "What did you do after you left?" → "Where did you really
+  go after you left, Tom?"). Deliberately flavor-only — no mechanical
+  effect on gating, pressure, or demeanor. See DECISIONS.md for why.
+- **Evidence status badges** (`EvidenceScreen.tsx`): cards now show a
+  "🔒 Locked" / "● New" / "✓ Read" badge reusing the existing
+  acquired/inspected distinction, instead of relying on dashed-border
+  alone to signal "not yet requested."
+
+Why
+- Direct playtest feedback from Oriol: intro text overlapped faces,
+  conversation chip rows ate too much screen space, and evidence cards'
+  acquired/pending states weren't visually clear enough.
+
+Files
+- `src/components/IntroSequence.tsx`, `WitnessChat.tsx`, `EvidenceScreen.tsx`
+- `src/game/types.ts` (`QuestionTone`), `caseData.ts` (tone tags + reworded labels)
+
+How to test
+- `npm run dev` or the live Vercel URL — check a witness's face stays
+  clear during the cast intro, that only 3 chips ever show per witness,
+  and that evidence cards read Locked/New/Read correctly through a
+  request → open cycle.
+- `npx tsx scripts/selftest.ts` → 49/49 (no engine/gating logic changed,
+  so assertion count is unchanged from the previous entry).
+
+Current limitations / next step
+- Tone is cosmetic only this round — see DECISIONS.md for the tradeoff
+  if Oriol wants it to have a real mechanical effect later.
+- Not every topic got a hand-sharpened label — the clearly confrontational
+  ones were prioritized; purely factual topics kept their original wording.

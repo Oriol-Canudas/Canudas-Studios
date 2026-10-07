@@ -2,12 +2,22 @@ import { useEffect, useRef, useState } from "react";
 import { WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isTopicReachable } from "../game/witnessEngine";
-import type { EvidenceId, WitnessId } from "../game/types";
+import type { EvidenceId, QuestionTone, WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
 import TypewriterText from "./TypewriterText";
 import TypingIndicator from "./TypingIndicator";
 import EvidencePicker from "./EvidencePicker";
+
+const MAX_VISIBLE_CHIPS = 3;
+
+// Cosmetic only — color signals the question's tone, never changes what
+// the witness can say or how the engine gates anything.
+const TONE_STYLE: Record<QuestionTone, string> = {
+  soft: "border-sky-300/30 bg-sky-300/10 text-sky-200",
+  neutral: "border-amber-300/30 bg-amber-300/10 text-amber-200",
+  accusative: "border-red-400/30 bg-red-400/10 text-red-200",
+};
 
 interface WitnessChatProps {
   witnessId: WitnessId;
@@ -78,7 +88,18 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
     setPickerOpen(false);
   }
 
-  const visibleTopics = witness.topics.filter((t) => isTopicReachable(t, witnessStages));
+  // Cap the row at 3 chips so it never eats the screen. Not-yet-asked
+  // topics are prioritized (stable on authored order), so once one is
+  // used it sinks behind the others and the next reachable topic takes
+  // its place — "ask one, see 3 more" — without needing extra state.
+  const reachableTopics = witness.topics.filter((t) => isTopicReachable(t, witnessStages));
+  const visibleTopics = [...reachableTopics]
+    .sort((a, b) => {
+      const askedA = (witnessStages[witnessId][a.id] ?? -1) >= 0 ? 1 : 0;
+      const askedB = (witnessStages[witnessId][b.id] ?? -1) >= 0 ? 1 : 0;
+      return askedA - askedB;
+    })
+    .slice(0, MAX_VISIBLE_CHIPS);
 
   return (
     <div className="flex h-full flex-col pb-[calc(env(safe-area-inset-bottom)+0px)]">
@@ -154,9 +175,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
                 onClick={() => send(t.chipLabel, t.id)}
                 disabled={busy}
                 className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition-colors disabled:opacity-50 ${
-                  asked
-                    ? "border-white/10 bg-white/[0.02] text-white/40"
-                    : "border-amber-300/30 bg-amber-300/10 text-amber-200"
+                  asked ? "border-white/10 bg-white/[0.02] text-white/40" : TONE_STYLE[t.tone ?? "neutral"]
                 }`}
               >
                 {t.chipLabel}

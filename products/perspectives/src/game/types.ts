@@ -84,10 +84,20 @@ export interface TestimonyStage {
   demeanor?: Demeanor;
 }
 
+/**
+ * Flavor-only categorization of a question's tone — purely cosmetic
+ * (wording + chip color), no mechanical effect on gating or demeanor.
+ * Keeps the suggestion row varied without turning tone into a stat/dice
+ * mechanic.
+ */
+export type QuestionTone = "soft" | "neutral" | "accusative";
+
 export interface TestimonyTopic {
   id: string;
   /** Human label shown as a suggested-question chip. */
   chipLabel: string;
+  /** Cosmetic tone tag for chip color/wording variety. Defaults to "neutral". */
+  tone?: QuestionTone;
   /** Keywords/synonyms used to match free-form player questions to this topic. */
   keywords: string[];
   stages: TestimonyStage[];
