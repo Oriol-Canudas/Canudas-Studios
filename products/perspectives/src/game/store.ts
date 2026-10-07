@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { EVIDENCE, EVIDENCE_BY_ID, WITNESS_BY_ID, WITNESSES } from "./caseData";
 import { track } from "./analytics";
+import { playSfx } from "./audio";
 import { getDeflection, matchTopic, resolveStage, type AllWitnessStages } from "./witnessEngine";
 import type { BoardEntry, Demeanor, EvidenceId, PlayerVerdict, WitnessId } from "./types";
 
@@ -91,6 +92,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     track("evidence_inspected", { evidenceId: id });
+    playSfx("evidence");
     set({ discoveredEvidence: next, board: nextBoard, boardEntryKeys: nextKeys });
   },
 
@@ -153,13 +155,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (stageData.addsBoardEntries?.length) {
         nextBoard = [...nextBoard];
         nextKeys = new Set(nextKeys);
+        let addedContradiction = false;
         stageData.addsBoardEntries.forEach((entry, i) => {
           const key = boardKey(entry, `${id}:${topic.id}:${newStage}:${i}`);
           if (!nextKeys.has(key)) {
             nextKeys.add(key);
             nextBoard.push({ ...entry, id: key });
+            if (entry.type === "contradiction") addedContradiction = true;
           }
         });
+        if (addedContradiction) playSfx("contradiction");
       }
       if (stageData.unlocksEvidence?.length) {
         nextDiscovered = new Set(nextDiscovered);
@@ -172,10 +177,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       [id]: { ...state.witnessStages[id], [topic.id]: newStage },
     };
 
-    const nextDemeanor =
-      advanced && stageData.demeanor && stageData.demeanor !== state.demeanor[id]
-        ? { ...state.demeanor, [id]: stageData.demeanor }
-        : state.demeanor;
+    const demeanorChanged = advanced && stageData.demeanor && stageData.demeanor !== state.demeanor[id];
+    const nextDemeanor = demeanorChanged ? { ...state.demeanor, [id]: stageData.demeanor! } : state.demeanor;
+    if (demeanorChanged) playSfx("demeanor");
 
     set({
       witnessStages: updatedWitnessStages,
@@ -191,6 +195,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   submitVerdict: (v) => {
     track("decision_selected", { ...v });
     track("session_completed", {});
+    playSfx("verdict");
     set({ verdict: v, revealed: true });
   },
 

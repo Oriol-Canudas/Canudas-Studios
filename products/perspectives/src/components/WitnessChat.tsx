@@ -10,9 +10,10 @@ import TypingIndicator from "./TypingIndicator";
 interface WitnessChatProps {
   witnessId: WitnessId;
   onBack: () => void;
+  onInspect: () => void;
 }
 
-export default function WitnessChat({ witnessId, onBack }: WitnessChatProps) {
+export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessChatProps) {
   const witness = WITNESS_BY_ID[witnessId];
   const askWitness = useGameStore((s) => s.askWitness);
   const openWitness = useGameStore((s) => s.openWitness);
@@ -71,7 +72,9 @@ export default function WitnessChat({ witnessId, onBack }: WitnessChatProps) {
         <button onClick={onBack} className="text-2xl text-white/70 active:text-white">
           {"←"}
         </button>
-        <Portrait name={witness.name} accentColor={witness.accentColor} image={witness.portraitImage} size="sm" />
+        <button onClick={onInspect}>
+          <Portrait name={witness.name} accentColor={witness.accentColor} image={witness.portraitImage} size="sm" />
+        </button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-lg font-medium text-white">{witness.name}</p>
           <p className="truncate text-sm text-white/50">{witness.role}</p>

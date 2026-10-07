@@ -146,3 +146,55 @@ Current limitations / next step
 - Portrait/scene images were generated oversized (26MB total, PNGs
   mislabeled `.jpg`) and had to be resized/re-encoded before committing —
   worth remembering for any future asset generation in this project.
+
+---
+
+## 2026-10-07 — "Polish the one case": dossier, cold-open intro, text density, sound
+
+What changed
+- Oriol's direction: defer the RPG meta-progression and multi-case content
+  pipeline (both backlogged), focus entirely on making Case 002 excellent.
+  Also backlogged: full voice recognition + a conversational witness avatar.
+- Tap any witness portrait (witness list or chat header) to open a
+  full-screen character dossier — portrait, demeanor, 3 key facts, a
+  "Question [name]" CTA straight into chat.
+- Added a 4-slide animated cold-open before the case file loads (reuses
+  existing scene art + Elena's portrait, tap to skip), replayed each time
+  "Play again" is used rather than dropping straight back to the case file.
+- Trimmed copy across Home/Evidence/Verdict screens — shorter subtitles,
+  "what Elena admits" collapsed into check-chips instead of a bulleted
+  paragraph. Did not touch the actual testimony content — that's the game.
+- Added sound: a looping ambient tension bed plus 4 SFX (evidence
+  discovered, contradiction flagged, demeanor shift, verdict delivered),
+  generated via Magnific. Mute toggle persists to `localStorage`, visible
+  on every screen except the intro.
+
+Why
+- Direct product decision from Oriol after playing the deterministic +
+  first visual build: prioritize depth on one case over breadth of
+  features, since the open commercial question is "is this experience
+  itself excellent," not "how much content exists yet."
+
+Files
+- `src/components/CharacterDossier.tsx`, `IntroSequence.tsx`,
+  `SoundToggle.tsx` (new)
+- `src/game/audio.ts` (new) — guarded for the Node-based self-test, which
+  imports `store.ts`, which now calls into it
+- `src/game/types.ts`, `caseData.ts` (keyFacts, trimmed context strings)
+- `src/App.tsx`, `HearScreen.tsx`, `WitnessChat.tsx`, `CaseHome.tsx`,
+  `EvidenceScreen.tsx`, `VerdictScreen.tsx` (updated)
+- `public/audio/*.mp3` (new assets)
+
+How to test
+- `npm run dev`, or the live Vercel URL — tap a portrait, replay the case
+  to see the intro again, listen for SFX on evidence/contradictions/verdict.
+- `npx tsx scripts/selftest.ts` → still 27/27 (no store-logic changes this
+  round, pure UI/asset additions).
+
+Current limitations / next step
+- Reveal screen is still a text wall — the cinematic portrait-led
+  walkthrough is next on Oriol's ranked list, not started this round.
+- Generated ambient audio came back as a 6MB uncompressed WAV, re-encoded
+  to a 388KB MP3 before committing — same oversized-asset lesson as the
+  images, now true for audio too.
+- Step 6 (real LLM dialogue) still unstarted, still needs `OPENAI_API_KEY`.

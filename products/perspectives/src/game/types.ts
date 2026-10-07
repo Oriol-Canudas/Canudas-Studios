@@ -90,6 +90,8 @@ export interface WitnessConfig {
   role: string;
   age?: number;
   context: string; // short intro paragraph shown at top of witness screen
+  /** 3 short punchy bullets for the full-screen dossier — not the full context paragraph. */
+  keyFacts: string[];
   portraitPrompt: string; // the brief used to generate portraitImage
   portraitImage: string; // public/ path to the generated portrait
   accentColor: string; // tailwind-ish hex for their theme tint

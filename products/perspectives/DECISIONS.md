@@ -150,3 +150,43 @@ instruction. Newest at the bottom.
 - Extended `scripts/selftest.ts` to 27 assertions covering both new
   mechanics (demeanor transitions, cross-witness topics correctly gated and
   ungated) rather than trusting them unverified.
+
+## "Polish the one case" pass (2026-10-07)
+- Oriol's call: defer the RPG mastery/seniority meta-progression and
+  multi-case content pipeline — both captured as backlog — and instead make
+  this single case as good as it can be. Also deferred: full voice
+  recognition + a conversational "talking avatar" witness.
+- **Tap-portrait dossier**: added `keyFacts: string[]` to `WitnessConfig`
+  (3 short bullets per witness) rather than reusing the full `context`
+  paragraph — the dossier is meant to be a glance, not a re-read.
+  `CharacterDossier.tsx` is a full-screen overlay; portrait taps in both
+  `HearScreen` and `WitnessChat`'s header open it. Row-tap (not on the
+  portrait) still opens the chat directly — kept the fast path fast.
+- **Cold-open intro**: `IntroSequence.tsx` is 4 auto-advancing full-bleed
+  slides (~2.2s each, tap anywhere to skip) shown once per session, before
+  `CaseHome`. Reusing `scenes/home.jpg`, `scenes/evidence.jpg`,
+  `scenes/verdict.jpg`, and Elena's portrait — no new art needed for this.
+  Replaying a case ("Play again") returns to the intro too, not straight to
+  the case file, so the ritual repeats rather than just resetting state.
+- **Text density pass**: trimmed `context` paragraphs, collapsed "what Elena
+  admits" from a bulleted paragraph into inline check-chips, shortened
+  subtitles across Evidence/Verdict screens. Deliberately did NOT touch the
+  actual testimony content in `caseData.ts` — that's the game, not chrome.
+- **Sound**: generated via Magnific (1 ambient loop + 4 SFX: evidence
+  discovered, contradiction flagged, demeanor shift, verdict delivered).
+  Same lesson as the images: the ambient track came back as a 6MB
+  uncompressed WAV and had to be re-encoded to a 388KB MP3 before
+  committing — always check generated audio file size/format too, not just
+  images. `src/game/audio.ts` is a plain `HTMLAudioElement` wrapper, no
+  library; it's imported by `store.ts` (SFX fire from state transitions,
+  not from components) which is also exercised by the Node-based
+  self-test, so every entry point is guarded behind a
+  `typeof window !== "undefined"` check — otherwise `new Audio(...)` would
+  crash the test harness outside a browser. Ambient only starts from the
+  "Begin the case" tap (a real user gesture, required for mobile autoplay)
+  and stops on reaching Reveal so the verdict gavel SFX lands in near-silence.
+  Mute preference persists to `localStorage`; toggle is a fixed-position
+  button (`SoundToggle.tsx`) shown on every screen except the intro.
+- Reveal screen's cinematic rebuild (text → portrait-led flashback
+  sequence) was NOT done this round — still a text-based reveal. That's the
+  next item on the list Oriol ranked, not yet started.

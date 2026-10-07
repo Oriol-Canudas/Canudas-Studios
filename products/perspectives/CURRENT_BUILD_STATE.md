@@ -40,9 +40,16 @@ Primary validation questions (from the original brief, H1–H8):
 ## Current build stage
 
 **Stage:** Deterministic vertical slice complete, self-tested, deployed and
-playable, plus a full visual/UX pass (portraits, scene art, paced dialogue
-reveal, demeanor states, Case Clarity meter, cross-witness reactions). Real
-LLM-driven witness dialogue (Step 6) is designed for but not yet implemented.
+playable, plus two visual/UX passes: (1) portraits, scene art, paced dialogue
+reveal, demeanor states, Case Clarity meter, cross-witness reactions; (2)
+tap-to-inspect character dossiers, an animated cold-open intro, a text-density
+pass, and ambient/SFX sound. Real LLM-driven witness dialogue (Step 6) is
+designed for but not yet implemented.
+
+**Explicit scope call (Oriol, 2026-10-07):** go deep on this one case before
+going wide. Backlogged, not forgotten: RPG-style mastery/seniority
+meta-progression across cases, a multi-case content pipeline, and full voice
+recognition + a conversational "talking avatar" witness.
 
 ## What is decided
 
@@ -74,7 +81,10 @@ LLM-driven witness dialogue (Step 6) is designed for but not yet implemented.
 
 ## What is NOT being built yet
 
-- Real LLM-driven witness conversation (Step 6 — next).
+- Real LLM-driven witness conversation (Step 6).
+- Cinematic (portrait-led) reveal — still a text-based reveal screen.
+- RPG mastery/seniority meta-progression, multi-case content, voice
+  recognition + conversational avatar — all explicitly backlogged by Oriol.
 - Authentication, payments, multiplayer, persistence/database.
 - Generalized case-authoring system (only Case 002 exists; it's hand-authored
   data, not a generator).
@@ -116,8 +126,12 @@ and must stay that way to avoid spoiling the case.
 - `src/game/witnessEngine.ts` — the consistency-enforcing layer.
 - `src/game/clarity.ts` — Case Clarity %; `src/game/demeanor.ts` — demeanor
   display styling.
-- `public/portraits/*.jpg`, `public/scenes/*.jpg` — generated art assets
-  (keep these small — see DECISIONS.md, they were 26MB before resizing).
+- `public/portraits/*.jpg`, `public/scenes/*.jpg`, `public/audio/*.mp3` —
+  generated assets (keep these small — see DECISIONS.md; images were 26MB
+  and the ambient track 6MB before resizing/re-encoding).
+- `src/game/audio.ts` — SFX/ambient; guarded for the Node-based self-test.
+- `src/components/CharacterDossier.tsx`, `IntroSequence.tsx` — the two new
+  full-screen experiences this round.
 - `scripts/selftest.ts` — regression harness (27 assertions); run this after
   any change to `caseData.ts`, `witnessEngine.ts`, or `store.ts`.
 
@@ -133,7 +147,20 @@ and must stay that way to avoid spoiling the case.
 
 ## Next build step
 
-**Step 6 — add player-facing AI**, per the original brief:
+Two independent tracks are queued; which goes first is Oriol's call.
+
+**A. Rest of the visual/UX ranked list** (items 5–8, since 1–4 are done):
+1. Cinematic reveal — rebuild `RevealScreen.tsx` as a portrait-led
+   walkthrough of the true timeline instead of a text wall.
+2. Living portraits — subtle demeanor-driven visual feedback on the
+   portrait images themselves (glow/shake/desaturate).
+3. Key-line voice acting — TTS for the 2–3 most dramatic lines per
+   witness (e.g. Tom's confession), as a lighter-weight stand-in for the
+   backlogged full voice/avatar feature.
+4. Transition polish — motion between Hear/Examine/Reason instead of
+   instant tab-swaps.
+
+**B. Step 6 — add player-facing AI**, per the original brief:
 1. Add a Vercel serverless function (e.g. `api/witness-chat.ts`) that reads
    `OPENAI_API_KEY` server-side only.
 2. Feed it: the witness's `knows`/`beliefs`/the stage text already

@@ -28,7 +28,7 @@ export default function EvidenceScreen() {
       <div className="px-5 pt-5">
         <h2 className="text-2xl font-semibold text-white">Evidence</h2>
         <p className="mt-1 text-base text-white/55">
-          Some evidence is available immediately. Request the rest from the court record.
+          Tap a dashed card to request it from the record.
         </p>
 
         <div className="mt-5 grid grid-cols-2 gap-3">

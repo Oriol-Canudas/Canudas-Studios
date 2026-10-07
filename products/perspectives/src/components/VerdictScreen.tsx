@@ -62,10 +62,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
           </div>
 
           <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/[0.04] p-4">
-            <p className="text-base font-medium text-red-200">This is final.</p>
-            <p className="mt-1 text-[17px] leading-relaxed text-white/70">
-              Once you deliver your verdict, the case closes and the truth is revealed.
-            </p>
+            <p className="text-base font-medium text-red-200">This is final — it closes the case and reveals the truth.</p>
           </div>
 
           <div className="mt-6">

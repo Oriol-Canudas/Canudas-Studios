@@ -5,6 +5,8 @@ interface CaseHomeProps {
   onBegin: () => void;
 }
 
+const ADMITS = ["Was there that night", "They argued", "Touched the knife earlier"];
+
 export default function CaseHome({ onBegin }: CaseHomeProps) {
   return (
     <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0a0d] via-[#0a0a0d] to-[#121018] text-white">
@@ -20,23 +22,20 @@ export default function CaseHome({ onBegin }: CaseHomeProps) {
       <div className="mx-auto w-full max-w-md flex-1 px-6 pb-10 pt-6">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
           <p className="text-sm uppercase tracking-wide text-red-300/80">The Charge</p>
-          <p className="mt-2 text-[17px] leading-relaxed text-white/90">{CASE_META.charge}</p>
-          <p className="mt-3 text-[17px] leading-relaxed text-white/70">
-            Cause of death: {CASE_META.causeOfDeath}
-          </p>
+          <p className="mt-2 text-[18px] font-medium leading-snug text-white/90">{CASE_META.charge}</p>
+          <p className="mt-2 text-sm text-white/50">{CASE_META.causeOfDeath}</p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {ADMITS.map((a) => (
+              <span key={a} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white/75">
+                {"✓"} {a}
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-base font-semibold text-white">She denies killing him.</p>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-sm uppercase tracking-wide text-white/60">What Elena admits</p>
-          <ul className="mt-2 space-y-1.5 text-[17px] leading-relaxed text-white/80">
-            <li>• She visited Daniel that night.</li>
-            <li>• They argued.</li>
-            <li>• She touched the knife earlier in the evening.</li>
-          </ul>
-          <p className="mt-3 text-[17px] font-medium text-white/90">She denies killing him.</p>
-        </div>
-
-        <div className="mt-8">
+        <div className="mt-6">
           <p className="text-sm uppercase tracking-wide text-white/60 mb-3">You will hear from</p>
           <div className="flex flex-wrap gap-3">
             {WITNESSES.map((w) => (
@@ -48,11 +47,10 @@ export default function CaseHome({ onBegin }: CaseHomeProps) {
           </div>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-4">
-          <p className="text-base font-medium text-amber-200">Your role: the Judge.</p>
-          <p className="mt-1.5 text-[17px] leading-relaxed text-white/75">
-            Question witnesses. Examine evidence. Build your own reconstruction of the night.
-            When you're ready — and only you decide when that is — deliver your verdict.
+        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-4">
+          <span className="text-2xl">{"⚖️"}</span>
+          <p className="text-base leading-snug text-amber-100">
+            You're the Judge. Question, examine, decide — whenever you're ready.
           </p>
         </div>
       </div>

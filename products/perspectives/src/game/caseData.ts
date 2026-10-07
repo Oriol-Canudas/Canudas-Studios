@@ -209,7 +209,12 @@ export const WITNESSES: WitnessConfig[] = [
     role: "The defendant — Daniel's former partner",
     age: 34,
     context:
-      "Together with Daniel for roughly six years. He called it a breakup about eight months ago — but Elena says it was never that simple. She admits visiting that night, arguing with Daniel, and touching the knife earlier in the evening. She denies killing him.",
+      "Together with Daniel ~6 years. He called it a breakup 8 months ago — Elena says it was never that clean. She admits being there that night. She denies killing him.",
+    keyFacts: [
+      "Together with Daniel for ~6 years",
+      "Admits visiting that night, and touching the knife earlier",
+      "Denies killing him",
+    ],
     portraitPrompt:
       "Black woman, mid-30s, tired and guarded expression, cinematic dark lighting",
     portraitImage: "/portraits/elena.jpg",
@@ -332,7 +337,12 @@ export const WITNESSES: WitnessConfig[] = [
     name: "Sofia Mendes",
     role: "Daniel's girlfriend — together ~5 months",
     context:
-      "Daniel told Sofia that he and Elena broke up months before she came into the picture, and that Elena was struggling to let go. Sofia initially presents herself as having had no contact with Daniel after his 23:06 text to her.",
+      "Dating Daniel ~5 months. He told her Elena was long in the past. She first claims no contact with Daniel after his 23:06 text.",
+    keyFacts: [
+      "Dating Daniel for ~5 months",
+      "Told Elena was firmly “in the past”",
+      "Initially denies any later contact that night",
+    ],
     portraitPrompt:
       "South Asian woman, late 20s, composed but tense expression, cinematic dark lighting",
     portraitImage: "/portraits/sofia.jpg",
@@ -442,7 +452,12 @@ export const WITNESSES: WitnessConfig[] = [
     name: "Tom Becker",
     role: "Daniel's close friend — ~9 years",
     context:
-      "Knows both Elena and Sofia. Repeatedly warned Daniel he was manipulating both women. Claims he visited Daniel earlier in the evening and then went straight home.",
+      "Daniel's friend of ~9 years. Repeatedly warned him he was stringing both women along. Claims he went home early that night.",
+    keyFacts: [
+      "Daniel's close friend for ~9 years",
+      "Warned Daniel to stop lying to both women",
+      "Initially claims he went straight home that night",
+    ],
     portraitPrompt:
       "White man, mid-30s, uneasy and guarded expression, cinematic dark lighting",
     portraitImage: "/portraits/tom.jpg",
@@ -589,7 +604,12 @@ export const WITNESSES: WitnessConfig[] = [
     name: "Marco Costa",
     role: "Daniel's older brother",
     context:
-      "Knew Daniel's personality better than anyone — someone who hated confrontation and kept incompatible stories alive rather than face either woman honestly. Spoke to Daniel on the phone the night he died.",
+      "Knew Daniel better than anyone — a man who hated confrontation and kept both women on the line rather than face either honestly. Spoke to him that night.",
+    keyFacts: [
+      "Daniel's older brother",
+      "Knew Daniel avoided confrontation at all costs",
+      "Spoke to Daniel by phone the night he died",
+    ],
     portraitPrompt:
       "Middle Eastern man, early 40s, grieving but composed, cinematic dark lighting",
     portraitImage: "/portraits/marco.jpg",
@@ -667,7 +687,12 @@ export const WITNESSES: WitnessConfig[] = [
     name: "Julia Ferrer",
     role: "Neighbour, lives across the hall",
     context:
-      "Heard fragments of arguments and doors that night. Her account is partly reliable, partly interpretive — she didn't see everything clearly, and she's filled in some gaps herself.",
+      "Heard fragments of arguments through the wall. Her account is honest but imprecise — she didn't see everything clearly.",
+    keyFacts: [
+      "Lives across the hall from Daniel",
+      "Heard raised voices and doors that night",
+      "Saw someone leave — but her account is imprecise",
+    ],
     portraitPrompt:
       "East Asian woman, 60s, curious and talkative expression, standing in an apartment hallway, cinematic dark lighting",
     portraitImage: "/portraits/julia.jpg",
