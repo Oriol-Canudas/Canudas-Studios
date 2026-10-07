@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
-import type { WitnessId } from "../game/types";
+import { isTopicReachable } from "../game/witnessEngine";
+import type { EvidenceId, WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
 import TypewriterText from "./TypewriterText";
 import TypingIndicator from "./TypingIndicator";
+import EvidencePicker from "./EvidencePicker";
 
 interface WitnessChatProps {
   witnessId: WitnessId;
@@ -16,16 +18,22 @@ interface WitnessChatProps {
 export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessChatProps) {
   const witness = WITNESS_BY_ID[witnessId];
   const askWitness = useGameStore((s) => s.askWitness);
+  const presentEvidence = useGameStore((s) => s.presentEvidence);
   const openWitness = useGameStore((s) => s.openWitness);
+  const setDraft = useGameStore((s) => s.setDraft);
   const messages = useGameStore((s) => s.chatHistory[witnessId]);
-  const witnessStages = useGameStore((s) => s.witnessStages[witnessId]);
+  const witnessStages = useGameStore((s) => s.witnessStages);
   const currentDemeanor = useGameStore((s) => s.demeanor[witnessId]);
+  const discoveredEvidence = useGameStore((s) => s.discoveredEvidence);
+  const draft = useGameStore((s) => s.drafts[witnessId]);
 
-  const [draft, setDraft] = useState("");
   const [typingIndex, setTypingIndex] = useState<number | null>(null);
   const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevLenRef = useRef(messages.length);
+
+  const busy = typingIndex !== null || animatingIndex !== null;
 
   useEffect(() => {
     openWitness(witnessId);
@@ -61,10 +69,16 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
 
   function send(text: string, topicId?: string) {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || busy) return;
     askWitness(witnessId, trimmed, topicId);
-    setDraft("");
   }
+
+  function handlePresent(evidenceId: EvidenceId, excerptIndex: number) {
+    presentEvidence(witnessId, evidenceId, excerptIndex);
+    setPickerOpen(false);
+  }
+
+  const visibleTopics = witness.topics.filter((t) => isTopicReachable(t, witnessStages));
 
   return (
     <div className="flex h-full flex-col pb-[calc(env(safe-area-inset-bottom)+0px)]">
@@ -96,6 +110,16 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
                 </div>
               );
             }
+            if (m.role === "evidence") {
+              return (
+                <div key={i} className="flex justify-center">
+                  <div className="max-w-[90%] rounded-xl border border-amber-300/25 bg-amber-300/[0.07] px-4 py-2.5 text-center text-sm text-amber-100/90">
+                    {"\u{1F4C4} Presented: "}
+                    {m.text}
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={i} className={`flex ${m.role === "player" ? "justify-end" : "justify-start"}`}>
                 <div
@@ -121,14 +145,15 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
       </div>
 
       <div className="border-t border-white/10 bg-black/40 px-3 pb-3 pt-2">
-        <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
-          {witness.topics.map((t) => {
-            const asked = (witnessStages[t.id] ?? -1) >= 0;
+        <div className="mb-2 flex flex-wrap gap-2">
+          {visibleTopics.map((t) => {
+            const asked = (witnessStages[witnessId][t.id] ?? -1) >= 0;
             return (
               <button
                 key={t.id}
                 onClick={() => send(t.chipLabel, t.id)}
-                className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition-colors ${
+                disabled={busy}
+                className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition-colors disabled:opacity-50 ${
                   asked
                     ? "border-white/10 bg-white/[0.02] text-white/40"
                     : "border-amber-300/30 bg-amber-300/10 text-amber-200"
@@ -147,20 +172,35 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
           }}
           className="flex items-center gap-2"
         >
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            aria-label="Present evidence"
+            className="shrink-0 rounded-full border border-white/15 bg-white/[0.05] p-3 text-lg text-white/70 active:text-white"
+          >
+            {"\u{1F4C4}"}
+          </button>
           <input
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ask anything…"
-            className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-4 py-3 text-[17px] text-white placeholder:text-white/35 outline-none focus:border-amber-300/50"
+            onChange={(e) => setDraft(witnessId, e.target.value)}
+            placeholder="Ask in your own words, or tap a suggestion"
+            aria-label={`Ask ${witness.name} a question`}
+            disabled={busy}
+            className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-4 py-3 text-[17px] text-white placeholder:text-white/35 outline-none focus:border-amber-300/50 disabled:opacity-60"
           />
           <button
             type="submit"
-            className="shrink-0 rounded-full bg-amber-400 px-5 py-3 text-base font-semibold text-black active:scale-95 transition-transform"
+            disabled={busy || !draft.trim()}
+            className="shrink-0 rounded-full bg-amber-400 px-5 py-3 text-base font-semibold text-black active:scale-95 transition-transform disabled:opacity-40"
           >
             Ask
           </button>
         </form>
       </div>
+
+      {pickerOpen && (
+        <EvidencePicker discoveredIds={discoveredEvidence} onPresent={handlePresent} onClose={() => setPickerOpen(false)} />
+      )}
     </div>
   );
 }

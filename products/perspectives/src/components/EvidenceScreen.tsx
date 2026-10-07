@@ -14,9 +14,16 @@ const CATEGORY_ICON: Record<string, string> = {
 export default function EvidenceScreen() {
   const discovered = useGameStore((s) => s.discoveredEvidence);
   const discoverEvidence = useGameStore((s) => s.discoverEvidence);
+  const inspectEvidence = useGameStore((s) => s.inspectEvidence);
   const [open, setOpen] = useState<EvidenceId | null>(null);
 
   const openItem = EVIDENCE.find((e) => e.id === open) ?? null;
+
+  function handleOpen(id: EvidenceId) {
+    discoverEvidence(id);
+    inspectEvidence(id);
+    setOpen(id);
+  }
 
   return (
     <div className="pb-28">
@@ -37,7 +44,7 @@ export default function EvidenceScreen() {
             return (
               <button
                 key={e.id}
-                onClick={() => (isDiscovered ? setOpen(e.id) : discoverEvidence(e.id))}
+                onClick={() => handleOpen(e.id)}
                 className={`flex flex-col items-start gap-2 rounded-2xl border p-4 text-left active:scale-[0.98] transition-transform ${
                   isDiscovered
                     ? "border-white/10 bg-white/[0.04]"

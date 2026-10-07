@@ -7,6 +7,8 @@
 export type AnalyticsEvent =
   | "session_started"
   | "evidence_inspected"
+  | "evidence_inspected_detail"
+  | "evidence_presented"
   | "witness_opened"
   | "witness_questioned"
   | "decision_selected"

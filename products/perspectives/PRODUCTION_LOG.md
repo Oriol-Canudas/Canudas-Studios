@@ -234,3 +234,110 @@ Current limitations / next step
 - Same as last entry: cinematic reveal, living portraits, key-line voice
   acting, transition polish (Oriol's ranked items 5–8), and Step 6
   (LLM dialogue) are all still pending, unstarted this round.
+
+---
+
+## 2026-10-08 — Investigation-integrity pass: spoilers, evidence presentation, honest grading
+
+What changed
+- A structured playtest reproduced real bugs across the engine, the board,
+  and the reveal. Oriol reviewed the fix plan and approved it with seven
+  explicit adjustments before any code was written (see DECISIONS.md for
+  the full list); this entry describes what was actually built.
+- **Suggestion chips no longer state premises the player doesn't know
+  yet.** A chip is hidden only when its question would presuppose a
+  cross-witness fact that isn't true yet (3 reactive topics); every
+  ordinary question — even ones that currently get a denial — stays
+  visible. Chips now wrap instead of clipping in a horizontal scroll.
+- **"Present evidence" inside conversations.** A new icon button beside
+  the question input opens a picker over only the evidence already
+  requested from Examine; picking a specific excerpt line presents it to
+  the witness in-chat, who replies with a variant line that explicitly
+  references what was shown. Acquired (`discoveredEvidence`), inspected
+  (`inspectedEvidence`, new), and presented (`presentedEvidence` +
+  `presentationLog`, new, per-witness, with the exact excerpt recorded)
+  are now three distinct, separately tracked states.
+- **Evidence two-tap bug fixed**: requesting an undiscovered document now
+  opens its detail view on the same tap, instead of requiring an
+  identical-feeling second tap.
+- **Testimony vs. verified fact.** Tom's knife confession is now recorded
+  on the board as a `claim`, not a `fact` — matching ground truth isn't
+  the same as player-verified.
+- **Arbitrary question-order bug removed.** Tom's "did you see anyone" /
+  "did you go up" / "the argument" no longer form a forced chain —  all
+  three are independently askable once he's admitted returning, in any
+  order. Sofia's apartment-visit admission no longer has an extra,
+  unearned dependency on her call-back admission.
+- **Board facts are now explicitly authored**, not parsed from display
+  text — a new `EVIDENCE_FACTS` table in `caseData.ts` gives each document
+  a small, hand-written breakdown (time + content + epistemic type),
+  replacing the old single generic "Evidence obtained: …" entry. The case
+  timeline is no longer testimony-only.
+- **Neutral wording for the 23:58 phone-unlock record** — now states it
+  doesn't establish who used the phone, in both the evidence card and the
+  board fact; the reveal's omniscient timeline narration is reworded to
+  flag that distinction rather than claim the record "confirms" it.
+- **Keyword matching**: fixed Marco's "did you speak to him that night"
+  being unanswerable before any evidence existed (split into an
+  ungated baseline stage + an evidence-gated detail stage) and widened
+  Julia's keyword coverage for the reproduced phrasings. Kept
+  deliberately small — no ambiguous-match clarification UI, no broader
+  NLU layer this round.
+- **Verdict grading now has three honest outcomes per axis** (correct /
+  wrong / insufficient) instead of two — "insufficient evidence" on both
+  axes no longer collapses into the harshest "you believed the
+  prosecution" headline. 9 distinct headlines total.
+- **Reveal reworked**: the support/challenge framing per verdict choice is
+  now a small set of hand-authored notes (`RESPONSIBLE_REVEAL_NOTES` /
+  `ELENA_REVEAL_NOTES`), not an inference from the player's board. The
+  player's free-text theory is shown as-written, explicitly not scored.
+  The full ground-truth timeline is now behind a "show the complete
+  story" expand instead of forced on first view. "six minutes later" →
+  corrected to 46 minutes (23:06 to 23:52).
+- **Case Clarity % removed entirely** (`clarity.ts` deleted) — replaced
+  with plain, honest counts (documents acquired / actually read,
+  witnesses questioned) on both the Case Board and the Verdict screen.
+- Draft text per witness now lives in the store (`drafts`), surviving tab
+  navigation away from a conversation, not just component remounts.
+- Comparison tool and progressive hints were explicitly deprioritized by
+  Oriol in the same approval and are not part of this round.
+
+Why
+- Direct product correction from Oriol after a structured playtest
+  surfaced real integrity problems — not polish, but the UI occasionally
+  showing or implying something the engine didn't actually know yet.
+
+Files
+- `src/game/types.ts` (`EvidenceFact`, `presentedText`), `caseData.ts`
+  (`EVIDENCE_FACTS`, loosened Tom/Sofia gating, Marco's split stage,
+  keyword additions, neutral wording), `witnessEngine.ts`
+  (`isTopicReachable`, `topicForEvidence`), `store.ts` (`inspectedEvidence`,
+  `presentedEvidence`, `presentationLog`, `drafts`, `presentEvidence`
+  action, shared `advanceTopic` helper), `verdictGrading.ts` (rewritten),
+  `analytics.ts` (2 new event types)
+- `src/game/clarity.ts` — deleted
+- `src/components/EvidencePicker.tsx` (new), `WitnessChat.tsx`,
+  `EvidenceScreen.tsx`, `CaseBoard.tsx`, `VerdictScreen.tsx`,
+  `RevealScreen.tsx` (all updated)
+- `scripts/selftest.ts` — grew from 27 to 47 assertions
+
+How to test
+- `npx tsx scripts/selftest.ts` → 47/47 pass.
+- `npm run dev` or the live Vercel URL — present evidence from inside a
+  conversation, try Tom's follow-ups out of order, deliver an
+  insufficient-evidence verdict, check the Case Board's new counts and
+  attributed claims.
+
+Current limitations / next step
+- Browser automation was unavailable in this environment (Chrome
+  extension not connected) — same limitation noted in the very first
+  build log entry. Everything above is verified against the real store
+  via `scripts/selftest.ts`, not against the rendered page. A real
+  phone/browser pass — chip wrapping on a narrow screen, the evidence
+  picker sheet, draft preservation across tabs, an actual
+  insufficient-evidence playthrough end-to-end, and reset — is still
+  needed before calling this fully validated.
+- Comparison tool and progressive hints (Oriol's items C3/C5) remain
+  unbuilt, deprioritized behind this integrity pass.
+- Cinematic reveal, living portraits, key-line voice acting, transition
+  polish, and Step 6 (LLM dialogue) are all still unstarted.

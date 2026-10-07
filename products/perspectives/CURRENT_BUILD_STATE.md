@@ -5,6 +5,21 @@ Claude. This file is the fastest way for any collaborator to understand
 **what is currently built, what is decided, what is being worked on, and
 what should happen next** without reconstructing context from chat history.
 
+## Shared review queue (2026-10-08)
+
+Read [REVIEW_HANDOFF.md](REVIEW_HANDOFF.md) for Codex's prior playtest findings,
+acceptance criteria and the implementation/review exchange. Oriol has selected
+repository-based coordination: Claude implements, Codex reviews; one code editor
+at a time. The agreed sequence in that handoff is integrity fixes, then actual
+OpenAI conversation for Tom, then measured validation. **Claude has filled in
+the "Claude result" section of that handoff — integrity fixes (step 1) are
+implemented and self-tested; step 2 (OpenAI conversation for Tom) has not been
+started.** The older “Next build step” and “Open product questions” below
+describe the previous baseline; reconcile them after the active iteration
+rather than treating them as the latest priority. No automatic agent
+notification or execution is configured — Oriol still needs to trigger Codex's
+review pass.
+
 ## Ownership
 
 - **Claude**: production lead for implementation.
@@ -40,13 +55,16 @@ Primary validation questions (from the original brief, H1–H8):
 ## Current build stage
 
 **Stage:** Deterministic vertical slice complete, self-tested, deployed and
-playable, plus three visual/UX passes: (1) portraits, scene art, paced
-dialogue reveal, demeanor states, Case Clarity meter, cross-witness
-reactions; (2) tap-to-inspect character dossiers, an animated cold-open
-intro, a text-density pass, and ambient/SFX sound; (3) intro expanded into
-two slower steps — case hook, then a dedicated cast-introduction sequence
-after "Begin the case." Real LLM-driven witness dialogue (Step 6) is
-designed for but not yet implemented.
+playable, plus four passes: (1) portraits, scene art, paced dialogue
+reveal, demeanor states, Case Clarity meter, cross-witness reactions; (2)
+tap-to-inspect character dossiers, an animated cold-open intro, a
+text-density pass, and ambient/SFX sound; (3) intro expanded into two
+slower steps — case hook, then a dedicated cast-introduction sequence
+after "Begin the case"; (4) an investigation-integrity pass — spoiler-free
+suggestion chips, in-chat evidence presentation, honest 3-outcome verdict
+grading, authored (not parsed) board facts, and removal of the Case
+Clarity %. Real LLM-driven witness dialogue (Step 6) is designed for but
+not yet implemented.
 
 **Explicit scope call (Oriol, 2026-10-07):** go deep on this one case before
 going wide. Backlogged, not forgotten: RPG-style mastery/seniority
@@ -72,8 +90,11 @@ recognition + a conversational "talking avatar" witness.
   that to work — confirm this is set in Project Settings → Build &
   Deployment.
 - No hard energy/turn-limit mechanic — the player may ask as much or as
-  little as they want, per the brief. Progression is communicated instead
-  via a soft **Case Clarity** % (`src/game/clarity.ts`), gating nothing.
+  little as they want, per the brief. The earlier soft **Case Clarity** %
+  was removed (2026-10-08, see DECISIONS.md) — it misrepresented a
+  zero-investigation playthrough as partially "clear" and implied a
+  completion goal. Progression is now communicated via plain counts
+  (documents acquired vs. actually read, witnesses questioned).
 - Witness emotional state (**demeanor**) is authored per testimony stage,
   not computed from a generic formula — keeps each witness's arc intentional.
 - Cross-witness awareness is implemented as new topics on the existing
@@ -93,10 +114,9 @@ recognition + a conversational "talking avatar" witness.
 
 ## Current runnable state
 
-- `npm install && npm run dev` → http://localhost:5173
-- `npx tsx scripts/selftest.ts` → 27/27 assertions pass
-- Live on Vercel (ask Oriol or check the Vercel dashboard for the current
-  production URL under this project).
+- `npm install && npm run dev` → http://localhost:5173 (or whichever port is free)
+- `npx tsx scripts/selftest.ts` → 49/49 assertions pass
+- Live at https://gamexperspectives.vercel.app, auto-deploys from `main`.
 
 ## Current architecture
 
@@ -124,18 +144,24 @@ and must stay that way to avoid spoiling the case.
 - `CURRENT_BUILD_STATE.md` — this handoff file.
 - `DECISIONS.md` — assumptions and implementation decisions made without
   needing Oriol's approval, plus what Step 6 needs from him.
-- `src/game/caseData.ts` — the only place "what happened" is allowed to live.
-- `src/game/witnessEngine.ts` — the consistency-enforcing layer.
-- `src/game/clarity.ts` — Case Clarity %; `src/game/demeanor.ts` — demeanor
-  display styling.
+- `src/game/caseData.ts` — the only place "what happened" is allowed to live,
+  including the hand-authored `EVIDENCE_FACTS` board breakdown.
+- `src/game/witnessEngine.ts` — the consistency-enforcing layer; also
+  `isTopicReachable` (chip visibility) and `topicForEvidence` (evidence→topic
+  lookup for in-chat presentation).
+- `src/game/verdictGrading.ts` — 3-outcome (correct/wrong/insufficient)
+  grading per axis, plus the authored reveal notes per verdict choice.
+- `src/game/demeanor.ts` — demeanor display styling.
 - `public/portraits/*.jpg`, `public/scenes/*.jpg`, `public/audio/*.mp3` —
   generated assets (keep these small — see DECISIONS.md; images were 26MB
   and the ambient track 6MB before resizing/re-encoding).
 - `src/game/audio.ts` — SFX/ambient; guarded for the Node-based self-test.
-- `src/components/CharacterDossier.tsx`, `IntroSequence.tsx` — the two new
-  full-screen experiences this round.
-- `scripts/selftest.ts` — regression harness (27 assertions); run this after
+- `src/components/CharacterDossier.tsx`, `IntroSequence.tsx`,
+  `EvidencePicker.tsx` — full-screen/overlay experiences.
+- `scripts/selftest.ts` — regression harness (49 assertions); run this after
   any change to `caseData.ts`, `witnessEngine.ts`, or `store.ts`.
+- `REVIEW_HANDOFF.md` — shared review queue with Codex (playtesting/review);
+  read before starting the next iteration.
 
 ## Open product questions
 

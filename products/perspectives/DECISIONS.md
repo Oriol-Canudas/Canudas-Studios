@@ -212,3 +212,97 @@ instruction. Newest at the bottom.
 - Character-intro hook lines are intentionally different wording from each
   witness's `keyFacts` (used by the dossier) — avoids reading the same
   three bullets twice in two different UI contexts.
+
+## Investigation-integrity pass (2026-10-08)
+
+A structured playtest (impatient / completionist / conversational-explorer
+personas) reproduced real bugs: spoiler/fabricated-premise suggestion
+chips, testimony misfiled as verified fact, an "insufficient evidence"
+verdict grading as the harshest possible outcome, an arbitrary forced
+question order, a two-tap evidence-request bug, and a Case Clarity %
+that implied a completion goal the brief explicitly argues against. Oriol
+reviewed the proposed fix plan and approved it with seven adjustments
+before implementation; the adjustments (not the original plan) are what's
+reflected below.
+
+- **Chip visibility vs. revelation eligibility are different gates.**
+  `isTopicReachable()` (`witnessEngine.ts`) hides a suggestion chip only
+  when the topic's *first* stage requires a cross-witness precondition
+  that isn't true yet — i.e. only when the question's own wording would
+  state something the player doesn't actually know (the 3 reactive
+  topics: Elena's/Sofia's "did you know Tom also returned," Marco's
+  reaction to Tom's confession). Every ordinary question stays visible
+  even when the honest answer is a denial — a denial is a legitimate,
+  informative answer, not a reason to hide the question. Rejected my own
+  earlier draft of this fix, which would have also capped/hidden chips
+  more aggressively than that.
+- **Acquired / inspected / presented evidence are three distinct states.**
+  `discoveredEvidence` (requested from the record, Examine tab) is
+  unchanged; new `inspectedEvidence` marks a document actually opened and
+  read; new `presentedEvidence` (per witness) + `presentationLog` (with
+  the exact excerpt index and timestamp) track evidence shown directly to
+  a specific witness in conversation. The Case Board's old "documents
+  inspected" label, which actually measured possession, now correctly
+  reads "documents acquired" alongside a separate "actually read" count.
+- **Presenting evidence doesn't invent new gating.** `presentEvidence()`
+  reuses the exact same `resolveStage` rules as asking a question —
+  it just also surfaces a document picker in-chat and, via
+  `topicForEvidence()`, finds the one topic (if any) that document is
+  *already authored* to speak to for that witness. No new
+  "unlocks-on-presentation" field, so presenting a document can never
+  cascade into unrelated admissions — only the stage that document was
+  always gated on, if its other conditions are also met. A
+  `presentedText` variant (new, optional, on `TestimonyStage`) is used
+  instead of the normal line only for the handful of flagship
+  confrontations (Tom's return, Sofia's call-back, Sofia's apartment
+  visit, Tom's knife account), so the reply visibly references what was
+  shown rather than reading as a repeat answer.
+- **Board facts are hand-authored, not parsed.** Rejected regex-extracting
+  "HH:MM" lines out of evidence `details[]` strings as inferring meaning
+  from display text. Added `EVIDENCE_FACTS` (`caseData.ts`) — a small,
+  explicitly authored breakdown per document, each entry with its own
+  time/content/epistemic type, the same editorial judgment an
+  investigator writing up a document would apply. This is what now
+  populates the board and timeline on evidence discovery, replacing the
+  old single generic "Evidence obtained: …" blob.
+- **Neutral wording for inference-prone evidence.** The 23:58 phone-unlock
+  record now reads "unlocked and active for approximately 20 seconds —
+  this record does not establish who used it" in both the evidence card
+  and the board fact. `TIMELINE`'s omniscient, reveal-only narration (which
+  *does* know Daniel was alive) is reworded to flag that distinction
+  explicitly rather than stating the record "confirms" it.
+- **Keyword matching stayed small on purpose.** Fixed the specific
+  reproduced failures (Marco's "did you speak to him that night" was
+  unanswerable before evidence existed — split into an ungated baseline
+  stage + an evidence-gated specific-detail stage; Julia's topics were
+  missing common phrasings) and added a modest regression set. Did not
+  build an ambiguous-match clarification UI or any broader NLU layer —
+  explicitly deferred, bundled with the existing (also deferred) Step 6
+  LLM work, which needs the same `matchTopic`/`resolveStage` seam to stay
+  clean for a future real-model layer to slot into.
+- **Reveal support/challenge framing is authored, not inferred.** Rejected
+  reusing the player's board entries as implicit "proof" of their verdict
+  — a board entry's mere presence doesn't establish whether it supports or
+  challenges a given conclusion. Added small, fixed `RESPONSIBLE_REVEAL_NOTES`
+  / `ELENA_REVEAL_NOTES` tables (`verdictGrading.ts`) — one authored note
+  per structured verdict option (5 + 3 = 8 total), shown with the verdict
+  the player actually chose. The player's free-text theory is still shown
+  on the Reveal, but as-written, explicitly uncompared against anything.
+- **Verdict grading now has three outcomes per axis, not two.**
+  `insufficient_evidence` grades as its own `Judgment` ("insufficient"),
+  distinct from "correct"/"wrong" — 9 honest headlines instead of 4, so
+  declining to convict without enough evidence never reads as "you
+  believed the prosecution."
+- Comparison tool (pin-a-hypothesis + mark-pairs-consistent) and
+  progressive hints were explicitly deprioritized by Oriol in this same
+  approval — "before expanding the comparison and hint features" — and
+  are not implemented this round. Backlogged, not forgotten.
+- **Validation**: extended `scripts/selftest.ts` from 27 to 47 assertions
+  covering every item above (chip reachability, loosened question order,
+  Marco's split stage, presenting evidence in-chat, the new grading
+  table). All pass. Browser automation was unavailable in this
+  environment (Chrome extension not connected) — same limitation as the
+  first build — so the actual rendered interaction (mobile chip wrapping,
+  the evidence picker sheet, draft preservation, an insufficient-evidence
+  playthrough end-to-end) has NOT been visually verified this round and
+  needs a real phone/browser pass before calling this fully validated.

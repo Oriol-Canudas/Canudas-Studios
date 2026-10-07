@@ -8,7 +8,7 @@
 // to stay consistent with.
 // ─────────────────────────────────────────────────────────────────────────
 
-import type { EvidenceItem, WitnessConfig } from "./types";
+import type { EvidenceFact, EvidenceId, EvidenceItem, WitnessConfig } from "./types";
 
 export const CASE_META = {
   title: "The Last Message",
@@ -70,7 +70,7 @@ export const TIMELINE = [
   { time: "23:54", label: "Lift takes Sofia to Daniel's floor." },
   { time: "~23:54–23:57", label: "Daniel tells Sofia the truth — Elena was never really finished, he kept both of them going. Sofia becomes furious, shouts, grabs his shirt, throws his phone onto the sofa." },
   { time: "23:57", label: "Sofia takes the lift back down. Daniel is alive." },
-  { time: "23:58", label: "Daniel's phone is unlocked for ~20 seconds — confirms he's alive and active after Sofia left." },
+  { time: "23:58", label: "Daniel's phone is unlocked for ~20 seconds. He is alive — though this alone isn't something an investigator could prove from the record itself; see E05." },
   { time: "23:59", label: "Tom enters through the underground parking." },
   { time: "00:00", label: "Tom takes the lift to Daniel's floor. They argue — Daniel accuses Tom of interfering and making things worse." },
   { time: "~00:00–00:02", label: "Daniel shoves Tom; Tom shoves back. Daniel grabs the kitchen knife while angrily gesturing and orders Tom to leave. Tom tries to push past. During the struggle, Daniel — still holding the knife — is accidentally stabbed in the chest." },
@@ -198,6 +198,56 @@ export const EVIDENCE: EvidenceItem[] = [
     initial: false,
   },
 ];
+
+/**
+ * Hand-authored breakdown of what each document actually establishes, for
+ * the case board. Deliberately NOT a mechanical dump of every detail
+ * line — a curated reading, the same editorial judgment an investigator
+ * writing up a document would apply. Each entry states its own time (if
+ * any), its content, and its epistemic type; "lead" is used where the
+ * record itself is ambiguous (e.g. an unidentified figure on camera).
+ */
+export const EVIDENCE_FACTS: Record<EvidenceId, EvidenceFact[]> = {
+  E01_knife: [
+    { content: "Kitchen knife recovered near Daniel's body.", type: "fact" },
+    { content: "Fingerprints on the knife: Elena Rossi and Daniel Costa only — no third identifiable print.", type: "fact" },
+  ],
+  E02_msg_sofia_2306: [
+    { time: "23:06", content: "Daniel texts Sofia: “She's here. It's getting ugly. I'll call you when she leaves.”", type: "fact" },
+  ],
+  E03_entrance_camera: [
+    { time: "22:41", content: "Elena enters through the front entrance.", type: "fact" },
+    { time: "23:52", content: "Elena leaves through the front entrance.", type: "fact" },
+    { time: "23:58", content: "Someone leaves through the front entrance; the image is unclear and unidentified.", type: "lead" },
+    { content: "The underground garage entrance is not covered by this camera.", type: "fact" },
+  ],
+  E04_forensic_prelim: [
+    { content: "Probable time of death: between 23:30 and 00:10.", type: "fact" },
+    { content: "Cause of death: a single stab wound to the chest.", type: "fact" },
+    { content: "No obvious defensive wounds on the body.", type: "fact" },
+  ],
+  E05_daniel_phone_records: [
+    { time: "23:34", content: "Daniel calls his brother Marco.", type: "fact" },
+    { time: "23:50", content: "Daniel calls Sofia back — connected for 36 seconds.", type: "fact" },
+    { time: "23:58", content: "Daniel's phone is unlocked and active for approximately 20 seconds. This record does not establish who used it.", type: "fact" },
+    { time: "00:03", content: "A missed call from Tom Becker.", type: "fact" },
+  ],
+  E06_elena_phone_records: [
+    { time: "23:27", content: "Elena drafts but never sends: “You don't get to rewrite what happened.”", type: "fact" },
+    { time: "23:46", content: "Elena texts a friend: “I'm leaving. I'm done with this.”", type: "fact" },
+    { time: "00:01", content: "Elena has a four-minute call with a friend, after the building.", type: "fact" },
+  ],
+  E07_tom_phone_records: [
+    { time: "23:49", content: "Tom's phone disconnects from his home Wi-Fi.", type: "lead" },
+    { time: "23:56", content: "Tom's phone location is consistent with Daniel's neighbourhood.", type: "fact" },
+    { time: "00:03", content: "Tom calls Daniel — unanswered.", type: "fact" },
+  ],
+  E08_garage_access_log: [
+    { time: "23:53", content: "Sofia Mendes enters via the underground garage.", type: "fact" },
+    { time: "23:59", content: "Tom Becker enters via the underground garage.", type: "fact" },
+    { time: "00:05", content: "Tom Becker's vehicle exits the garage.", type: "fact" },
+  ],
+};
 
 // ───────────────────────────── Witnesses ─────────────────────────────────
 
@@ -379,6 +429,7 @@ export const WITNESSES: WitnessConfig[] = [
           },
           {
             text: "...He called me back. Fine. At 23:50. We spoke for maybe half a minute. He said Elena was leaving, and that there was something he should have told me months ago.",
+            presentedText: "...Fine — I can see you've got his phone records. He called me back. At 23:50. We spoke for maybe half a minute. He said Elena was leaving, and that there was something he should have told me months ago.",
             requiresEvidence: ["E05_daniel_phone_records"],
             demeanor: "defensive",
             addsBoardEntries: [
@@ -398,8 +449,8 @@ export const WITNESSES: WitnessConfig[] = [
           },
           {
             text: "...Yes. I went over. I came up through the garage — I didn't want to run into Elena on her way out.",
+            presentedText: "...The garage log. Right. Yes — I went over. I came up through the garage, I didn't want to run into Elena on her way out.",
             requiresEvidence: ["E08_garage_access_log"],
-            requiresWitnessStage: { witness: "sofia", topic: "contact_after_text", minStage: 1 },
             demeanor: "nervous",
             addsBoardEntries: [
               { type: "claim", text: "Sofia admits she went to the apartment that night, entering via the underground garage.", source: "sofia", timestamp: "23:53" },
@@ -494,6 +545,7 @@ export const WITNESSES: WitnessConfig[] = [
           },
           {
             text: "...Alright. I went back. Around midnight. I was worried about how the night was going to go.",
+            presentedText: "...Alright. Fine — your phone records put me there, I know. I went back. Around midnight. I was worried about how the night was going to go.",
             requiresEvidence: ["E07_tom_phone_records"],
             demeanor: "defensive",
             addsBoardEntries: [
@@ -530,10 +582,10 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "I needed to talk to him. Yes, I went up.",
-            requiresWitnessStage: { witness: "tom", topic: "saw_sofia", minStage: 1 },
+            requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
             demeanor: "nervous",
             addsBoardEntries: [
-              { type: "claim", text: "Tom admits he went up to Daniel's apartment after seeing Sofia leave.", source: "tom", timestamp: "00:00" },
+              { type: "claim", text: "Tom admits he went up to Daniel's apartment after returning that night.", source: "tom", timestamp: "00:00" },
             ],
           },
         ],
@@ -545,7 +597,7 @@ export const WITNESSES: WitnessConfig[] = [
         stages: [
           {
             text: "We argued. He said I'd made things worse by interfering, by talking to both of them. It got heated. I shoved him, he shoved me back.",
-            requiresWitnessStage: { witness: "tom", topic: "went_up", minStage: 0 },
+            requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
             minAskCount: 1,
             demeanor: "defensive",
             addsBoardEntries: [
@@ -566,12 +618,13 @@ export const WITNESSES: WitnessConfig[] = [
           },
           {
             text: "He grabbed the knife off the counter — he was pointing at me with it, shouting at me to get out. I tried to push past him, get the door. We were tangled up for a second and… he had the knife. It went into him. I didn't stab him. I didn't touch that knife. I swear to you, I didn't mean for any of it.",
+            presentedText: "...You already know, don't you — the forensic report, the knife. Fine. He grabbed the knife off the counter — he was pointing at me with it, shouting at me to get out. I tried to push past him, get the door. We were tangled up for a second and… he had the knife. It went into him. I didn't stab him. I swear to you, I didn't mean for any of it.",
             requiresWitnessStage: { witness: "tom", topic: "the_argument", minStage: 0 },
             requiresEvidence: ["E01_knife", "E04_forensic_prelim"],
             minAskCount: 1,
             demeanor: "panicking",
             addsBoardEntries: [
-              { type: "fact", text: "Tom's final account: Daniel grabbed the knife himself; it entered him accidentally during the struggle as Tom tried to get past him.", source: "tom", timestamp: "~00:02" },
+              { type: "claim", text: "Tom's account: Daniel grabbed the knife himself; it entered him accidentally during the struggle as Tom tried to get past him.", source: "tom", timestamp: "~00:02" },
             ],
           },
           {
@@ -651,10 +704,15 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "that_night_call",
         chipLabel: "Did you speak to Daniel that night?",
-        keywords: ["that night", "call", "phone", "speak to him", "23:34"],
+        keywords: ["that night", "call", "phone", "speak to him", "23:34", "talked to", "spoke", "did you talk"],
         stages: [
           {
+            text: "Briefly, yes. He called me — I don't remember exactly when. He sounded stressed.",
+            demeanor: "composed",
+          },
+          {
             text: "He called me around 11:30. He sounded stressed — said something like ‘I have to stop lying to people tonight.’ I told him to just talk to them calmly. I had no idea it was that night, with Elena right there.",
+            presentedText: "...His phone records, right. Yes — he called me at 23:34. He sounded stressed, said something like ‘I have to stop lying to people tonight.’ I told him to just talk to them calmly. I had no idea it was that night, with Elena right there.",
             requiresEvidence: ["E05_daniel_phone_records"],
             demeanor: "composed",
             addsBoardEntries: [
@@ -706,7 +764,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "what_heard",
         chipLabel: "What did you hear that night?",
-        keywords: ["hear", "heard", "argument", "noise", "sound"],
+        keywords: ["hear", "heard", "argument", "noise", "sound", "shouting", "yelling", "fighting", "scream", "through the wall"],
         stages: [
           {
             text: "Raised voices, more than once that night. Doors. The usual things you hear through a wall you shouldn't be able to hear through.",
@@ -720,7 +778,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_woman",
         chipLabel: "Did you see anyone leave?",
-        keywords: ["see anyone", "leave", "woman", "coat", "midnight"],
+        keywords: ["see anyone", "leave", "woman", "coat", "midnight", "see", "describe", "what did you see", "saw", "exit", "walked out", "front door"],
         stages: [
           {
             text: "I saw a woman leaving, in a dark coat — around midnight, I think, give or take. She was holding something small, I couldn't tell you what. She looked back toward his door before she went. I couldn't see her face properly, the hallway light's been out for weeks.",
@@ -734,7 +792,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "sure_about_time",
         chipLabel: "How sure are you about the time?",
-        keywords: ["sure", "certain", "exact time", "precise", "positive"],
+        keywords: ["sure", "certain", "exact time", "precise", "positive", "accurate", "clock", "really midnight", "how sure"],
         stages: [
           {
             text: "Not very, if I'm honest. I wasn't looking at a clock. “Around midnight” is the best I can give you — it could have been a bit before, a bit after. I wouldn't swear to the minute.",

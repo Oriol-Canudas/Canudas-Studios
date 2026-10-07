@@ -57,10 +57,19 @@ export interface BoardEntry {
   timestamp?: string; // in-world time label e.g. "23:50", used for timeline sorting
 }
 
+/** One hand-authored, individually meaningful fact drawn from a document. Not a transcript dump — a curated reading of it, same as an investigator would write up. */
+export interface EvidenceFact {
+  time?: string;
+  content: string;
+  type: BoardEntryType;
+}
+
 /** A single step in a witness's progressive testimony on one topic. */
 export interface TestimonyStage {
   /** What the witness says at this stage. */
   text: string;
+  /** Alternate line used only when this stage is reached by the player presenting evidence directly in conversation, rather than by asking again. References the specific document. */
+  presentedText?: string;
   /** Evidence that must be discovered before this stage can be reached. */
   requiresEvidence?: EvidenceId[];
   /** Another witness topic that must already be at/past a given stage. */

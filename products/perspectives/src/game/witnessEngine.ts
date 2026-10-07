@@ -101,6 +101,36 @@ export function resolveStage(
   return Math.max(reachable, previousStage);
 }
 
+/**
+ * Whether a topic's suggestion chip should be shown at all right now.
+ *
+ * This is deliberately narrower than "can this topic advance" — an
+ * ordinary investigative question (one whose first stage needs no
+ * cross-witness knowledge) stays visible even when the honest answer is
+ * currently a denial; a denial is a legitimate, informative answer, not a
+ * reason to hide the question. The only thing that must be hidden is a
+ * question whose own premise isn't yet true for the player — which only
+ * happens for the handful of cross-witness reactive topics, where the
+ * chip's own wording ("Tom says he came back too...") states something
+ * the player doesn't actually know yet until that prerequisite is real.
+ */
+export function isTopicReachable(topic: TestimonyTopic, allStages: AllWitnessStages): boolean {
+  const first = topic.stages[0];
+  if (!first?.requiresWitnessStage) return true;
+  const { witness, topic: otherTopic, minStage } = first.requiresWitnessStage;
+  return (allStages[witness]?.[otherTopic] ?? -1) >= minStage;
+}
+
+/** Which of this witness's topics the given evidence is authored to speak to, if any. */
+export function topicForEvidence(witness: WitnessConfig, evidenceId: EvidenceId): TestimonyTopic | null {
+  for (const topic of witness.topics) {
+    for (const stage of topic.stages) {
+      if (stage.requiresEvidence?.includes(evidenceId)) return topic;
+    }
+  }
+  return null;
+}
+
 const deflectionCounters = new Map<WitnessId, number>();
 
 export function getDeflection(witness: WitnessConfig): string {

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useGameStore } from "../game/store";
-import { computeClarity } from "../game/clarity";
 import type { ElenaVerdict, PlayerVerdict, ResponsibleParty } from "../game/types";
 
 interface VerdictScreenProps {
@@ -24,13 +23,14 @@ const ELENA_OPTIONS: { id: ElenaVerdict; label: string }[] = [
 
 export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProps) {
   const submitVerdict = useGameStore((s) => s.submitVerdict);
-  const discoveredEvidence = useGameStore((s) => s.discoveredEvidence);
-  const witnessStages = useGameStore((s) => s.witnessStages);
+  const inspectedEvidence = useGameStore((s) => s.inspectedEvidence);
+  const chatHistory = useGameStore((s) => s.chatHistory);
   const [theory, setTheory] = useState("");
   const [responsible, setResponsible] = useState<ResponsibleParty | null>(null);
   const [elenaVerdict, setElenaVerdict] = useState<ElenaVerdict | null>(null);
 
-  const clarity = computeClarity(discoveredEvidence, witnessStages);
+  const documentsRead = inspectedEvidence.size;
+  const witnessesQuestioned = Object.values(chatHistory).filter((h) => h.length > 0).length;
   const canSubmit = responsible !== null && elenaVerdict !== null;
 
   function handleSubmit() {
@@ -57,8 +57,10 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
 
         <div className="px-5 pb-5 pt-5">
           <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5">
-            <span className="text-sm text-white/55">Case clarity at this moment</span>
-            <span className="text-base font-semibold text-amber-300">{clarity}%</span>
+            <span className="text-sm text-white/55">Where you stand right now</span>
+            <span className="text-base font-medium text-white/80">
+              {documentsRead}/8 documents read · {witnessesQuestioned}/5 witnesses
+            </span>
           </div>
 
           <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/[0.04] p-4">
