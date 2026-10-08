@@ -41,13 +41,18 @@
 //     client-side too) and narrates it.
 //   - Diagnostics logged (console.log, visible in Vercel's function logs)
 //     are metadata only — never raw message or dialogue content.
+//
+// Everything this file imports lives under api/ — nothing reaches into
+// src/. An earlier version imported getAuthorizedDisclosures and
+// WITNESS_BY_ID.tom directly from src/game/*, which ran fine locally
+// (tsx) but made the deployed Vercel function crash with
+// FUNCTION_INVOCATION_FAILED on every request. api/lib/tomTopics.ts is a
+// hand-kept mirror of Tom's authorized-disclosure gating data for exactly
+// this reason — see that file's header for the real tradeoff this causes.
 // ─────────────────────────────────────────────────────────────────────────
 
-import { getAuthorizedDisclosures } from "../src/game/witnessEngine";
-import { WITNESS_BY_ID } from "../src/game/caseData";
+import { getTomAuthorizedDisclosures } from "./lib/tomTopics";
 import { TOM_CHARACTER_CONTEXT, TOM_LEAK_MARKERS } from "./lib/tomCharacter";
-import type { AllWitnessStages } from "../src/game/witnessEngine";
-import type { EvidenceId } from "../src/game/types";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
@@ -207,7 +212,7 @@ interface GeneratePass {
 
 async function generatePass(
   matchedTopicId: string | null,
-  authorized: ReturnType<typeof getAuthorizedDisclosures>,
+  authorized: ReturnType<typeof getTomAuthorizedDisclosures>,
   history: { role: string; text: string }[],
   message: string
 ): Promise<GeneratePass> {
@@ -285,7 +290,7 @@ Respond with strict JSON only: {"dialogue": string, "cue": string | null, "factR
 export function validateDialogue(
   dialogue: string,
   factRefs: string[],
-  authorized: ReturnType<typeof getAuthorizedDisclosures>
+  authorized: ReturnType<typeof getTomAuthorizedDisclosures>
 ): { ok: boolean; reason?: string } {
   // A topic counts as authorized only when it's both unlocked and has real
   // content — this structurally covers "locked" too, since a locked topic
@@ -338,7 +343,6 @@ async function handleConverse(body: any, res: any) {
   const rawAskCounts: Record<string, number> = body?.askCounts ?? {};
   const defensiveTopicIds: string[] = Array.isArray(body?.defensiveTopicIds) ? body.defensiveTopicIds : [];
 
-  const witness = WITNESS_BY_ID.tom;
   const overallStart = Date.now();
 
   // Pass 1: interpret, with real history this time.
@@ -364,9 +368,8 @@ async function handleConverse(body: any, res: any) {
   const effectiveLockedIds = new Set(defensiveTopicIds);
   if (validTopicId && validCitedEvidenceIds.length > 0) effectiveLockedIds.delete(validTopicId);
 
-  const shimAllStages = { tom: rawStages } as unknown as AllWitnessStages;
-  const discoveredEvidenceSet = new Set(knownEvidenceIds as EvidenceId[]);
-  const authorized = getAuthorizedDisclosures(witness, shimAllStages, projectedAskCounts, discoveredEvidenceSet, effectiveLockedIds);
+  const discoveredEvidenceSet = new Set(knownEvidenceIds);
+  const authorized = getTomAuthorizedDisclosures(rawStages, projectedAskCounts, discoveredEvidenceSet, effectiveLockedIds);
 
   // Pass 2: generate dialogue bounded by that authorized set.
   let gen: GeneratePass;
