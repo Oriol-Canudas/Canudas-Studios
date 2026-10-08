@@ -32,7 +32,7 @@
 //   - OPENAI_API_KEY is read from process.env ONLY, never sent to the
 //     client, never logged.
 //   - Tom's private character context and leak markers live in
-//     api/_lib/tomCharacter.ts — never imported by src/, never in the
+//     api/lib/tomCharacter.ts — never imported by src/, never in the
 //     client bundle.
 //   - This endpoint NEVER decides final game state on its own — the
 //     client's own resolveFreeformTurn (store.ts) remains the authority on
@@ -45,7 +45,7 @@
 
 import { getAuthorizedDisclosures } from "../src/game/witnessEngine";
 import { WITNESS_BY_ID } from "../src/game/caseData";
-import { TOM_CHARACTER_CONTEXT, TOM_LEAK_MARKERS } from "./_lib/tomCharacter";
+import { TOM_CHARACTER_CONTEXT, TOM_LEAK_MARKERS } from "./lib/tomCharacter";
 import type { AllWitnessStages } from "../src/game/witnessEngine";
 import type { EvidenceId } from "../src/game/types";
 

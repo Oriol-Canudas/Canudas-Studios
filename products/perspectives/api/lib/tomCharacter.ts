@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 // Tom Becker's private character context — server-side only.
 //
-// This file is under api/_lib/, which only the witness-chat serverless
+// This file is under api/lib/, which only the witness-chat serverless
 // function imports; it is never part of the Vite client bundle, unlike
 // src/game/caseData.ts (whose GROUND_TRUTH/TIMELINE are already
 // client-visible in the JS bundle today, gated only by the UI not
