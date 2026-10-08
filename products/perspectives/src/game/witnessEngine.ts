@@ -25,6 +25,8 @@ import type {
   EvidenceId,
   InterpretationResult,
   RevelationDef,
+  RevelationId,
+  TestimonyStage,
   TestimonyTopic,
   WitnessConfig,
   WitnessId,
@@ -67,16 +69,12 @@ export function matchTopic(witness: WitnessConfig, freeText: string): TestimonyT
   return best?.topic ?? null;
 }
 
-function stageRequirementsMet(
-  topic: TestimonyTopic,
-  stageIndex: number,
+function normalGatesMet(
+  stage: TestimonyStage,
   askCountAfterThis: number,
   discoveredEvidence: Set<EvidenceId>,
   allStages: AllWitnessStages
 ): boolean {
-  const stage = topic.stages[stageIndex];
-  if (!stage) return false;
-
   if (stage.requiresEvidence) {
     for (const ev of stage.requiresEvidence) {
       if (!discoveredEvidence.has(ev)) return false;
@@ -94,6 +92,38 @@ function stageRequirementsMet(
 }
 
 /**
+ * Whether a stage's requirements are met — either its normal authored
+ * gates (evidence/cross-witness-stage/pressure), OR its altUnlock
+ * conditions, evaluated as a plain OR, never an additional requirement on
+ * top of the normal gates. relayedRevelations/currentIntent are optional
+ * and default to "altUnlock never satisfied" — every existing call site
+ * that omits them (chips, evidence presentation, tests) is completely
+ * unaffected by this function's existence.
+ */
+export function stageRequirementsMet(
+  topic: TestimonyTopic,
+  stageIndex: number,
+  askCountAfterThis: number,
+  discoveredEvidence: Set<EvidenceId>,
+  allStages: AllWitnessStages,
+  relayedRevelations?: ReadonlySet<RevelationId>,
+  currentIntent?: ConversationIntent
+): boolean {
+  const stage = topic.stages[stageIndex];
+  if (!stage) return false;
+
+  if (normalGatesMet(stage, askCountAfterThis, discoveredEvidence, allStages)) return true;
+
+  if (stage.altUnlock && relayedRevelations && currentIntent) {
+    const relayOk = stage.altUnlock.requiresRelayed.every((r) => relayedRevelations.has(r));
+    const intentOk = stage.altUnlock.requiresIntent.includes(currentIntent);
+    if (relayOk && intentOk) return true;
+  }
+
+  return false;
+}
+
+/**
  * Given the question has been resolved to `topic`, figure out the furthest
  * stage the witness can now truthfully reach. Never regresses below the
  * stage already shown.
@@ -103,11 +133,13 @@ export function resolveStage(
   previousStage: number,
   askCountAfterThis: number,
   discoveredEvidence: Set<EvidenceId>,
-  allStages: AllWitnessStages
+  allStages: AllWitnessStages,
+  relayedRevelations?: ReadonlySet<RevelationId>,
+  currentIntent?: ConversationIntent
 ): number {
   let reachable = -1;
   for (let i = 0; i < topic.stages.length; i++) {
-    if (stageRequirementsMet(topic, i, askCountAfterThis, discoveredEvidence, allStages)) {
+    if (stageRequirementsMet(topic, i, askCountAfterThis, discoveredEvidence, allStages, relayedRevelations, currentIntent)) {
       reachable = i;
     }
   }
@@ -166,12 +198,14 @@ export function getAuthorizedDisclosures(
   allStages: AllWitnessStages,
   askCounts: Record<string, number>,
   discoveredEvidence: Set<EvidenceId>,
-  defensiveTopics: ReadonlySet<string>
+  defensiveTopics: ReadonlySet<string>,
+  relayedRevelations?: ReadonlySet<RevelationId>,
+  currentIntent?: ConversationIntent
 ): AuthorizedDisclosure[] {
   return witness.topics.map((topic) => {
     const prevStage = allStages[witness.id]?.[topic.id] ?? -1;
     const askCount = askCounts[topic.id] ?? 0;
-    const stageIndex = resolveStage(topic, prevStage, askCount, discoveredEvidence, allStages);
+    const stageIndex = resolveStage(topic, prevStage, askCount, discoveredEvidence, allStages, relayedRevelations, currentIntent);
     const locked = defensiveTopics.has(topic.id);
     return {
       topicId: topic.id,
@@ -214,6 +248,7 @@ const VALID_INTENTS: ConversationIntent[] = [
   "accusation",
   "evidence_challenge",
   "empathetic_appeal",
+  "repair",
   "general_question",
   "off_topic",
   "unclear",

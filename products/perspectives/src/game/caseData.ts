@@ -417,10 +417,16 @@ export const WITNESSES: WitnessConfig[] = [
     portraitImage: "/portraits/sofia.jpg",
     accentColor: "#f472b6",
     baselineDemeanor: "composed",
+    freeformEnabled: true,
     deflections: [
       "I've told you everything I know.",
       "I don't see why that matters.",
       "I really don't think I can help you with that.",
+    ],
+    defensiveLines: [
+      "I don't know what you want me to say. I've told you what happened.",
+      "That's not fair — I came here and told you the truth once I could.",
+      "I'm not going to just agree with a version of events I don't recognize.",
     ],
     demeanorImages: {
       composed: "/portraits/sofia.jpg",
@@ -485,6 +491,15 @@ export const WITNESSES: WitnessConfig[] = [
             text: "...Yes. I went over. I came up through the garage — I didn't want to run into Elena on her way out.",
             presentedText: "...The garage log. Right. Yes — I went over. I came up through the garage, I didn't want to run into Elena on her way out.",
             requiresEvidence: ["E08_garage_access_log"],
+            // Alternate route: she doesn't need to be confronted with the
+            // garage log at all if she's already learned Tom went back
+            // too and the player meets that with genuine understanding —
+            // the thing she was protecting ("I might be the last one who
+            // saw him") is no longer true, so admitting her own visit
+            // stops costing her as much.
+            altUnlock: { requiresRelayed: ["tom_returned"], requiresIntent: ["empathetic_appeal"] },
+            altUnlockText:
+              "...Can I tell you something? I've been so afraid of being the last person who saw him. If Tom went back after me, then — okay. Yes. I went over that night. I came up through the garage, because I didn't want to run into Elena.",
             demeanor: "nervous",
             addsBoardEntries: [
               { type: "claim", text: "Sofia admits she went to the apartment that night, entering via the underground garage.", source: "sofia", timestamp: "23:53" },
@@ -550,6 +565,7 @@ export const WITNESSES: WitnessConfig[] = [
     portraitImage: "/portraits/tom.jpg",
     accentColor: "#60a5fa",
     baselineDemeanor: "guarded",
+    freeformEnabled: true,
     deflections: [
       "I already told you — I went home.",
       "I don't know what else you want from me.",
@@ -683,6 +699,13 @@ export const WITNESSES: WitnessConfig[] = [
             requiresWitnessStage: { witness: "tom", topic: "the_argument", minStage: 0 },
             requiresEvidence: ["E01_knife", "E04_forensic_prelim"],
             minAskCount: 1,
+            // Alternate route: learning Sofia was ALSO there that night,
+            // and that her account doesn't contradict his, makes him feel
+            // less like the sole, isolated suspect — enough to volunteer
+            // this without ever being confronted with the forensic report.
+            altUnlock: { requiresRelayed: ["sofia_visited"], requiresIntent: ["empathetic_appeal"] },
+            altUnlockText:
+              "...Okay. Okay — you're going to find out one way or another, and I'd rather you heard it from me than pieced it together. He grabbed the knife off the counter, pointing it at me, shouting at me to get out. I tried to push past him. We were tangled up for a second and he had the knife, and it went into him. I didn't stab him. I swear to you, I didn't mean for any of it.",
             demeanor: "panicking",
             addsBoardEntries: [
               { type: "claim", text: "Tom's account: Daniel grabbed the knife himself; it entered him accidentally during the struggle as Tom tried to get past him.", source: "tom", timestamp: "~00:02" },
@@ -717,6 +740,18 @@ export const WITNESSES: WitnessConfig[] = [
         demeanor: "resigned",
         addsBoardEntries: [
           { type: "claim", text: "Tom, told Sofia also hid something that night: unsurprised, draws a parallel to his own lie.", source: "tom" },
+        ],
+      },
+      // New this round: he already privately knew Sofia had been there
+      // (he saw her leaving via the garage — his own saw_sofia topic) —
+      // this isn't new canon, just his first acknowledgment that it's now
+      // something the Judge actually knows too, not just him.
+      sofia_visited: {
+        text: "Yeah. I saw her leaving when I came in. I didn't say anything earlier because I didn't want to be the one who put her in this, on top of everything else.",
+        generative: true,
+        demeanor: "nervous",
+        addsBoardEntries: [
+          { type: "claim", text: "Tom, told Sofia's visit is now known: confirms he saw her leaving as he arrived, says he withheld it to avoid implicating her.", source: "tom" },
         ],
       },
     },

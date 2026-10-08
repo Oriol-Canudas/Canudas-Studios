@@ -28,7 +28,12 @@ const JUDGMENT_LABEL: Record<Judgment, string> = {
   insufficient: "Called insufficient",
 };
 
-const MEANINGFUL_EVENT_KINDS = new Set(["defensive_lock", "evidence_admission", "empathetic_recovery"]);
+const MEANINGFUL_EVENT_KINDS = new Set([
+  "defensive_lock",
+  "evidence_admission",
+  "empathetic_recovery",
+  "voluntary_disclosure",
+]);
 
 export default function RevealScreen({ onReset }: RevealScreenProps) {
   const verdict = useGameStore((s) => s.verdict);
@@ -76,14 +81,14 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
 
       {meaningfulEvents.length > 0 && (
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-base font-medium text-white/70">What your questioning of Tom established</p>
+          <p className="text-base font-medium text-white/70">What your questioning established</p>
           <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/85">
             {meaningfulEvents.map((e, i) => (
               <li key={i}>• {e.summary}</li>
             ))}
           </ul>
           <p className="mt-2 text-sm text-white/40">
-            These are his disclosures, not independently verified facts — the Case Board separates claims from
+            These are their own disclosures, not independently verified facts — the Case Board separates claims from
             confirmed evidence.
           </p>
         </div>

@@ -37,7 +37,7 @@ interface WitnessChatProps {
 
 export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessChatProps) {
   const witness = WITNESS_BY_ID[witnessId];
-  const isFreeform = witnessId === "tom"; // this iteration: Tom only — see DECISIONS.md
+  const isFreeform = Boolean(witness.freeformEnabled); // Tom and Sofia, this round — see DECISIONS.md
 
   const askWitness = useGameStore((s) => s.askWitness);
   const presentEvidence = useGameStore((s) => s.presentEvidence);
@@ -178,7 +178,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   }
 
   function handleRelay(revelationId: RevelationId) {
-    relayRevelation(witnessId, revelationId);
+    void relayRevelation(witnessId, revelationId);
     setRelayPickerOpen(false);
   }
 

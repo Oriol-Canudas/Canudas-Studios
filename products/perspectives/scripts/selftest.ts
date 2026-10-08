@@ -5,9 +5,10 @@
 import { useGameStore } from "../src/game/store";
 import { WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
 import { gradeVerdict } from "../src/game/verdictGrading";
-import { getAuthorizedDisclosures, isTopicReachable, validateInterpretation } from "../src/game/witnessEngine";
+import { getAuthorizedDisclosures, isTopicReachable, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
 import { validateDialogue } from "../api/witness-chat";
+import { LEAK_MARKERS } from "../api/lib/characterContext";
 
 let failures = 0;
 function assert(cond: boolean, msg: string) {
@@ -649,11 +650,17 @@ console.log("\n=== Playthrough 27: validateDialogue catches leaks and invented a
   const tom = WITNESS_BY_ID.tom;
   const state = useGameStore.getState();
   const authorized = getAuthorizedDisclosures(tom, state.witnessStages, state.askCounts.tom, state.discoveredEvidence, new Set());
+  const tomMarkers = LEAK_MARKERS.tom!;
 
-  const leaked = validateDialogue("Fine — he grabbed the knife and it accidentally stabbed him.", [], authorized);
+  const leaked = validateDialogue("Fine — he grabbed the knife and it accidentally stabbed him.", null, [], authorized, tomMarkers);
   assert(!leaked.ok && !!leaked.reason?.startsWith("leak_marker"), "A generated line that leaks an unauthorized secret is rejected, even with zero claimed factRefs");
 
-  const fakeFactRef = validateDialogue("I already told you what happened with the knife.", ["the_knife"], authorized);
+  // The leak scan covers the CUE too, not just the dialogue — a stage
+  // direction can give away a secret just as easily as spoken lines.
+  const leakedViaCue = validateDialogue("I went home, like I said.", "He flinches, remembering he grabbed the knife.", [], authorized, tomMarkers);
+  assert(!leakedViaCue.ok && !!leakedViaCue.reason?.startsWith("leak_marker"), "A leak in the CUE is caught too, not just in the dialogue");
+
+  const fakeFactRef = validateDialogue("I already told you what happened with the knife.", null, ["the_knife"], authorized, tomMarkers);
   assert(!fakeFactRef.ok && fakeFactRef.reason === "unauthorized_factref:the_knife", "A claimed factRef for a not-yet-authorized topic is rejected");
 
   // A locked topic is never in the authorized set at all (see
@@ -662,14 +669,137 @@ console.log("\n=== Playthrough 27: validateDialogue catches leaks and invented a
   // not-currently-authorized topic — no partial credit while locked,
   // and no separate special case needed to guarantee that.
   const lockedState = getAuthorizedDisclosures(tom, state.witnessStages, state.askCounts.tom, state.discoveredEvidence, new Set(["after_that"]));
-  const onLocked = validateDialogue("I went home, like I said.", ["after_that"], lockedState);
+  const onLocked = validateDialogue("I went home, like I said.", null, ["after_that"], lockedState, tomMarkers);
   assert(!onLocked.ok && onLocked.reason === "unauthorized_factref:after_that", "A factRef on a locked topic is rejected — being locked just means it's never in the authorized set");
 
-  const empty = validateDialogue("   ", [], authorized);
+  const empty = validateDialogue("   ", null, [], authorized, tomMarkers);
   assert(!empty.ok && empty.reason === "empty_dialogue", "Empty generated dialogue is rejected, never displayed as a blank line");
 
-  const valid = validateDialogue("I went straight home, same as I told you before.", ["after_that"], authorized);
+  const valid = validateDialogue("I went straight home, same as I told you before.", null, ["after_that"], authorized, tomMarkers);
   assert(valid.ok, "A dialogue line that stays within authorized content and cites it correctly passes validation");
+}
+
+// ── Playthrough 28: altUnlock — a conversational route that isn't evidence ──
+console.log("\n=== Playthrough 28: conversation can voluntarily unlock a disclosure, without evidence ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness } = useGameStore.getState();
+
+  // Approach A: evidence-only path. Never relay, never ask Sofia with
+  // empathy — she should never admit her visit at all. topicIdHint used
+  // throughout this playthrough (same as a chip tap) so the assertions
+  // test altUnlock itself, not matchTopic's keyword-overlap scoring.
+  askWitness("sofia", "did you go to the apartment that night", "went_to_apartment");
+  askWitness("sofia", "did you go to the apartment that night", "went_to_apartment");
+  const noRouteState = useGameStore.getState();
+  assert(
+    (noRouteState.witnessStages.sofia.went_to_apartment ?? -1) === 0,
+    "Without evidence OR the conversational route, Sofia's visit stays denied — repeating the question alone changes nothing"
+  );
+}
+{
+  useGameStore.getState().reset();
+  // Get Tom to admit he returned (the real prerequisite for tom_returned).
+  const { discoverEvidence, askWitness, relayRevelation, sendFreeformMessage } = useGameStore.getState();
+  discoverEvidence("E07_tom_phone_records");
+  askWitness("tom", "where did you really go after you left");
+  askWitness("tom", "where did you really go after you left");
+  const afterTom = useGameStore.getState();
+  assert((afterTom.witnessStages.tom.after_that ?? -1) >= 1, "Setup: Tom has admitted he returned");
+
+  await relayRevelation("sofia", "tom_returned");
+  const afterRelay = useGameStore.getState();
+  assert(afterRelay.relayedRevelations.sofia.has("tom_returned"), "Relaying tom_returned to Sofia is recorded");
+  assert(
+    (afterRelay.witnessStages.sofia.went_to_apartment ?? -1) < 1,
+    "Relaying alone does not unlock anything — altUnlock also requires the right intent on an actual message"
+  );
+
+  // Approach B: the conversational route — empathy, backed by the relay,
+  // with zero evidence ever presented. Phrasing deliberately includes
+  // "were you there" (went_to_apartment's own keyword) so the deterministic
+  // fallback matcher — which, unlike the live model, has no conversation
+  // history to resolve a vaguer follow-up against — still resolves the
+  // right topic; this is a test-harness constraint, not a game rule.
+  await sendFreeformMessage("sofia", "I understand how scary that must have been — were you there yourself?");
+  const afterEmpathy = useGameStore.getState();
+  assert(
+    (afterEmpathy.witnessStages.sofia.went_to_apartment ?? -1) >= 1,
+    "Empathy, backed by an ACTUALLY relayed fact (not just evidence), voluntarily unlocks her admission"
+  );
+  const voluntaryEvent = afterEmpathy.conversationEventLog.find((e) => e.witnessId === "sofia" && e.kind === "voluntary_disclosure");
+  assert(Boolean(voluntaryEvent), "The event log records this specifically as a voluntary disclosure, distinct from an evidence admission");
+  assert(
+    !afterEmpathy.discoveredEvidence.has("E08_garage_access_log"),
+    "This happened WITHOUT the garage log ever being presented — conversation, not evidence, did the work"
+  );
+}
+{
+  // Generic empathy with NO relay still unlocks nothing — the gate is an
+  // objective fact (relayedRevelations), never the model's classification
+  // of tone alone.
+  useGameStore.getState().reset();
+  const { sendFreeformMessage } = useGameStore.getState();
+  await sendFreeformMessage("sofia", "I understand this must be hard for you");
+  const state = useGameStore.getState();
+  assert(
+    (state.witnessStages.sofia.went_to_apartment ?? -1) < 1,
+    "Generic empathy with nothing actually relayed still unlocks nothing — politeness alone is never a key"
+  );
+}
+
+// ── Playthrough 29: repair is never mistaken for a fresh accusation ──
+console.log("\n=== Playthrough 29: an apology isn't reclassified as another accusation ===");
+{
+  const result = interpretDeterministic({
+    witness: WITNESS_BY_ID.tom,
+    rawText: "I'm sorry, that was unfair — I'm not accusing you of anything",
+    knownEvidenceIds: [],
+    evidenceTitles: {},
+  });
+  assert(result.intent === "repair", `A message containing "accusing" but clearly apologizing classifies as repair, got "${result.intent}"`);
+}
+{
+  useGameStore.getState().reset();
+  const { sendFreeformMessage } = useGameStore.getState();
+  // Lock a topic with a real unsupported accusation first. "kill" (not
+  // "knife") deliberately — mentioning "knife" here would get crudely
+  // matched as citing E01's title ("Kitchen knife," already known/initial
+  // evidence) by the fallback's detectCitedEvidence, which would make
+  // this read as evidence_challenge instead of a bare accusation.
+  await sendFreeformMessage("tom", "did you kill him, just admit it");
+  const locked = useGameStore.getState();
+  assert(locked.defensiveTopics.tom.has("the_knife"), "Setup: an unsupported accusation locked the_knife");
+
+  await sendFreeformMessage("tom", "I'm sorry, I didn't mean to push like that — what really happened, in your own words?");
+  const afterRepair = useGameStore.getState();
+  assert(afterRepair.defensiveTopics.tom.has("the_knife"), "A repair attempt does NOT itself clear a defensive lock — an apology isn't evidence");
+  const repairEvent = afterRepair.conversationEventLog.find((e) => e.witnessId === "tom" && e.kind === "repair_acknowledged");
+  assert(Boolean(repairEvent), "The repair attempt is recorded as its own distinct event, not folded into another defensive_lock or no_change");
+}
+
+// ── Playthrough 30: the generic authorization algorithm works for any witness, not just Tom ──
+console.log("\n=== Playthrough 30: Sofia gets the same authorization machinery as Tom, not a special case ===");
+{
+  useGameStore.getState().reset();
+  const sofia = WITNESS_BY_ID.sofia;
+  assert(Boolean(sofia.freeformEnabled), "Sofia is freeformEnabled this round");
+  const state = useGameStore.getState();
+  const fresh = getAuthorizedDisclosures(sofia, state.witnessStages, state.askCounts.sofia, state.discoveredEvidence, new Set());
+  const contactFresh = fresh.find((d) => d.topicId === "contact_after_text")!;
+  assert(
+    contactFresh.stageIndex === 0 && !!contactFresh.text && contactFresh.text.includes("That text at 23:06"),
+    "Sofia's baseline denial is authorized from the start, same as Tom's — a legitimate answer, not a secret; her hidden-call admission (stage 1) stays out of reach until E05 is actually discovered"
+  );
+
+  // stageRequirementsMet/resolveStage's altUnlock params are optional and
+  // default to "never satisfied" — every pre-existing call site (chips,
+  // evidence) that omits them is completely unaffected.
+  const topic = sofia.topics.find((t) => t.id === "went_to_apartment")!;
+  const withoutAltArgs = resolveStage(topic, 0, 0, state.discoveredEvidence, state.witnessStages);
+  assert(withoutAltArgs === 0, "Omitting relayedRevelations/currentIntent behaves exactly as before — altUnlock never fires implicitly");
+  const metDirectly = stageRequirementsMet(topic, 1, 1, state.discoveredEvidence, state.witnessStages, new Set(["tom_returned"]), "empathetic_appeal");
+  assert(metDirectly, "stageRequirementsMet itself recognizes the altUnlock OR-branch when both conditions are actually passed");
 }
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);

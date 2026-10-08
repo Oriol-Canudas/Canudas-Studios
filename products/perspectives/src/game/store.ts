@@ -2,13 +2,14 @@ import { create } from "zustand";
 import { EVIDENCE, EVIDENCE_BY_ID, EVIDENCE_FACTS, REVELATIONS, WITNESS_BY_ID, WITNESSES } from "./caseData";
 import { track } from "./analytics";
 import { playSfx } from "./audio";
-import { converseWithTom, defaultCueFor } from "./interpreter";
+import { converseWithWitness, defaultCueFor, generateRelayReaction } from "./interpreter";
 import {
   getDefensiveLine,
   getDeflection,
   isRevelationKnown,
   matchTopic,
   resolveStage,
+  stageRequirementsMet,
   topicForEvidence,
   validateInterpretation,
   type AllWitnessStages,
@@ -16,6 +17,7 @@ import {
 import type {
   BoardEntry,
   ConversationEvent,
+  ConversationIntent,
   Demeanor,
   EvidenceId,
   InterpretationResult,
@@ -65,9 +67,10 @@ interface GameState {
   relayedRevelations: Record<WitnessId, Set<RevelationId>>;
   relayLog: RelayRecord[];
   /**
-   * Free-form conversation (Tom only, this iteration). A topic lands here
-   * after an unsupported accusation and stays until a meaningful change of
-   * approach (real evidence, or empathy backed by real evidence) lifts it —
+   * Free-form conversation only (witnesses with freeformEnabled — Tom and
+   * Sofia, this round). A topic lands here after an unsupported accusation
+   * and stays until a meaningful change of approach (real evidence, or an
+   * authored altUnlock route — see TestimonyStage.altUnlock) lifts it —
    * never a permanent lock.
    */
   defensiveTopics: Record<WitnessId, Set<string>>;
@@ -94,8 +97,8 @@ interface GameState {
   openWitness: (id: WitnessId) => void;
   askWitness: (id: WitnessId, questionText: string, topicIdHint?: string) => void;
   presentEvidence: (witnessId: WitnessId, evidenceId: EvidenceId, excerptIndex: number) => void;
-  relayRevelation: (witnessId: WitnessId, revelationId: RevelationId) => void;
-  /** Free-form conversation entry point (Tom only, this iteration) — interprets, validates, resolves, and performs one turn. */
+  relayRevelation: (witnessId: WitnessId, revelationId: RevelationId) => Promise<void>;
+  /** Free-form conversation entry point (any witness with freeformEnabled) — interprets, validates, resolves, and performs one turn. */
   sendFreeformMessage: (witnessId: WitnessId, rawText: string) => Promise<void>;
   /** Re-runs the last failed turn's text without re-appending a duplicate player bubble. */
   retryFreeformMessage: (witnessId: WitnessId) => Promise<void>;
@@ -215,6 +218,11 @@ function resolveDemeanorUpdate(
   return { demeanor: current, changed: false };
 }
 
+/** Whether `topic.stages[stageIndex]` would be reached through its NORMAL gates alone (no relay/intent) — used only to tell "reached via altUnlock" apart from "was reachable anyway," never to decide the actual unlock. */
+function normalGatesMetFor(topic: TestimonyTopic, stageIndex: number, askCountAfterThis: number, state: GameState): boolean {
+  return stageRequirementsMet(topic, stageIndex, askCountAfterThis, state.discoveredEvidence, state.witnessStages);
+}
+
 /**
  * Shared stage-advancement logic used by both asking a question and
  * presenting evidence directly. `useAltText` picks the `presentedText`
@@ -226,10 +234,20 @@ function advanceTopic(
   id: WitnessId,
   topic: TestimonyTopic,
   newAskCount: number,
-  useAltText: boolean
+  useAltText: boolean,
+  relayedRevelations?: ReadonlySet<RevelationId>,
+  currentIntent?: ConversationIntent
 ) {
   const prevStage = state.witnessStages[id][topic.id] ?? -1;
-  const newStage = resolveStage(topic, prevStage, newAskCount, state.discoveredEvidence, state.witnessStages);
+  const newStage = resolveStage(
+    topic,
+    prevStage,
+    newAskCount,
+    state.discoveredEvidence,
+    state.witnessStages,
+    relayedRevelations,
+    currentIntent
+  );
 
   if (newStage === -1) return null;
 
@@ -239,7 +257,16 @@ function advanceTopic(
 
   const stageData = topic.stages[newStage];
   const advanced = newStage > prevStage;
-  const text = (useAltText && advanced ? stageData.presentedText : undefined) ?? stageData.text;
+  // Reached ONLY because of altUnlock (relay + the right intent), not
+  // because its normal evidence/witness-stage/pressure gates were met —
+  // recomputed by checking the normal gates alone (no relay/intent args),
+  // never trusted as a flag the caller passed in.
+  const reachedViaAltUnlock =
+    advanced && Boolean(stageData.altUnlock) && !normalGatesMetFor(topic, newStage, newAskCount, state);
+  const text =
+    (useAltText && advanced ? stageData.presentedText : undefined) ??
+    (reachedViaAltUnlock ? stageData.altUnlockText : undefined) ??
+    stageData.text;
 
   let nextBoard = state.board;
   let nextKeys = state.boardEntryKeys;
@@ -285,6 +312,7 @@ function advanceTopic(
     text,
     newStage,
     advanced,
+    reachedViaAltUnlock,
     patch: {
       witnessStages: updatedWitnessStages,
       askCounts: { ...state.askCounts, [id]: { ...state.askCounts[id], [topic.id]: newAskCount } },
@@ -324,9 +352,9 @@ function countTurnAndResolveDemeanor(state: GameState, witnessId: WitnessId, pro
 }
 
 /**
- * The validated behavior core for one free-form turn — Section 3's three
- * test cases, all reusing the same authored stage ladder `advanceTopic`
- * already walks for every other witness interaction in this app:
+ * The validated behavior core for one free-form turn — reusing the same
+ * authored stage ladder `advanceTopic` already walks for every other
+ * witness interaction in this app:
  *
  *   A. Unsupported accusation (no cited evidence, topic not yet admitted)
  *      -> locks the topic defensive. Recoverable, never permanent.
@@ -337,12 +365,20 @@ function countTurnAndResolveDemeanor(state: GameState, witnessId: WitnessId, pro
  *         unlock.
  *   C. Evidence-backed understanding (empathetic_appeal + evidence) ->
  *      clears a defensive lock and falls through to the same path as B.
- *      Empathy with NO evidence never unlocks anything — politeness alone
- *      is not a key.
+ *   D. altUnlock (relay + the right intent, no evidence at all) -> an
+ *      authored ALTERNATE route onto the exact same stage ladder —
+ *      "learning another witness's account" or "a fear being addressed"
+ *      changing what's volunteered, never a new fact invented by the
+ *      model. Generic empathy with no evidence and no matching relay
+ *      still unlocks nothing — politeness alone is never a key.
+ *   E. Repair (the player walking back their own earlier accusation) ->
+ *      acknowledged in its own right, never reclassified as a fresh
+ *      accusation just because it mentions one, and never itself evidence
+ *      that something false becomes true.
  *
  * This function makes no network calls and decides nothing the rest of
  * the engine couldn't already justify — it is the validated-transition
- * layer the brief requires between interpretation and generated dialogue.
+ * layer between interpretation and generated dialogue.
  */
 function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: InterpretationResult): FreeformResolution {
   const witness = WITNESS_BY_ID[witnessId];
@@ -365,6 +401,31 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
         summary: "Off-topic or unclear question — no change.",
       },
       patch: {},
+    };
+  }
+
+  // E. A repair attempt is never treated as a fresh accusation (even if it
+  // literally contains the word "accusing") and never itself clears a lock
+  // — an apology isn't evidence. It's still a real, distinct conversational
+  // event: the witness may stay guarded, but what the player actually said
+  // gets acknowledged rather than met with the same stock defensive line.
+  if (interp.intent === "repair") {
+    const isDefensiveNow = state.defensiveTopics[witnessId].has(topic.id);
+    return {
+      text: isDefensiveNow ? getDefensiveLine(witness) : getDeflection(witness),
+      topicId: topic.id,
+      eventKind: "repair_acknowledged",
+      clearDefensive: false,
+      setDefensive: false,
+      event: {
+        witnessId,
+        t: Date.now(),
+        kind: "repair_acknowledged",
+        topicId: topic.id,
+        citedEvidenceIds: [],
+        summary: `Player walked back an earlier accusation on "${topic.chipLabel}" — acknowledged; trust not automatically restored.`,
+      },
+      patch: countTurnAndResolveDemeanor(state, witnessId, undefined),
     };
   }
 
@@ -396,13 +457,26 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
     };
   }
 
-  // Still defensive and nothing offered to lift it (no evidence, and
-  // empathy alone doesn't count) — stay locked, same line again. This is
-  // what keeps the lock real without making it permanent: the ONLY ways
-  // out are evidence or evidence-backed empathy, handled below. Still
-  // counts as a turn, so the cooldown clock keeps advancing toward the
-  // point where a calmer state is finally allowed to show.
-  if (isDefensive && !hasEvidence) {
+  // D. Does ANY not-yet-reached stage on this topic have an altUnlock
+  // whose conditions are satisfied THIS turn? Checked against objective
+  // state only — relayedRevelations is only ever populated by the
+  // explicit relay action, never by the player's own unverified claim in
+  // free text, and currentIntent is the same validated classification
+  // every other branch already trusts, not a new trust boundary.
+  const relayed = state.relayedRevelations[witnessId];
+  const altUnlockCandidate = topic.stages.some(
+    (s, i) => i > (state.witnessStages[witnessId][topic.id] ?? -1) && s.altUnlock
+      && s.altUnlock.requiresIntent.includes(interp.intent)
+      && s.altUnlock.requiresRelayed.every((r) => relayed.has(r))
+  );
+
+  // Still defensive and nothing offered to lift it (no evidence, and no
+  // altUnlock route either — empathy alone still doesn't count) — stay
+  // locked, same line again. This is what keeps the lock real without
+  // making it permanent. Still counts as a turn, so the cooldown clock
+  // keeps advancing toward the point where a calmer state is finally
+  // allowed to show.
+  if (isDefensive && !hasEvidence && !altUnlockCandidate) {
     return {
       text: getDefensiveLine(witness),
       topicId: topic.id,
@@ -421,13 +495,15 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
     };
   }
 
-  // B (evidence_challenge) and C (empathetic_appeal + evidence) both land
-  // here: real evidence is present, so it's allowed to unlock whatever
-  // it's authored to unlock — via the EXACT same call presentEvidence
-  // already makes. No special-cased "instant confession" path exists.
+  // B (evidence_challenge), C (empathetic_appeal + evidence), and D
+  // (altUnlock) all land here: something real is present, so it's allowed
+  // to unlock whatever it's authored to unlock — via the EXACT same call
+  // presentEvidence already makes, now also given relayedRevelations and
+  // this turn's intent so altUnlock can fire. No special-cased "instant
+  // confession" path exists outside this one authored mechanism.
   const newAskCount = (state.askCounts[witnessId][topic.id] ?? 0) + 1;
-  const result = advanceTopic(state, witnessId, topic, newAskCount, hasEvidence);
-  const clearDefensive = isDefensive && hasEvidence;
+  const result = advanceTopic(state, witnessId, topic, newAskCount, hasEvidence, relayed, interp.intent);
+  const clearDefensive = isDefensive && (hasEvidence || Boolean(result?.reachedViaAltUnlock));
 
   if (!result) {
     return {
@@ -450,13 +526,15 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
 
   const kind: TurnEventKind = !result.advanced
     ? "no_change"
-    : clearDefensive
-      ? "evidence_admission"
-      : interp.intent === "empathetic_appeal"
-        ? "empathetic_recovery"
-        : hasEvidence
-          ? "evidence_admission"
-          : "normal_advance";
+    : result.reachedViaAltUnlock
+      ? "voluntary_disclosure"
+      : clearDefensive
+        ? "evidence_admission"
+        : interp.intent === "empathetic_appeal"
+          ? "empathetic_recovery"
+          : hasEvidence
+            ? "evidence_admission"
+            : "normal_advance";
 
   return {
     text: result.text,
@@ -471,13 +549,15 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
       topicId: topic.id,
       citedEvidenceIds: interp.citedEvidenceIds,
       summary:
-        kind === "evidence_admission"
-          ? `Challenged "${topic.chipLabel}" with evidence — ${witness.name} made a limited admission.`
-          : kind === "empathetic_recovery"
-            ? `Reopened "${topic.chipLabel}" through empathy backed by evidence, after it had gone defensive.`
-            : kind === "normal_advance"
-              ? `Advanced "${topic.chipLabel}" through ordinary questioning.`
-              : `Asked about "${topic.chipLabel}" — nothing new yet.`,
+        kind === "voluntary_disclosure"
+          ? `${witness.name} volunteered an answer on "${topic.chipLabel}" because of what the player shared in conversation — not because of any evidence presented.`
+          : kind === "evidence_admission"
+            ? `Challenged "${topic.chipLabel}" with evidence — ${witness.name} made a limited admission.`
+            : kind === "empathetic_recovery"
+              ? `Reopened "${topic.chipLabel}" through empathy backed by evidence, after it had gone defensive.`
+              : kind === "normal_advance"
+                ? `Advanced "${topic.chipLabel}" through ordinary questioning.`
+                : `Asked about "${topic.chipLabel}" — nothing new yet.`,
     },
     patch: result.patch,
   };
@@ -491,17 +571,17 @@ type GetFn = () => GameState;
  * bubble is already in chatHistory and pendingWitnesses is already set by
  * the caller.
  *
- * converseWithTom gives the model real conversation history AND Tom's
- * private character context, but the dialogue it returns has already been
- * validated server-side against exactly what's currently authorized (see
- * api/witness-chat.ts) — this function does NOT re-trust it blindly, it
- * only ever uses it as an alternate DISPLAY TEXT. The actual STATE
- * decision (does this topic advance, does a defensive lock get set or
- * cleared, what board entries/demeanor result) still runs through the
- * exact same validateInterpretation -> resolveFreeformTurn pipeline as
- * before, untouched — the model proposes an interpretation and a
- * performance, the deterministic engine remains the sole authority on
- * what actually happened in the case.
+ * converseWithWitness gives the model real conversation history AND this
+ * witness's private character context, but the dialogue it returns has
+ * already been validated server-side against exactly what's currently
+ * authorized (see api/witness-chat.ts) — this function does NOT re-trust
+ * it blindly, it only ever uses it as an alternate DISPLAY TEXT. The
+ * actual STATE decision (does this topic advance, does a defensive lock
+ * get set or cleared, what board entries/demeanor result) still runs
+ * through the exact same validateInterpretation -> resolveFreeformTurn
+ * pipeline as before, untouched — the model proposes an interpretation
+ * and a performance, the deterministic engine remains the sole authority
+ * on what actually happened in the case.
  */
 async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, get: GetFn): Promise<void> {
   const witness = WITNESS_BY_ID[witnessId];
@@ -514,7 +594,21 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
       .slice(-10)
       .map((m) => ({ role: m.role, text: m.text }));
 
-    const outcome = await converseWithTom(
+    // Only facts ACTUALLY relayed to this witness (relayRevelation action),
+    // never anything the player merely claimed in free text — see
+    // ConverseContext.relayedFacts.
+    const relayedFacts = Array.from(preState.relayedRevelations[witnessId])
+      .map((id) => ({ id, label: REVELATIONS[id]?.label }))
+      .filter((r): r is { id: RevelationId; label: string } => Boolean(r.label));
+
+    // Compact structured memory: what already happened with this witness,
+    // not raw transcript — a projection of the existing event log.
+    const conversationMemory = preState.conversationEventLog
+      .filter((e) => e.witnessId === witnessId)
+      .slice(-8)
+      .map((e) => e.summary);
+
+    const outcome = await converseWithWitness(
       {
         witness,
         rawText: text,
@@ -524,6 +618,8 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
         witnessStages: preState.witnessStages[witnessId],
         askCounts: preState.askCounts[witnessId],
         defensiveTopicIds: Array.from(preState.defensiveTopics[witnessId]),
+        relayedFacts,
+        conversationMemory,
       },
       true
     );
@@ -675,8 +771,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     // conversation only — see sendFreeformMessage) stays locked through a
     // chip tap too — the suggestion chips are a shortcut INTO the same
     // conversation, not a side door around its rules. This is a no-op for
-    // every witness except Tom this iteration: defensiveTopics only ever
-    // gets entries from the free-form path, which only Tom's screen uses.
+    // any witness without freeformEnabled: defensiveTopics only ever gets
+    // entries from the free-form path.
     if (state.defensiveTopics[id].has(topic.id)) {
       const line = getDefensiveLine(witness);
       track("witness_questioned", { witnessId: id, topicId: topic.id, matched: true, stage: state.witnessStages[id][topic.id] ?? -1, advanced: false });
@@ -781,13 +877,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
   },
 
-  relayRevelation: (witnessId, revelationId) => {
+  relayRevelation: async (witnessId, revelationId) => {
     const state = get();
     const witness = WITNESS_BY_ID[witnessId];
     const revelation = REVELATIONS[revelationId];
     if (!witness || !revelation) return;
     if (!isRevelationKnown(revelation, state.witnessStages)) return; // can't relay what the player hasn't learned
     if (state.relayedRevelations[witnessId].has(revelationId)) return; // never re-tellable
+    if (state.pendingWitnesses.has(witnessId)) return; // same duplicate-submission guard as a free-form turn
 
     const nextRelayed = {
       ...state.relayedRevelations,
@@ -807,6 +904,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
 
+    // Board entries + demeanor are authored and deterministic regardless
+    // of whether the DISPLAY TEXT ends up generated or static — the model
+    // never decides any of this, only how the SAME reaction is phrased.
     let nextBoard = state.board;
     let nextKeys = state.boardEntryKeys;
     if (reaction.addsBoardEntries?.length) {
@@ -833,8 +933,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       : state.lastDemeanorChangeTurn;
     if (resolved.changed) playSfx("demeanor");
 
-    set({
-      chatHistory: { ...state.chatHistory, [witnessId]: [...history, { role: "witness", text: reaction.text }] },
+    const basePatch = {
       relayedRevelations: nextRelayed,
       relayLog: nextLog,
       board: nextBoard,
@@ -842,7 +941,71 @@ export const useGameStore = create<GameState>((set, get) => ({
       demeanor: nextDemeanor,
       demeanorTurnCount: { ...state.demeanorTurnCount, [witnessId]: newTurnCount },
       lastDemeanorChangeTurn: nextLastChangeTurn,
+    };
+
+    if (!reaction.generative || !witness.freeformEnabled) {
+      // Today's exact behavior: the static authored line, shown immediately.
+      set({
+        ...basePatch,
+        chatHistory: { ...state.chatHistory, [witnessId]: [...history, { role: "witness", text: reaction.text }] },
+      });
+      return;
+    }
+
+    // Generative: show the relay bubble right away, mark pending (so the
+    // UI shows a typing indicator and blocks a second submit), then try
+    // to get a paraphrased-but-bounded reaction. Falls back to the exact
+    // static line — same as the non-generative path above — on ANY
+    // failure; the player never sees a gap or an error.
+    set({
+      ...basePatch,
+      chatHistory: { ...state.chatHistory, [witnessId]: history },
+      pendingWitnesses: new Set(state.pendingWitnesses).add(witnessId),
     });
+
+    try {
+      const preGen = get();
+      const relayedFacts = Array.from(preGen.relayedRevelations[witnessId])
+        .map((id) => ({ id, label: REVELATIONS[id]?.label }))
+        .filter((r): r is { id: RevelationId; label: string } => Boolean(r.label));
+
+      const outcome = await generateRelayReaction(
+        {
+          witness,
+          relayLabel: revelation.label,
+          anchorText: reaction.text,
+          knownEvidenceIds: Array.from(preGen.discoveredEvidence),
+          witnessStages: preGen.witnessStages[witnessId],
+          askCounts: preGen.askCounts[witnessId],
+          defensiveTopicIds: Array.from(preGen.defensiveTopics[witnessId]),
+          relayedFacts,
+        },
+        true
+      );
+
+      const finalText = outcome.dialogue ?? reaction.text;
+      const afterGen = get();
+      const nextPending = new Set(afterGen.pendingWitnesses);
+      nextPending.delete(witnessId);
+      set({
+        chatHistory: {
+          ...afterGen.chatHistory,
+          [witnessId]: [
+            ...afterGen.chatHistory[witnessId],
+            { role: "witness", text: finalText, cue: outcome.cue ?? undefined, source: outcome.dialogue ? "ai" : "fallback" },
+          ],
+        },
+        pendingWitnesses: nextPending,
+      });
+    } catch {
+      const afterFail = get();
+      const nextPending = new Set(afterFail.pendingWitnesses);
+      nextPending.delete(witnessId);
+      set({
+        chatHistory: { ...afterFail.chatHistory, [witnessId]: [...afterFail.chatHistory[witnessId], { role: "witness", text: reaction.text }] },
+        pendingWitnesses: nextPending,
+      });
+    }
   },
 
   sendFreeformMessage: async (witnessId, rawText) => {

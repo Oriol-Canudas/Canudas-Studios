@@ -82,6 +82,39 @@ export interface TestimonyStage {
   unlocksEvidence?: EvidenceId[];
   /** If set, the witness's displayed demeanor updates to this once this stage is (newly) reached. */
   demeanor?: Demeanor;
+  /**
+   * An alternate way to reach THIS stage without its requiresEvidence/
+   * requiresWitnessStage/minAskCount gates — via a conversational
+   * intervention instead. Evaluated as an OR against the normal gates,
+   * never a requirement on top of them. Both conditions are checked
+   * against objective, already-tracked state — never the model's
+   * interpretation of what the player merely claimed:
+   *   - requiresRelayed: these revelations must already be in
+   *     relayedRevelations for this witness (only ever set by the
+   *     explicit relay action, never inferred from free text).
+   *   - requiresIntent: the player's CLASSIFIED intent on this turn
+   *     (validated the same way every intent already is) must be one
+   *     of these.
+   * The model never decides the unlock — it only classifies intent; the
+   * deterministic engine evaluates this gate exactly like any other.
+   */
+  altUnlock?: {
+    requiresRelayed: RevelationId[];
+    requiresIntent: ConversationIntent[];
+  };
+  /** Text used specifically when this stage is reached via altUnlock rather than evidence or a plain ask — lets the line acknowledge WHY the witness is now willing to say this. Falls back to `text` if absent. */
+  altUnlockText?: string;
+  /**
+   * Reactions only (WitnessConfig.reactions[revelationId]): when true,
+   * `text` is an ANCHOR fed to the generate pass as the one new fact this
+   * witness just learned, rather than the final displayed line — the
+   * model paraphrases around it, still bounded by this witness's own
+   * current authorized-disclosure set, so the player can follow up on the
+   * reaction in their own words. On any validation failure, falls back to
+   * `text` verbatim — today's exact behavior. Omitted/false (the default
+   * for every existing reaction) is unchanged: `text` is shown as-is.
+   */
+  generative?: boolean;
 }
 
 /**
@@ -166,6 +199,8 @@ export interface WitnessConfig {
   demeanorImages?: Partial<Record<Demeanor, string>>;
   /** One-line behavior description shown alongside a demeanorImages portrait — "what you'd notice if you looked up right now," not plot information. */
   demeanorLines?: Partial<Record<Demeanor, string>>;
+  /** Whether this witness gets the AI-backed free-form conversation (interpret → authorize → generate → validate) rather than chip-only deterministic matching. Opt-in per witness; everyone defaults to deterministic-only. */
+  freeformEnabled?: boolean;
 }
 
 export type ResponsibleParty = "elena" | "sofia" | "tom" | "someone_else" | "insufficient_evidence";
@@ -192,7 +227,8 @@ export interface PlayerVerdict {
 export type ConversationIntent =
   | "accusation" // confronts without evidence/admission backing it
   | "evidence_challenge" // cites real, already-known evidence
-  | "empathetic_appeal" // acknowledges Tom's position, with or without evidence
+  | "empathetic_appeal" // acknowledges the witness's position, with or without evidence
+  | "repair" // walks back or apologizes for the player's own earlier accusation/tone — never reclassified as a fresh accusation just because it mentions one
   | "general_question"
   | "off_topic"
   | "unclear";
@@ -211,6 +247,8 @@ export type TurnEventKind =
   | "defensive_lock" // unsupported accusation closed a topic down
   | "evidence_admission" // evidence-backed contradiction produced a limited admission
   | "empathetic_recovery" // validated empathetic appeal reopened a defensive topic
+  | "voluntary_disclosure" // reached via altUnlock (relay + the right intent) — never forced by evidence
+  | "repair_acknowledged" // player walked back an earlier accusation; acknowledged, trust not automatically restored
   | "normal_advance" // an ordinary, already-reachable stage advance
   | "no_change"; // understood, but nothing new was reachable
 
