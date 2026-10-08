@@ -434,3 +434,40 @@ Current limitations / next step
 - Browser automation still unavailable in this environment — these fixes
   are verified by code review and the self-test suite, not by actually
   watching the animation in a browser. Worth a real check on Oriol's end.
+
+---
+
+## 2026-10-08 — Intro-1 music: retry the autoplay unlock on any real tap
+
+What changed
+- Oriol reported intro-1's music missing. Not a regression — nothing in
+  `audio.ts`/`App.tsx` had changed since the original "best-effort
+  autoplay" fix; the mount-time `playAmbient()` call in `App.tsx` simply
+  has no real user gesture behind it, so strict autoplay policies (mobile
+  Safari, Chrome's engagement heuristic) can silently block it. It likely
+  "worked" before because tapping to skip the intro happened to double as
+  the unlocking gesture; letting it auto-advance without tapping leaves
+  it silent until "Begin the case."
+- `IntroSequence.tsx`'s tap-to-skip handler now also calls `playAmbient()`
+  before advancing — any real tap during either intro (not just the
+  explicit "Begin the case" button) now retries the unlock. Safe no-op if
+  it's already playing.
+
+Why
+- Direct playtest report from Oriol.
+
+Files
+- `src/components/IntroSequence.tsx`
+
+How to test
+- `npm run dev` or the live Vercel URL — load fresh, tap anywhere during
+  intro-1 (not just wait for it to auto-advance), confirm ambient audio
+  starts. `npx tsx scripts/selftest.ts` → still 49/49.
+
+Current limitations / next step
+- A page load with zero taps during intro-1 may still be silent on
+  strict browsers until "Begin the case" — that's a hard platform
+  restriction (no gesture = no guaranteed autoplay-with-sound), not
+  something fixable from app code. Browser automation still unavailable
+  in this environment, so this is verified by code review, not by
+  actually hearing it.

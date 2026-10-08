@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { playAmbient } from "../game/audio";
 
 export interface IntroSlide {
   image: string;
@@ -40,8 +41,18 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
 
   const slide = slides[index];
 
+  // The mount-time autoplay attempt in App.tsx has no real user gesture
+  // behind it, so strict browsers (mobile Safari, Chrome's autoplay
+  // heuristic) silently block it. Any actual tap here — even the "tap to
+  // skip" gesture — IS a real gesture, so retry here too; a no-op if it
+  // already succeeded, the thing that actually unlocks it if it didn't.
+  function handleTap() {
+    playAmbient();
+    onDone();
+  }
+
   return (
-    <div className="fixed inset-0 z-50 bg-black" onClick={onDone}>
+    <div className="fixed inset-0 z-50 bg-black" onClick={handleTap}>
       <img
         src={slide.image}
         alt=""
