@@ -5,8 +5,9 @@
 import { useGameStore } from "../src/game/store";
 import { WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
 import { gradeVerdict } from "../src/game/verdictGrading";
-import { isTopicReachable, validateInterpretation } from "../src/game/witnessEngine";
+import { getAuthorizedDisclosures, isTopicReachable, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
+import { validateDialogue } from "../api/witness-chat";
 
 let failures = 0;
 function assert(cond: boolean, msg: string) {
@@ -594,6 +595,81 @@ console.log("\n=== Playthrough 25: a witness does calm down, just not instantly 
     useGameStore.getState().demeanor.elena === "composed",
     "3 turns after the spike, the calmer state finally shows — de-escalation isn't suppressed forever, just delayed"
   );
+}
+
+// ── Playthrough 26: authorized disclosures reflect reality, not secrets ──
+console.log("\n=== Playthrough 26: getAuthorizedDisclosures never shows a secret before it's earned ===");
+{
+  useGameStore.getState().reset();
+  const tom = WITNESS_BY_ID.tom;
+  const state0 = useGameStore.getState();
+
+  const fresh = getAuthorizedDisclosures(tom, state0.witnessStages, state0.askCounts.tom, state0.discoveredEvidence, new Set());
+  const afterThatFresh = fresh.find((d) => d.topicId === "after_that")!;
+  assert(
+    afterThatFresh.stageIndex === 0 && !!afterThatFresh.text && afterThatFresh.text.includes("I went home"),
+    "Tom's baseline denial is authorized from the start — it's a legitimate answer, not a secret"
+  );
+  const knifeFresh = fresh.find((d) => d.topicId === "the_knife")!;
+  assert(
+    knifeFresh.stageIndex === -1 && knifeFresh.text === null,
+    "The confession is NOT authorized before its real prerequisites are met — knowing it isn't the same as being allowed to say it"
+  );
+
+  // A defensive lock overrides whatever would otherwise be reachable.
+  const locked = getAuthorizedDisclosures(tom, state0.witnessStages, state0.askCounts.tom, state0.discoveredEvidence, new Set(["after_that"]));
+  const afterThatLocked = locked.find((d) => d.topicId === "after_that")!;
+  assert(
+    afterThatLocked.locked && afterThatLocked.stageIndex === -1 && afterThatLocked.text === null,
+    "A defensive lock overrides authorization entirely, even for an otherwise-reachable stage"
+  );
+
+  // Build up to the real confession through the authored prerequisites and
+  // confirm it only becomes authorized once genuinely earned.
+  const { discoverEvidence, askWitness } = useGameStore.getState();
+  discoverEvidence("E07_tom_phone_records");
+  discoverEvidence("E01_knife");
+  discoverEvidence("E04_forensic_prelim");
+  askWitness("tom", "what did you do after you left");
+  askWitness("tom", "what happened between you and daniel");
+  askWitness("tom", "what really happened with the knife");
+  const advanced = useGameStore.getState();
+  const earned = getAuthorizedDisclosures(tom, advanced.witnessStages, advanced.askCounts.tom, advanced.discoveredEvidence, new Set());
+  const knifeEarned = earned.find((d) => d.topicId === "the_knife")!;
+  assert(
+    knifeEarned.stageIndex >= 1 && !!knifeEarned.text && knifeEarned.text.toLowerCase().includes("knife"),
+    "Once genuinely earned through the authored prerequisites, the confession IS authorized"
+  );
+}
+
+// ── Playthrough 27: validateDialogue catches leaks and invented authorization ──
+console.log("\n=== Playthrough 27: validateDialogue catches leaks and invented authorization ===");
+{
+  useGameStore.getState().reset();
+  const tom = WITNESS_BY_ID.tom;
+  const state = useGameStore.getState();
+  const authorized = getAuthorizedDisclosures(tom, state.witnessStages, state.askCounts.tom, state.discoveredEvidence, new Set());
+
+  const leaked = validateDialogue("Fine — he grabbed the knife and it accidentally stabbed him.", [], authorized);
+  assert(!leaked.ok && !!leaked.reason?.startsWith("leak_marker"), "A generated line that leaks an unauthorized secret is rejected, even with zero claimed factRefs");
+
+  const fakeFactRef = validateDialogue("I already told you what happened with the knife.", ["the_knife"], authorized);
+  assert(!fakeFactRef.ok && fakeFactRef.reason === "unauthorized_factref:the_knife", "A claimed factRef for a not-yet-authorized topic is rejected");
+
+  // A locked topic is never in the authorized set at all (see
+  // witnessEngine.ts's getAuthorizedDisclosures), so a factRef claiming it
+  // is caught by the exact same "unauthorized_factref" path as any other
+  // not-currently-authorized topic — no partial credit while locked,
+  // and no separate special case needed to guarantee that.
+  const lockedState = getAuthorizedDisclosures(tom, state.witnessStages, state.askCounts.tom, state.discoveredEvidence, new Set(["after_that"]));
+  const onLocked = validateDialogue("I went home, like I said.", ["after_that"], lockedState);
+  assert(!onLocked.ok && onLocked.reason === "unauthorized_factref:after_that", "A factRef on a locked topic is rejected — being locked just means it's never in the authorized set");
+
+  const empty = validateDialogue("   ", [], authorized);
+  assert(!empty.ok && empty.reason === "empty_dialogue", "Empty generated dialogue is rejected, never displayed as a blank line");
+
+  const valid = validateDialogue("I went straight home, same as I told you before.", ["after_that"], authorized);
+  assert(valid.ok, "A dialogue line that stays within authorized content and cites it correctly passes validation");
 }
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);

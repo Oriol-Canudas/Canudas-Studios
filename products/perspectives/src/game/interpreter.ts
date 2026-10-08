@@ -1,12 +1,21 @@
 // ─────────────────────────────────────────────────────────────────────────
-// Free-text interpretation for the Tom conversation scene.
+// Free-text conversation for Tom.
 //
-// Two paths share one contract (InterpretationResult): a deterministic,
-// zero-dependency fallback that always works, and an AI-backed path that
-// calls the server-side /api/witness-chat endpoint. Both are run through
-// validateInterpretation() in witnessEngine.ts before anything acts on
-// them — this module never gets to skip that check, by construction (it
-// doesn't have access to real game state to decide trust on its own).
+// Two paths share one contract: a deterministic, zero-dependency fallback
+// that always works (interpretDeterministic — classification only, no
+// dialogue), and an AI-backed path (converseWithTom) that calls the
+// server-side /api/witness-chat "converse" action, which both interprets
+// AND generates validated in-character dialogue in one round trip — see
+// that file for the full pipeline (interpret → authorize → generate →
+// validate).
+//
+// validateInterpretation() in witnessEngine.ts still runs on whatever
+// {intent, topicId, citedEvidenceIds} comes back from EITHER path before
+// anything acts on it — this module never gets to skip that check. The
+// server has already validated the generated DIALOGUE itself before
+// returning it (or substituted its own safe fallback); the client's job
+// is only to decide whether that dialogue is usable here (same topic the
+// client independently resolved to — see store.ts's runFreeformTurn).
 //
 // If the AI call fails for ANY reason (no key configured, network error,
 // malformed response, timeout) this silently degrades to the deterministic
@@ -17,8 +26,9 @@
 import type { EvidenceId, InterpretationResult, PerformanceCue, TurnEventKind, WitnessConfig } from "./types";
 import { matchTopic } from "./witnessEngine";
 
-const REQUEST_TIMEOUT_MS = 12000;
+const REQUEST_TIMEOUT_MS = 15000;
 const MAX_MESSAGE_CHARS = 600;
+const MAX_HISTORY_MESSAGES = 10;
 
 const ACCUSATION_MARKERS = [
   "kill",
@@ -36,6 +46,8 @@ const ACCUSATION_MARKERS = [
   "admit it",
   "you stabbed",
   "you killed him",
+  "coward",
+  "cobard",
   "ho vas matar",
   "vas matar",
   "mens",
@@ -109,12 +121,6 @@ export function interpretDeterministic(ctx: InterpretContext): InterpretationRes
   return { intent, topicId: topic?.id ?? null, citedEvidenceIds, confidence: topic ? 0.55 : 0.3 };
 }
 
-export interface InterpretOutcome {
-  result: InterpretationResult;
-  source: "ai" | "fallback";
-  diagnostics?: { latencyMs: number; model?: string };
-}
-
 async function fetchJsonWithTimeout(url: string, body: unknown, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
@@ -130,47 +136,24 @@ async function fetchJsonWithTimeout(url: string, body: unknown, timeoutMs: numbe
   }
 }
 
-/** Attempts the live AI interpretation; always falls back silently to the deterministic path on any failure. */
-export async function interpretMessage(ctx: InterpretContext, aiEnabled: boolean): Promise<InterpretOutcome> {
-  if (!aiEnabled) return { result: interpretDeterministic(ctx), source: "fallback" };
-
-  const started = Date.now();
-  try {
-    const res = await fetchJsonWithTimeout(
-      "/api/witness-chat",
-      {
-        action: "interpret",
-        witnessId: ctx.witness.id,
-        message: ctx.rawText.slice(0, MAX_MESSAGE_CHARS),
-        topics: ctx.witness.topics.map((t) => ({ id: t.id, chipLabel: t.chipLabel })),
-        knownEvidenceIds: ctx.knownEvidenceIds,
-        evidenceTitles: ctx.evidenceTitles,
-      },
-      REQUEST_TIMEOUT_MS
-    );
-    if (!res.ok) throw new Error(`interpret http ${res.status}`);
-    const data = await res.json();
-    if (typeof data?.intent !== "string") throw new Error("malformed interpretation payload");
-    return {
-      result: data as InterpretationResult,
-      source: "ai",
-      diagnostics: { latencyMs: Date.now() - started, model: data._model },
-    };
-  } catch {
-    return { result: interpretDeterministic(ctx), source: "fallback" };
-  }
+export interface ConverseContext {
+  witness: WitnessConfig;
+  rawText: string;
+  /** Recent chat history, oldest first — gives the model enough to understand "why?" or "what do you mean?". */
+  history: { role: string; text: string }[];
+  knownEvidenceIds: EvidenceId[];
+  evidenceTitles: Record<string, string>;
+  /** This witness's own topicId -> stage map and ask counts — raw inputs the server re-derives authorization from, never trusted as already-unlocked. */
+  witnessStages: Record<string, number>;
+  askCounts: Record<string, number>;
+  defensiveTopicIds: string[];
 }
 
-export interface PerformContext {
-  witnessId: string;
-  authoredText: string;
-  eventKind: TurnEventKind;
-  recentHistory: { role: string; text: string }[];
-}
-
-export interface PerformOutcome {
-  text: string;
-  cue?: PerformanceCue;
+export interface ConverseOutcome {
+  result: InterpretationResult;
+  /** Validated, ready-to-display dialogue from the model — null if unavailable (fallback path, or the server itself had to substitute its own safe text, which it returns here already). */
+  dialogue: string | null;
+  cue: PerformanceCue | null;
   source: "ai" | "fallback";
 }
 
@@ -182,35 +165,66 @@ const DEFAULT_CUES: Partial<Record<TurnEventKind, PerformanceCue>> = {
   no_change: undefined,
 };
 
+/** The authored fallback cue for a given event kind, when no generated one is available. */
+export function defaultCueFor(eventKind: TurnEventKind): PerformanceCue | undefined {
+  return DEFAULT_CUES[eventKind];
+}
+
 /**
- * The model's ONLY creative latitude here is the short action cue — the
- * dialogue text itself stays the authored line verbatim, always. This is
- * a deliberate, narrower scope than full free-generation of Tom's replies:
- * it can't be safely verified without a real key to test against (see
- * DECISIONS.md), so this iteration keeps the content boundary hard and
- * only asks the model to add stage direction, not to rewrite testimony.
+ * Attempts the live, context-aware conversation; always falls back
+ * silently to the deterministic classifier (and null dialogue, signaling
+ * "use the authored resolution text") on any failure. The server has
+ * already validated any dialogue it returns against what Tom is actually
+ * authorized to say right now — this function doesn't re-derive that, it
+ * only decides whether to trust the network call at all.
  */
-export async function performLine(ctx: PerformContext, aiEnabled: boolean): Promise<PerformOutcome> {
-  const fallbackCue = DEFAULT_CUES[ctx.eventKind];
-  if (!aiEnabled) return { text: ctx.authoredText, cue: fallbackCue, source: "fallback" };
+export async function converseWithTom(ctx: ConverseContext, aiEnabled: boolean): Promise<ConverseOutcome> {
+  if (!aiEnabled) {
+    return {
+      result: interpretDeterministic(ctx),
+      dialogue: null,
+      cue: null,
+      source: "fallback",
+    };
+  }
 
   try {
     const res = await fetchJsonWithTimeout(
       "/api/witness-chat",
       {
-        action: "perform",
-        witnessId: ctx.witnessId,
-        authoredText: ctx.authoredText,
-        eventKind: ctx.eventKind,
-        recentHistory: ctx.recentHistory.slice(-6),
+        action: "converse",
+        witnessId: ctx.witness.id,
+        message: ctx.rawText.slice(0, MAX_MESSAGE_CHARS),
+        history: ctx.history.slice(-MAX_HISTORY_MESSAGES),
+        topics: ctx.witness.topics.map((t) => ({ id: t.id, chipLabel: t.chipLabel })),
+        knownEvidenceIds: ctx.knownEvidenceIds,
+        evidenceTitles: ctx.evidenceTitles,
+        witnessStages: ctx.witnessStages,
+        askCounts: ctx.askCounts,
+        defensiveTopicIds: ctx.defensiveTopicIds,
       },
       REQUEST_TIMEOUT_MS
     );
-    if (!res.ok) throw new Error(`perform http ${res.status}`);
+    if (!res.ok) throw new Error(`converse http ${res.status}`);
     const data = await res.json();
-    if (typeof data?.action !== "string" && data?.action !== undefined) throw new Error("malformed cue payload");
-    return { text: ctx.authoredText, cue: { action: data?.action, pauseMs: fallbackCue?.pauseMs }, source: "ai" };
+    if (typeof data?.intent !== "string") throw new Error("malformed converse payload");
+    return {
+      result: {
+        intent: data.intent,
+        topicId: typeof data.topicId === "string" ? data.topicId : null,
+        citedEvidenceIds: Array.isArray(data.citedEvidenceIds) ? data.citedEvidenceIds : [],
+        confidence: 0.6,
+      },
+      dialogue: typeof data.dialogue === "string" && data.dialogue.trim() ? data.dialogue : null,
+      cue: typeof data.cue === "string" && data.cue.trim() ? { action: data.cue } : null,
+      source: "ai",
+    };
   } catch {
-    return { text: ctx.authoredText, cue: fallbackCue, source: "fallback" };
+    return {
+      result: interpretDeterministic(ctx),
+      dialogue: null,
+      cue: null,
+      source: "fallback",
+    };
   }
 }

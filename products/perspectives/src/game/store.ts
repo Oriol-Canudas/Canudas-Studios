@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { EVIDENCE, EVIDENCE_BY_ID, EVIDENCE_FACTS, REVELATIONS, WITNESS_BY_ID, WITNESSES } from "./caseData";
 import { track } from "./analytics";
 import { playSfx } from "./audio";
-import { interpretMessage, performLine } from "./interpreter";
+import { converseWithTom, defaultCueFor } from "./interpreter";
 import {
   getDefensiveLine,
   getDeflection,
@@ -489,9 +489,19 @@ type GetFn = () => GameState;
 /**
  * Shared by sendFreeformMessage and retryFreeformMessage — the player
  * bubble is already in chatHistory and pendingWitnesses is already set by
- * the caller; this does interpret -> validate -> resolve -> perform and
- * commits the result, or marks the turn failed without ever silently
- * advancing scene state (the brief's explicit requirement).
+ * the caller.
+ *
+ * converseWithTom gives the model real conversation history AND Tom's
+ * private character context, but the dialogue it returns has already been
+ * validated server-side against exactly what's currently authorized (see
+ * api/witness-chat.ts) — this function does NOT re-trust it blindly, it
+ * only ever uses it as an alternate DISPLAY TEXT. The actual STATE
+ * decision (does this topic advance, does a defensive lock get set or
+ * cleared, what board entries/demeanor result) still runs through the
+ * exact same validateInterpretation -> resolveFreeformTurn pipeline as
+ * before, untouched — the model proposes an interpretation and a
+ * performance, the deterministic engine remains the sole authority on
+ * what actually happened in the case.
  */
 async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, get: GetFn): Promise<void> {
   const witness = WITNESS_BY_ID[witnessId];
@@ -499,23 +509,35 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
     const preState = get();
     const knownEvidenceIds = Array.from(preState.discoveredEvidence);
     const evidenceTitles = Object.fromEntries(EVIDENCE.map((e) => [e.id, e.title]));
+    const history = preState.chatHistory[witnessId]
+      .filter((m) => m.role === "player" || m.role === "witness")
+      .slice(-10)
+      .map((m) => ({ role: m.role, text: m.text }));
 
-    const { result: proposed, source: interpretSource } = await interpretMessage(
-      { witness, rawText: text, knownEvidenceIds, evidenceTitles },
+    const outcome = await converseWithTom(
+      {
+        witness,
+        rawText: text,
+        history,
+        knownEvidenceIds,
+        evidenceTitles,
+        witnessStages: preState.witnessStages[witnessId],
+        askCounts: preState.askCounts[witnessId],
+        defensiveTopicIds: Array.from(preState.defensiveTopics[witnessId]),
+      },
       true
     );
-    const validated = validateInterpretation(proposed, witness, new Set(knownEvidenceIds));
+    const validated = validateInterpretation(outcome.result, witness, new Set(knownEvidenceIds));
 
     const stateForResolution = get();
     const resolution = resolveFreeformTurn(stateForResolution, witnessId, validated);
 
-    const recentHistory = stateForResolution.chatHistory[witnessId]
-      .slice(-6)
-      .map((m) => ({ role: m.role, text: m.text }));
-    const performed = await performLine(
-      { witnessId, authoredText: resolution.text, eventKind: resolution.eventKind, recentHistory },
-      true
-    );
+    // The server already validated this dialogue against what's actually
+    // authorized before ever sending it back — this client-side check is
+    // just "did we get one at all," not a re-derivation of that boundary.
+    const useGenerated = outcome.source === "ai" && outcome.dialogue !== null;
+    const finalText = useGenerated ? outcome.dialogue! : resolution.text;
+    const finalCue = useGenerated ? (outcome.cue ?? defaultCueFor(resolution.eventKind)) : defaultCueFor(resolution.eventKind);
 
     const latest = get();
 
@@ -531,10 +553,10 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
 
     const witnessMessage: ChatMessage = {
       role: "witness",
-      text: performed.text,
+      text: finalText,
       topicId: resolution.topicId ?? undefined,
-      cue: performed.cue,
-      source: interpretSource === "ai" || performed.source === "ai" ? "ai" : "fallback",
+      cue: finalCue,
+      source: useGenerated ? "ai" : "fallback",
     };
 
     track("freeform_turn_resolved", {
@@ -542,8 +564,8 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
       intent: validated.intent,
       topicId: validated.topicId,
       eventKind: resolution.eventKind,
-      interpretSource,
-      performSource: performed.source,
+      source: outcome.source,
+      usedGeneratedDialogue: useGenerated,
     });
 
     set({

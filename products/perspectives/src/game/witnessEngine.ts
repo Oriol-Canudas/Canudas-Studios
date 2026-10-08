@@ -140,6 +140,49 @@ export function isRevelationKnown(revelation: RevelationDef, allStages: AllWitne
   return (allStages[witness]?.[topic] ?? -1) >= minStage;
 }
 
+export interface AuthorizedDisclosure {
+  topicId: string;
+  chipLabel: string;
+  /** Furthest stage currently reachable, -1 if nothing on this topic is reachable yet. */
+  stageIndex: number;
+  /** The authored text at that stage — the actual content Tom is allowed to convey right now. Null when stageIndex is -1. */
+  text: string | null;
+  /** True if an unsupported accusation has locked this topic — overrides stageIndex: evade, don't discuss, even if something was technically reachable. */
+  locked: boolean;
+}
+
+/**
+ * The knowledge/permission boundary, made explicit and computable: for
+ * every topic this witness has, what are they CURRENTLY authorized to
+ * actually say, independent of what the character privately knows. This
+ * is what a dialogue-generation prompt gets to work with — never the raw
+ * ground truth, never "what Tom knows," only "what's authorized right
+ * now." Uses the exact same `resolveStage` math everything else in this
+ * engine already goes through; this isn't a parallel gating system, it's
+ * a read-only snapshot of the existing one.
+ */
+export function getAuthorizedDisclosures(
+  witness: WitnessConfig,
+  allStages: AllWitnessStages,
+  askCounts: Record<string, number>,
+  discoveredEvidence: Set<EvidenceId>,
+  defensiveTopics: ReadonlySet<string>
+): AuthorizedDisclosure[] {
+  return witness.topics.map((topic) => {
+    const prevStage = allStages[witness.id]?.[topic.id] ?? -1;
+    const askCount = askCounts[topic.id] ?? 0;
+    const stageIndex = resolveStage(topic, prevStage, askCount, discoveredEvidence, allStages);
+    const locked = defensiveTopics.has(topic.id);
+    return {
+      topicId: topic.id,
+      chipLabel: topic.chipLabel,
+      stageIndex: locked ? -1 : stageIndex,
+      text: locked || stageIndex < 0 ? null : topic.stages[stageIndex].text,
+      locked,
+    };
+  });
+}
+
 /** Which of this witness's topics the given evidence is authored to speak to, if any. */
 export function topicForEvidence(witness: WitnessConfig, evidenceId: EvidenceId): TestimonyTopic | null {
   for (const topic of witness.topics) {
