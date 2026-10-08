@@ -3,7 +3,7 @@
 // would, and asserts the ground-truth-consistency invariants from the brief.
 
 import { useGameStore } from "../src/game/store";
-import { WITNESS_BY_ID } from "../src/game/caseData";
+import { WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
 import { gradeVerdict } from "../src/game/verdictGrading";
 import { isTopicReachable, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
@@ -522,6 +522,17 @@ await (async () => {
   presentEvidence("tom", "E07_tom_phone_records", 0);
   assert(!useGameStore.getState().defensiveTopics.tom.has("after_that"), "Presenting real evidence through the picker also lifts the lock");
 })();
+
+// ── Playthrough 23: every witness's baseline demeanor has an image ───────
+console.log("\n=== Playthrough 23: emotion-reveal data is complete for each baseline ===");
+{
+  for (const w of WITNESSES) {
+    assert(
+      Boolean(w.demeanorImages?.[w.baselineDemeanor]),
+      `${w.name}'s baseline demeanor ("${w.baselineDemeanor}") has a mapped portrait, so the intro reveal never shows a gap`
+    );
+  }
+}
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

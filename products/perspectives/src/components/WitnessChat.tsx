@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isRevelationKnown, isTopicReachable } from "../game/witnessEngine";
-import type { EvidenceId, QuestionTone, RevelationId, WitnessId } from "../game/types";
+import type { Demeanor, EvidenceId, QuestionTone, RevelationId, WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
 import TypewriterText from "./TypewriterText";
 import TypingIndicator from "./TypingIndicator";
 import EvidencePicker from "./EvidencePicker";
 import RelayPicker from "./RelayPicker";
+import EmotionReveal from "./EmotionReveal";
 
 const MAX_VISIBLE_CHIPS = 3;
 
@@ -57,6 +58,13 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
   const [evidencePickerOpen, setEvidencePickerOpen] = useState(false);
   const [relayPickerOpen, setRelayPickerOpen] = useState(false);
+  // Shows once on open (an "establishing shot" of their current state) and
+  // again whenever demeanor actually changes mid-conversation — never on
+  // every line. WitnessChat remounts per witness (App.tsx unmounts it when
+  // you go back), so seeding this from currentDemeanor at mount is exactly
+  // the "show current state on open" behavior, for free.
+  const [activeReveal, setActiveReveal] = useState<Demeanor | null>(currentDemeanor);
+  const prevDemeanorRef = useRef(currentDemeanor);
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const prevLenRef = useRef(messages.length);
@@ -73,6 +81,13 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
     openWitness(witnessId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [witnessId]);
+
+  useEffect(() => {
+    if (currentDemeanor !== prevDemeanorRef.current) {
+      prevDemeanorRef.current = currentDemeanor;
+      setActiveReveal(currentDemeanor);
+    }
+  }, [currentDemeanor]);
 
   // When a new witness line appears, hold it behind a brief "typing" beat
   // — longer for a line carrying a dramatic cue (a considered pause before
@@ -366,6 +381,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
       {relayPickerOpen && (
         <RelayPicker options={availableRelays} witnessId={witnessId} onRelay={handleRelay} onClose={() => setRelayPickerOpen(false)} />
       )}
+      {activeReveal && <EmotionReveal witness={witness} demeanor={activeReveal} onDone={() => setActiveReveal(null)} />}
     </div>
   );
 }

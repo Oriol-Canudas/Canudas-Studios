@@ -437,3 +437,51 @@ Catalan phrasing hook, and chips respecting the defensive lock. All pass.
 unavailable in this environment — the rendered scene (composer, loading/
 retry states, performance-cue timing, mobile keyboard behavior) has NOT
 been visually verified, same caveat as every round this session.
+
+## Emotional-state portraits (2026-10-08)
+
+Oriol's request: make demeanor changes visually cinematic (a face, not just
+a badge), for both the deterministic engine and the AI scene, not on every
+message. Decisions made while building it:
+
+- **Only authored states get an image — never pad to hit a round number.**
+  Oriol said "3–5 key emotions"; Marco only authors 2 demeanor states in
+  the actual case data, Julia only ever authors 1 (she never changes).
+  Generating images for demeanor values a witness never actually reaches
+  would be wasted work and an invitation for the data to drift out of
+  sync with the real content. `demeanorImages`/`demeanorLines` are
+  `Partial<Record<Demeanor, ...>>` precisely so "no entry" is a normal,
+  expected state, not a gap to paper over — the component falls back to
+  the witness's base portrait, never a broken image.
+- **Identity-anchored generation, not independent generations.** Each new
+  portrait was generated via `images_generate` with the witness's
+  *existing* portrait passed as a `type: "image"` reference, rather than
+  re-describing the character from scratch per emotion. Independent
+  generations from a text prompt alone tend to drift — different nose,
+  different exact skin tone, etc. — which would have undermined "this is
+  the same person, just a different moment," the entire point of the
+  feature. Reviewed all 11 outputs visually before committing any of them;
+  no regeneration was needed, the reference anchoring worked well on the
+  first pass.
+- **The reveal is driven by the same `demeanor[witnessId]` state every
+  interaction path already writes to** — `askWitness`, `presentEvidence`,
+  `relayRevelation`, and Tom's `sendFreeformMessage` all update it
+  identically, and always did, even before this feature existed. That
+  meant wiring this into `WitnessChat.tsx` once covered all 5 witnesses
+  and both the deterministic and AI-driven paths for free — no per-witness
+  or per-mode special-casing was needed, which is exactly what "applies
+  to the deterministic part too" required.
+- **Reused `IntroSequence`'s visual language** (full-bleed portrait,
+  lower-third caption, auto-advance with tap-to-skip) for the new
+  `EmotionReveal` component instead of inventing a second cinematic
+  pattern — one established idiom for "a brief full-screen beat," used
+  consistently everywhere it appears in the app.
+- **Shown on open, and only on an actual state change — never per
+  message.** This was explicit in the request ("not in every message")
+  and matters mechanically too: a demeanor badge changing on nearly every
+  reply (it already does, per-stage) would make a full-screen interrupt
+  on every single one of those feel like a bug, not a feature. Gated on
+  comparing against the previous demeanor via a ref, not on message count.
+- Noted but not acted on this round: using similar visible "behavior
+  sign" language to make the live-AI-vs-fallback distinction even more
+  obvious to the player. Flagged for a future pass in PRODUCTION_LOG.md.

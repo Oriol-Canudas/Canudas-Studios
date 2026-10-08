@@ -275,6 +275,18 @@ export const WITNESSES: WitnessConfig[] = [
       "I know how this looks. I know. But that's not what happened.",
       "Ask me something else. I don't know what you want me to say.",
     ],
+    demeanorImages: {
+      guarded: "/portraits/elena.jpg",
+      defensive: "/portraits/elena_defensive.jpg",
+      composed: "/portraits/elena_composed.jpg",
+      shaken: "/portraits/elena_shaken.jpg",
+    },
+    demeanorLines: {
+      guarded: "She watches you carefully, measuring every question before she answers.",
+      defensive: "Her arms are crossed. She's decided you're not on her side.",
+      composed: "She's steadier now — still careful, but no longer bracing for a fight.",
+      shaken: "Something just cracked her composure. She didn't see that coming.",
+    },
     topics: [
       {
         id: "relationship",
@@ -410,6 +422,18 @@ export const WITNESSES: WitnessConfig[] = [
       "I don't see why that matters.",
       "I really don't think I can help you with that.",
     ],
+    demeanorImages: {
+      composed: "/portraits/sofia.jpg",
+      defensive: "/portraits/sofia_defensive.jpg",
+      nervous: "/portraits/sofia_nervous.jpg",
+      shaken: "/portraits/sofia_shaken.jpg",
+    },
+    demeanorLines: {
+      composed: "She holds herself together — poised, but watching you closely.",
+      defensive: "Caught in something. Her voice has gone clipped and careful.",
+      nervous: "Her hands won't quite settle. She's deciding how much to say.",
+      shaken: "Whatever you just told her landed hard.",
+    },
     topics: [
       {
         id: "relationship",
@@ -536,6 +560,20 @@ export const WITNESSES: WitnessConfig[] = [
       "That's not fair. You're putting words in my mouth.",
       "I've told you what I know. I'm not going to just agree with whatever you throw at me.",
     ],
+    demeanorImages: {
+      guarded: "/portraits/tom.jpg",
+      defensive: "/portraits/tom_defensive.jpg",
+      nervous: "/portraits/tom_nervous.jpg",
+      panicking: "/portraits/tom_panicking.jpg",
+      resigned: "/portraits/tom_resigned.jpg",
+    },
+    demeanorLines: {
+      guarded: "He's giving short answers, arms crossed, waiting to see where this goes.",
+      defensive: "He's decided this is an attack, and he's not giving any ground.",
+      nervous: "There's sweat on his brow now. He knows you're getting closer.",
+      panicking: "He's not composed anymore. Whatever's coming, he's bracing for it.",
+      resigned: "The fight's gone out of him. He's just telling you the truth now.",
+    },
     topics: [
       {
         id: "earlier_visit",
@@ -705,6 +743,14 @@ export const WITNESSES: WitnessConfig[] = [
       "I wasn't there. I can only tell you what I know about my brother.",
       "I've told you what I know.",
     ],
+    demeanorImages: {
+      composed: "/portraits/marco.jpg",
+      shaken: "/portraits/marco_shaken.jpg",
+    },
+    demeanorLines: {
+      composed: "Steady, measured — a man used to holding himself together.",
+      shaken: "This has gotten through to him. The composure is gone.",
+    },
     topics: [
       {
         id: "daniels_personality",
@@ -797,6 +843,12 @@ export const WITNESSES: WitnessConfig[] = [
       "Oh — I'm not sure about that one.",
       "I really couldn't say for certain.",
     ],
+    demeanorImages: {
+      composed: "/portraits/julia.jpg",
+    },
+    demeanorLines: {
+      composed: "Chatty and a little distracted — she talks like someone glad for the company.",
+    },
     topics: [
       {
         id: "what_heard",

@@ -10,16 +10,16 @@ what should happen next** without reconstructing context from chat history.
 Read [REVIEW_HANDOFF.md](REVIEW_HANDOFF.md) for Codex's prior playtest findings,
 acceptance criteria and the implementation/review exchange. Oriol has selected
 repository-based coordination: Claude implements, Codex reviews; one code editor
-at a time. **Both step 1 (integrity fixes) and step 2 (Tom's free-form
-conversation scene) are now implemented and self-tested — see "Claude result"
-in REVIEW_HANDOFF.md for the full, honest breakdown of what's verified vs.
-not.** Headline: the scene is fully built and works end-to-end in
-deterministic-fallback mode (no `OPENAI_API_KEY` exists in this environment —
-confirmed, see below); real OpenAI calls have NOT been live-tested. The older
-"Next build step" and "Open product questions" below describe the previous
-baseline; reconciled where still relevant. No automatic agent notification is
-configured — Oriol still needs to trigger Codex's review pass, and needs to
-set `OPENAI_API_KEY` in Vercel for the live-AI path to actually activate.
+at a time. **Step 1 (integrity fixes), step 2 (Tom's free-form conversation
+scene), and the live AI path are all implemented, deployed, and confirmed
+working.** Oriol set `OPENAI_API_KEY` and OpenAI billing after the initial
+build; the endpoint was then verified live from this session (real
+`gpt-4o-mini` responses for both the interpret and perform calls — see
+REVIEW_HANDOFF.md's "Claude result" for the original honest breakdown of
+what was/wasn't tested as of that writing; this line post-dates it). The
+older "Next build step" and "Open product questions" below describe the
+previous baseline; reconciled where still relevant. Oriol still needs to
+trigger Codex's review pass — no automatic agent notification is configured.
 
 ## Ownership
 
@@ -71,8 +71,14 @@ never permanent); a real evidence citation produces a limited, authored
 admission; empathy alone never unlocks anything. Built with a hard
 validation boundary between interpretation and committed state (see
 DECISIONS.md), a server-side OpenAI adapter (`api/witness-chat.ts`,
-inert without a key), and a deterministic fallback that is what actually
-runs today, end to end, with no key configured.
+confirmed live and working once Oriol set `OPENAI_API_KEY` and billing
+on OpenAI), and a deterministic fallback the scene silently degrades to
+on any AI failure; (6) **emotional-state portraits** — 11 new,
+identity-anchored expression portraits across the 5 witnesses, and a
+brief cinematic "establishing shot" (`EmotionReveal.tsx`) shown on
+opening a conversation and again on any real demeanor change — applies
+uniformly to both the deterministic engine and Tom's AI scene, since
+both already wrote to the same shared `demeanor` state.
 
 **Explicit scope call (Oriol, 2026-10-07):** go deep on this one case before
 going wide. Backlogged, not forgotten: RPG-style mastery/seniority
@@ -129,14 +135,16 @@ recognition + a conversational "talking avatar" witness.
 ## Current runnable state
 
 - `npm install && npm run dev` → http://localhost:5173 (or whichever port is free)
-- `npx tsx scripts/selftest.ts` → 75/75 assertions pass
+- `npx tsx scripts/selftest.ts` → 80/80 assertions pass
 - `npm run build` → clean; `npm run lint` → clean
 - Live at https://gamexperspectives.vercel.app, auto-deploys from `main`.
-- **No `OPENAI_API_KEY` is configured anywhere** (checked: not in the repo,
-  no `.env`, no Vercel CLI access in the dev environment to set one) — Tom's
-  scene runs entirely on the deterministic fallback right now. Setting that
-  key as a Vercel project environment variable is the one remaining step to
-  light up the live-AI path; nothing else needs to change.
+- **`OPENAI_API_KEY` is set as a Vercel Production environment variable**
+  (never in the repo/`.env` — Oriol set it via the dashboard) and
+  confirmed live: both the `interpret` and `perform` calls in
+  `api/witness-chat.ts` returned real `gpt-4o-mini` responses when
+  tested directly against the deployed endpoint. Tom's scene runs on
+  live AI by default now; it still degrades silently to the
+  deterministic fallback on any transient failure, by design.
 
 ## Current architecture
 
@@ -180,12 +188,15 @@ and must stay that way to avoid spoiling the case.
 - `src/game/verdictGrading.ts` — 3-outcome (correct/wrong/insufficient)
   grading per axis, plus the authored reveal notes per verdict choice.
 - `src/game/demeanor.ts` — demeanor display styling.
-- `public/portraits/*.jpg`, `public/scenes/*.jpg`, `public/audio/*.mp3` —
-  generated assets (keep these small — see DECISIONS.md; images were 26MB
-  and the ambient track 6MB before resizing/re-encoding).
+- `public/portraits/*.jpg` (16 total: 5 base + 11 emotion variants),
+  `public/scenes/*.jpg`, `public/audio/*.mp3` — generated assets (keep
+  these small — see DECISIONS.md; images were 26MB and the ambient track
+  6MB before resizing/re-encoding; the emotion variants came back
+  correctly sized this time, ~15KB each).
 - `src/game/audio.ts` — SFX/ambient; guarded for the Node-based self-test.
 - `src/components/CharacterDossier.tsx`, `IntroSequence.tsx`,
-  `EvidencePicker.tsx`, `RelayPicker.tsx` — full-screen/overlay experiences.
+  `EvidencePicker.tsx`, `RelayPicker.tsx`, `EmotionReveal.tsx` —
+  full-screen/overlay experiences.
 - `src/game/interpreter.ts` — free-text interpretation for Tom: deterministic
   fallback + the client side of the AI call, always degrading silently.
 - `api/witness-chat.ts` — the server-side OpenAI adapter. Reads
@@ -210,23 +221,24 @@ and must stay that way to avoid spoiling the case.
 
 ## Next build step
 
-Three tracks are queued; which goes first is Oriol's call.
+Two tracks are queued; which goes first is Oriol's call.
 
-**A. Verify the AI path for real.** Needs `OPENAI_API_KEY` set as a Vercel
-project environment variable (Oriol's action — no dashboard/CLI access from
-this environment). Once set: play the deployed scene, confirm `source: "ai"`
-appears in messages instead of `"fallback"`, check the Vercel function logs
-for the latency/token diagnostics `api/witness-chat.ts` already emits, and
-validate the "perform" pass's cue quality feels right before considering any
-expansion of the model's creative scope.
+**A. ~~Verify the AI path for real.~~ Done (2026-10-08).** `OPENAI_API_KEY`
+is set and confirmed live. Still worth doing when Oriol has time: a real
+playthrough watching for `source: "ai"` vs `"fallback"` in practice, and
+checking the Vercel function logs for the latency/token diagnostics
+`api/witness-chat.ts` emits, to get a real sense of cost/latency per turn
+before considering any expansion of the model's creative scope (see
+DECISIONS.md on why dialogue generation itself is still deferred).
 
-**B. Rest of the visual/UX ranked list** (items 5–8, since 1–4 are done):
+**B. Rest of the visual/UX ranked list**: "Living portraits" (item 2) is
+now done — in a bigger form than originally scoped (full distinct
+emotion portraits via `EmotionReveal`, not a subtle glow/desaturate
+treatment on one static image). Remaining:
 1. Cinematic reveal — rebuild `RevealScreen.tsx` as a portrait-led
    walkthrough instead of a text wall.
-2. Living portraits — subtle demeanor-driven visual feedback on the
-   portrait images themselves.
-3. Key-line voice acting.
-4. Transition polish.
+2. Key-line voice acting.
+3. Transition polish.
 
 **C. General belief propagation beyond Tom's scene** — the relay system
 (Section "investigation-integrity pass" below) already generalizes

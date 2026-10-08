@@ -155,6 +155,17 @@ export interface WitnessConfig {
    * Witnesses without this never enter the accusation/defensive mechanic.
    */
   defensiveLines?: string[];
+  /**
+   * Portrait variant per emotional state, for the cinematic reveal
+   * (conversation intro + mid-conversation state changes). Deliberately
+   * sparse — only the states a witness actually reaches in the authored
+   * data get a dedicated image; `baselineDemeanor` should always have one
+   * (usually `portraitImage` itself). A state with no entry here falls
+   * back to the nearest one already shown, never a broken image.
+   */
+  demeanorImages?: Partial<Record<Demeanor, string>>;
+  /** One-line behavior description shown alongside a demeanorImages portrait — "what you'd notice if you looked up right now," not plot information. */
+  demeanorLines?: Partial<Record<Demeanor, string>>;
 }
 
 export type ResponsibleParty = "elena" | "sofia" | "tom" | "someone_else" | "insufficient_evidence";

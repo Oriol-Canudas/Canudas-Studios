@@ -569,3 +569,74 @@ Current limitations / next step
 - Free-form conversation is Tom-only; other witnesses are unchanged.
   Extending it further, and whether to widen the model's dialogue scope,
   are both open product questions for Oriol.
+
+---
+
+## 2026-10-08 — Emotional-state portraits: the cinematic reveal
+
+What changed
+- **New, generated portraits** for each witness's key emotional states —
+  Elena (guarded/defensive/composed/shaken, 4), Sofia (composed/defensive/
+  nervous/shaken, 4), Tom (his full 5-state arc: guarded/defensive/nervous/
+  panicking/resigned), Marco (composed/shaken, 2 — all he authored has),
+  Julia (composed only — she never shifts in the data, so no new image
+  was generated for her; her existing portrait already covers it). 11 new
+  images total, generated via Magnific anchored to each witness's existing
+  portrait as an identity reference (`images_generate` with a `type:
+  "image"` reference), so the same face carries across every expression
+  rather than drifting between independent generations. Reviewed all 11
+  visually before committing — consistent identity, clearly distinct,
+  readable expressions. Resized to match the existing 500×500 JPEG
+  portrait convention (~12–19KB each, ~280KB total for all 16 portraits
+  combined).
+- **New `EmotionReveal` component**: a brief full-screen "establishing
+  shot" — the witness's portrait for their current state, the state name,
+  and a one-line behavior description (e.g. "Her arms are crossed. She's
+  decided you're not on her side.") — shown once when a conversation
+  opens, and again whenever their demeanor *actually changes*
+  mid-conversation. Explicitly not on every line — only on a real state
+  transition. Auto-advances after ~2.2s, tap anywhere to skip sooner,
+  reusing `IntroSequence`'s established visual language instead of
+  inventing a second cinematic idiom.
+- **Applies to all 5 witnesses, both conversation modes** — this reads
+  directly off the existing `demeanor[witnessId]` store state, which
+  every interaction path already updates identically (`askWitness`,
+  `presentEvidence`, `relayRevelation`, and Tom's `sendFreeformMessage`
+  all go through it), so no witness- or mode-specific wiring was needed
+  beyond authoring the image/line data itself.
+
+Why
+- Direct product request from Oriol after playing the Tom scene: make
+  emotional state changes visible and cinematic, not just a small text
+  badge, and make sure it applies to the deterministic engine too, not
+  only the AI-driven scene.
+
+Files
+- New: `src/components/EmotionReveal.tsx`,
+  `public/portraits/{elena,sofia,tom,marco}_*.jpg` (11 files)
+- Extended: `src/game/types.ts` (`demeanorImages`, `demeanorLines` on
+  `WitnessConfig`), `caseData.ts` (populated per witness),
+  `WitnessChat.tsx` (mount + demeanor-change detection and the overlay)
+
+How to test
+- `npm run dev` or the live Vercel URL — open any witness, confirm the
+  establishing shot appears; press a witness through a real demeanor
+  change (e.g. Tom: accuse without evidence, then confront with phone
+  records) and confirm the reveal re-appears with the new state, not on
+  every line in between.
+- `npx tsx scripts/selftest.ts` → 80/80 (grew from 75) — added a
+  regression guard that every witness's baseline demeanor has a mapped
+  portrait, so the intro reveal can never show a gap.
+
+Current limitations / next step
+- Only the states each witness actually reaches in the authored data got
+  a dedicated image — any demeanor without one falls back to the
+  witness's base portrait rather than a broken image, by design, not an
+  oversight.
+- Browser automation still unavailable in this environment — the actual
+  rendered reveal (timing, portrait framing, skippability) has not been
+  visually verified live, same caveat as every round this session.
+- Oriol also flagged, for a future round: making the existing "live AI
+  vs. guided matching" distinction even more visible using similar
+  behavior-sign language. Noted, not acted on this round — the existing
+  action-cue text and the fallback banner already partially cover it.
