@@ -41,7 +41,13 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const prevLenRef = useRef(messages.length);
+  // Whether the player is currently parked at (or near) the bottom of the
+  // scroll area. Read inside the ResizeObserver below so a reply growing
+  // character-by-character never fights someone who scrolled up to reread
+  // earlier testimony.
+  const stickToBottomRef = useRef(true);
 
   const busy = typingIndex !== null || animatingIndex !== null;
 
@@ -74,7 +80,39 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   }, [messages.length]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    const el = scrollRef.current;
+    if (!el) return;
+    function onScroll() {
+      stickToBottomRef.current = el!.scrollHeight - el!.scrollTop - el!.clientHeight < 80;
+    }
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // A plain effect on `messages`/`animatingIndex` only fires once per state
+  // change, not per character — so as TypewriterText grows a long reply,
+  // the tail of it sat below the fold until the whole animation finished.
+  // Watching the content's actual height instead keeps it pinned to the
+  // bottom the entire time text is being "typed," not just at the start
+  // and end of it. `behavior: "auto"` (not "smooth") avoids the animation
+  // fighting itself on every tiny growth tick.
+  useEffect(() => {
+    const content = contentRef.current;
+    const scroller = scrollRef.current;
+    if (!content || !scroller) return;
+    const observer = new ResizeObserver(() => {
+      if (stickToBottomRef.current) {
+        scroller.scrollTo({ top: scroller.scrollHeight, behavior: "auto" });
+      }
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (stickToBottomRef.current) {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }
   }, [messages, typingIndex, animatingIndex]);
 
   function send(text: string, topicId?: string) {
@@ -117,12 +155,12 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
         <DemeanorBadge demeanor={currentDemeanor} />
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#0a0a0d] px-4 py-4">
         <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-3.5 text-base leading-relaxed text-white/60">
           {witness.context}
         </div>
 
-        <div className="space-y-3">
+        <div ref={contentRef} className="space-y-3">
           {messages.map((m, i) => {
             if (i === typingIndex) {
               return (
@@ -165,7 +203,10 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
         </div>
       </div>
 
-      <div className="border-t border-white/10 bg-black/40 px-3 pb-3 pt-2">
+      {/* A subtly lighter, warm-tinted panel — distinguishes "how you ask"
+          (chips + input) from "what was said" (the conversation above),
+          which otherwise read as one continuous dark surface. */}
+      <div className="border-t border-white/10 bg-[#171319] px-3 pb-3 pt-2">
         <div className="mb-2 flex flex-wrap gap-2">
           {visibleTopics.map((t) => {
             const asked = (witnessStages[witnessId][t.id] ?? -1) >= 0;

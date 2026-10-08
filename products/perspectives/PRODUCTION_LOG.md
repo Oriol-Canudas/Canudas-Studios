@@ -388,3 +388,49 @@ Current limitations / next step
   if Oriol wants it to have a real mechanical effect later.
 - Not every topic got a hand-sharpened label — the clearly confrontational
   ones were prioritized; purely factual topics kept their original wording.
+
+---
+
+## 2026-10-08 — Round 2 UX fixes: scroll-while-typing, panel contrast, evidence status
+
+What changed
+- **Scroll-while-typing bug fixed**: the auto-scroll used to only fire once
+  per message/animation state change, not per character — so a long
+  witness reply being typed out could grow past the bottom of the
+  visible area and sit there until the whole animation finished (reads
+  as "lagging" / "text disappearing"). Replaced with a `ResizeObserver`
+  on the message list that keeps the view pinned to the bottom the
+  entire time text is being typed, gated by whether the player is
+  already near the bottom (so scrolling up to reread isn't fought).
+- **Conversation vs. controls contrast**: the message history and the
+  chip-row/input footer used to be the same near-black tone, reading as
+  one continuous surface. The footer now sits on a subtly lighter panel
+  (`#171319`) so "how you ask" is visually distinct from "what was
+  said" — intentionally subtle, not a hard divider.
+- **Evidence status redesign**: "Locked" read as permanently
+  unavailable, which fought its own "tap to request" subtitle. Renamed
+  to a cool-toned "🔎 Request" badge (dashed sky-blue card) that reads as
+  "available, not yet pulled," not "forbidden." Requesting a document now
+  plays a brief flash/glow "discover" beat (480ms) on the card before its
+  detail sheet opens, instead of request-and-open happening in the same
+  instant. New/Read badges unchanged — Oriol liked those already.
+
+Why
+- Second round of direct playtest feedback from Oriol on the integrity-
+  pass build.
+
+Files
+- `src/components/WitnessChat.tsx`, `EvidenceScreen.tsx`
+
+How to test
+- `npm run dev` or the live Vercel URL — ask a witness something with a
+  long reply and confirm the view stays pinned to the bottom throughout
+  the typing animation, not just at the end; request a locked evidence
+  card and watch for the discover flash before the sheet opens.
+- `npx tsx scripts/selftest.ts` → still 49/49 (UI-only changes, no engine
+  logic touched).
+
+Current limitations / next step
+- Browser automation still unavailable in this environment — these fixes
+  are verified by code review and the self-test suite, not by actually
+  watching the animation in a browser. Worth a real check on Oriol's end.
