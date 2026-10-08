@@ -534,5 +534,67 @@ console.log("\n=== Playthrough 23: emotion-reveal data is complete for each base
   }
 }
 
+// ── Playthrough 24: demeanor has hysteresis — escalates fast, cools slowly ──
+console.log("\n=== Playthrough 24: mood doesn't flicker with every topic switch ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness, discoverEvidence } = useGameStore.getState();
+  discoverEvidence("E07_tom_phone_records");
+  discoverEvidence("E08_garage_access_log");
+  discoverEvidence("E01_knife");
+  discoverEvidence("E04_forensic_prelim");
+
+  assert(useGameStore.getState().demeanor.tom === "guarded", "Starts at baseline");
+
+  // Turn 1: a real escalation (guarded -> defensive) — must apply immediately.
+  askWitness("tom", "what did you do after you left");
+  assert(useGameStore.getState().demeanor.tom === "defensive", "A genuine escalation lands on the very next turn, no delay");
+
+  // Turns 2–3: these topics' authored demeanor ("nervous") is CALMER than
+  // "defensive" — a de-escalation attempt right after a spike. With only
+  // 1–2 turns elapsed since the spike, it must stay suppressed: the
+  // witness should still visibly read as "defensive," not flicker back
+  // down to "nervous" and then possibly back up again.
+  askWitness("tom", "did you see anyone when you got there");
+  assert(
+    useGameStore.getState().demeanor.tom === "defensive",
+    "A calmer proposal 1 turn after a spike is held back, not applied — this is the fix for the reported flickering"
+  );
+  askWitness("tom", "did you go up to his apartment");
+  assert(
+    useGameStore.getState().demeanor.tom === "defensive",
+    "Still held back 2 turns after the spike — cooldown is 3 turns"
+  );
+
+  // Turn 4 asks about a topic whose authored demeanor is "defensive" again
+  // (same tier, a no-op either way) — turn 5 is the confession, a real
+  // escalation to "panicking," which must land immediately regardless of
+  // the cooldown clock, exactly like turn 1 did.
+  askWitness("tom", "what happened between you and daniel");
+  askWitness("tom", "what really happened with the knife");
+  assert(useGameStore.getState().demeanor.tom === "panicking", "A later genuine escalation still lands immediately, cooldown or not");
+}
+
+// ── Playthrough 25: de-escalation DOES eventually happen, not stuck forever ──
+console.log("\n=== Playthrough 25: a witness does calm down, just not instantly ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness } = useGameStore.getState();
+
+  askWitness("elena", "what was your relationship with daniel"); // turn 1, guarded — no change
+  askWitness("elena", "what happened during the argument"); // turn 2, defensive — escalation, applies now
+  assert(useGameStore.getState().demeanor.elena === "defensive", "Escalates to defensive right away");
+
+  askWitness("elena", "why are your prints on the knife"); // turn 3, proposes guarded (calmer) — held back
+  assert(useGameStore.getState().demeanor.elena === "defensive", "1 turn after the spike: still held");
+  askWitness("elena", "what time did you leave"); // turn 4, proposes composed (calmer) — still held
+  assert(useGameStore.getState().demeanor.elena === "defensive", "2 turns after the spike: still held");
+  askWitness("elena", "did you see sofia or tom after you left"); // turn 5, proposes composed again — cooldown elapsed
+  assert(
+    useGameStore.getState().demeanor.elena === "composed",
+    "3 turns after the spike, the calmer state finally shows — de-escalation isn't suppressed forever, just delayed"
+  );
+}
+
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);

@@ -485,3 +485,43 @@ message. Decisions made while building it:
 - Noted but not acted on this round: using similar visible "behavior
   sign" language to make the live-AI-vs-fallback distinction even more
   obvious to the player. Flagged for a future pass in PRODUCTION_LOG.md.
+
+## Demeanor hysteresis (2026-10-08)
+
+Oriol's report: mood was changing on nearly every question — not
+natural. His explicit spec: fast to escalate (a pointed question can
+flip it immediately), slow to calm down (~3-4 turns on average), no
+flickering back and forth.
+
+- **Picked 3 turns, not a range.** "Average 3-4" could mean a fixed
+  value, a random jitter, or a range band. A fixed, predictable 3-turn
+  cooldown is simpler to reason about, test, and tune later than
+  randomizing it — and it's an avg-matching value (comfortably inside
+  "3-4"), not a guess. If 3 turns reads as too fast or slow once
+  actually played, it's a single constant
+  (`DEMEANOR_COOLDOWN_TURNS`) to adjust, not a redesign.
+- **A fixed severity ranking, not per-stage authored "is this escalation"
+  flags.** Considered hand-tagging every stage's demeanor transition as
+  escalating/de-escalating/neutral, which would let each author exactly
+  pick the behavior per moment — but that's meaningfully more authoring
+  surface for marginal gain here, since a simple ordered scale
+  (`composed < guarded/resigned < nervous < defensive < shaken <
+  panicking`) already captures the real cases in this case's data
+  correctly (verified: Tom's actual arc, Elena's, Sofia's all resolve
+  sensibly under it — see `scripts/selftest.ts` Playthroughs 24-25).
+  `resigned` sits with the mid-tier states deliberately — it's quiet
+  defeat after panic, not a return to calm, so it shouldn't read as
+  "composed" by the cooldown logic.
+- **"Turn" = a question that actually matched a live topic.** Off-topic/
+  deflected asks and presenting evidence that doesn't match anything
+  don't advance the cooldown clock. This was a scope call, not a
+  rigorous derivation — counting every player action (including
+  deflections) was the alternative, but topic-matched questions are the
+  cleaner, more defensible definition of "a real exchange happened."
+- **Found a real gap while implementing, fixed it in the same pass**: an
+  unsupported accusation previously never touched demeanor at all — only
+  a subsequent authored stage advance (if any) did. That directly
+  contradicted "if a user asks a pointy question, reacts badly right
+  away" — so the accusation itself now proposes an immediate "defensive"
+  reaction, routed through the same escalation rule as everything else
+  (no special-casing: it's just an escalation like any other).

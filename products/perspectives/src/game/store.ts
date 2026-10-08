@@ -80,6 +80,10 @@ interface GameState {
   chatHistory: Record<WitnessId, ChatMessage[]>;
   drafts: Record<WitnessId, string>;
   demeanor: Record<WitnessId, Demeanor>;
+  /** Real turns taken with each witness — the clock the de-escalation cooldown runs on. */
+  demeanorTurnCount: Record<WitnessId, number>;
+  /** demeanorTurnCount's value at the last time a witness's demeanor actually visibly changed. */
+  lastDemeanorChangeTurn: Record<WitnessId, number>;
   board: BoardEntry[];
   verdict: PlayerVerdict | null;
   revealed: boolean;
@@ -155,6 +159,62 @@ function boardKey(entry: Omit<BoardEntry, "id">, extra: string) {
   return `${entry.source ?? "x"}:${extra}`;
 }
 
+// How "keyed up" each state reads, for deciding escalation vs. de-escalation
+// — not a strict emotional journey, just enough ordering to tell "getting
+// worse" from "calming down." `resigned` sits with the mid-tier states
+// (quiet defeat, not blown-up panic) rather than near `composed`, so a
+// witness doesn't read as instantly "fine" the moment they stop panicking.
+const DEMEANOR_SEVERITY: Record<Demeanor, number> = {
+  composed: 0,
+  guarded: 1,
+  nervous: 2,
+  resigned: 2,
+  defensive: 3,
+  shaken: 4,
+  panicking: 5,
+};
+
+// A witness's mood can spike immediately (a pointed accusation lands and
+// they react right away) but settling back down takes a few real turns —
+// otherwise demeanor just mirrors whatever topic was asked last and reads
+// as flickering rather than someone's actual emotional state. "Turn" here
+// means a question that actually matched a live topic; off-topic/deflected
+// asks don't advance the engine at all, so they don't count either.
+const DEMEANOR_COOLDOWN_TURNS = 3;
+
+function emptyDemeanorTurnCount(): Record<WitnessId, number> {
+  const out = {} as Record<WitnessId, number>;
+  for (const w of WITNESSES) out[w.id] = 0;
+  return out;
+}
+
+function emptyLastDemeanorChangeTurn(): Record<WitnessId, number> {
+  const out = {} as Record<WitnessId, number>;
+  for (const w of WITNESSES) out[w.id] = 0;
+  return out;
+}
+
+/**
+ * Decides whether a newly-authored demeanor actually takes visible effect
+ * this turn. Escalation (more intense than the current state) always
+ * applies immediately — a sharp question should land sharp. Anything else
+ * (de-escalating, or sideways between same-tier states) is held back until
+ * enough turns have passed since the last visible change, so mood doesn't
+ * flicker with every topic switch.
+ */
+function resolveDemeanorUpdate(
+  current: Demeanor,
+  proposed: Demeanor | undefined,
+  turnsSinceLastChange: number
+): { demeanor: Demeanor; changed: boolean } {
+  if (!proposed || proposed === current) return { demeanor: current, changed: false };
+  const isEscalation = DEMEANOR_SEVERITY[proposed] > DEMEANOR_SEVERITY[current];
+  if (isEscalation || turnsSinceLastChange >= DEMEANOR_COOLDOWN_TURNS) {
+    return { demeanor: proposed, changed: true };
+  }
+  return { demeanor: current, changed: false };
+}
+
 /**
  * Shared stage-advancement logic used by both asking a question and
  * presenting evidence directly. `useAltText` picks the `presentedText`
@@ -172,6 +232,10 @@ function advanceTopic(
   const newStage = resolveStage(topic, prevStage, newAskCount, state.discoveredEvidence, state.witnessStages);
 
   if (newStage === -1) return null;
+
+  // A real turn with this witness — counts toward the de-escalation cooldown
+  // regardless of whether the stage itself advanced further.
+  const newTurnCount = (state.demeanorTurnCount[id] ?? 0) + 1;
 
   const stageData = topic.stages[newStage];
   const advanced = newStage > prevStage;
@@ -207,9 +271,15 @@ function advanceTopic(
     [id]: { ...state.witnessStages[id], [topic.id]: newStage },
   };
 
-  const demeanorChanged = advanced && stageData.demeanor && stageData.demeanor !== state.demeanor[id];
-  const nextDemeanor = demeanorChanged ? { ...state.demeanor, [id]: stageData.demeanor! } : state.demeanor;
-  if (demeanorChanged) playSfx("demeanor");
+  const turnsSinceLastChange = newTurnCount - (state.lastDemeanorChangeTurn[id] ?? 0);
+  const resolved = advanced
+    ? resolveDemeanorUpdate(state.demeanor[id], stageData.demeanor, turnsSinceLastChange)
+    : { demeanor: state.demeanor[id], changed: false };
+  const nextDemeanor = resolved.changed ? { ...state.demeanor, [id]: resolved.demeanor } : state.demeanor;
+  const nextLastChangeTurn = resolved.changed
+    ? { ...state.lastDemeanorChangeTurn, [id]: newTurnCount }
+    : state.lastDemeanorChangeTurn;
+  if (resolved.changed) playSfx("demeanor");
 
   return {
     text,
@@ -222,6 +292,8 @@ function advanceTopic(
       boardEntryKeys: nextKeys,
       discoveredEvidence: nextDiscovered,
       demeanor: nextDemeanor,
+      demeanorTurnCount: { ...state.demeanorTurnCount, [id]: newTurnCount },
+      lastDemeanorChangeTurn: nextLastChangeTurn,
     },
   };
 }
@@ -234,6 +306,21 @@ interface FreeformResolution {
   setDefensive: boolean;
   event: ConversationEvent;
   patch: Partial<GameState>;
+}
+
+/** Counts this as a real turn (for the de-escalation cooldown) and resolves whether a proposed demeanor actually takes effect. Used by resolveFreeformTurn's branches that don't go through advanceTopic. */
+function countTurnAndResolveDemeanor(state: GameState, witnessId: WitnessId, proposed: Demeanor | undefined) {
+  const newTurnCount = (state.demeanorTurnCount[witnessId] ?? 0) + 1;
+  const turnsSinceLastChange = newTurnCount - (state.lastDemeanorChangeTurn[witnessId] ?? 0);
+  const resolved = resolveDemeanorUpdate(state.demeanor[witnessId], proposed, turnsSinceLastChange);
+  if (resolved.changed) playSfx("demeanor");
+  return {
+    demeanor: resolved.changed ? { ...state.demeanor, [witnessId]: resolved.demeanor } : state.demeanor,
+    demeanorTurnCount: { ...state.demeanorTurnCount, [witnessId]: newTurnCount },
+    lastDemeanorChangeTurn: resolved.changed
+      ? { ...state.lastDemeanorChangeTurn, [witnessId]: newTurnCount }
+      : state.lastDemeanorChangeTurn,
+  };
 }
 
 /**
@@ -286,6 +373,10 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
 
   // A. Unsupported accusation on a topic never yet admitted anything —
   // lock it, stonewall, do not touch the authored stage ladder at all.
+  // The accusation itself is a real emotional spike, though: propose
+  // "defensive" as an immediate reaction (escalation always applies right
+  // away — see resolveDemeanorUpdate) rather than leaving the witness
+  // visually unaffected by being accused.
   if (interp.intent === "accusation" && !hasEvidence && !alreadyEngaged) {
     return {
       text: getDefensiveLine(witness),
@@ -301,14 +392,16 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
         citedEvidenceIds: [],
         summary: `Unsupported accusation on "${topic.chipLabel}" — ${witness.name} became defensive.`,
       },
-      patch: {},
+      patch: countTurnAndResolveDemeanor(state, witnessId, "defensive"),
     };
   }
 
   // Still defensive and nothing offered to lift it (no evidence, and
   // empathy alone doesn't count) — stay locked, same line again. This is
   // what keeps the lock real without making it permanent: the ONLY ways
-  // out are evidence or evidence-backed empathy, handled below.
+  // out are evidence or evidence-backed empathy, handled below. Still
+  // counts as a turn, so the cooldown clock keeps advancing toward the
+  // point where a calmer state is finally allowed to show.
   if (isDefensive && !hasEvidence) {
     return {
       text: getDefensiveLine(witness),
@@ -324,7 +417,7 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
         citedEvidenceIds: [],
         summary: `Still defensive on "${topic.chipLabel}" — no new evidence or understanding offered.`,
       },
-      patch: {},
+      patch: countTurnAndResolveDemeanor(state, witnessId, undefined),
     };
   }
 
@@ -351,7 +444,7 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
         citedEvidenceIds: interp.citedEvidenceIds,
         summary: `Asked about "${topic.chipLabel}" — not reachable yet.`,
       },
-      patch: {},
+      patch: countTurnAndResolveDemeanor(state, witnessId, undefined),
     };
   }
 
@@ -491,6 +584,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   chatHistory: emptyChatHistory(),
   drafts: emptyDrafts(),
   demeanor: initialDemeanor(),
+  demeanorTurnCount: emptyDemeanorTurnCount(),
+  lastDemeanorChangeTurn: emptyLastDemeanorChangeTurn(),
   board: [],
   verdict: null,
   revealed: false,
@@ -707,9 +802,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (addedContradiction) playSfx("contradiction");
     }
 
-    const demeanorChanged = reaction.demeanor && reaction.demeanor !== state.demeanor[witnessId];
-    const nextDemeanor = demeanorChanged ? { ...state.demeanor, [witnessId]: reaction.demeanor! } : state.demeanor;
-    if (demeanorChanged) playSfx("demeanor");
+    const newTurnCount = (state.demeanorTurnCount[witnessId] ?? 0) + 1;
+    const turnsSinceLastChange = newTurnCount - (state.lastDemeanorChangeTurn[witnessId] ?? 0);
+    const resolved = resolveDemeanorUpdate(state.demeanor[witnessId], reaction.demeanor, turnsSinceLastChange);
+    const nextDemeanor = resolved.changed ? { ...state.demeanor, [witnessId]: resolved.demeanor } : state.demeanor;
+    const nextLastChangeTurn = resolved.changed
+      ? { ...state.lastDemeanorChangeTurn, [witnessId]: newTurnCount }
+      : state.lastDemeanorChangeTurn;
+    if (resolved.changed) playSfx("demeanor");
 
     set({
       chatHistory: { ...state.chatHistory, [witnessId]: [...history, { role: "witness", text: reaction.text }] },
@@ -718,6 +818,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       board: nextBoard,
       boardEntryKeys: nextKeys,
       demeanor: nextDemeanor,
+      demeanorTurnCount: { ...state.demeanorTurnCount, [witnessId]: newTurnCount },
+      lastDemeanorChangeTurn: nextLastChangeTurn,
     });
   },
 
@@ -779,6 +881,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       chatHistory: emptyChatHistory(),
       drafts: emptyDrafts(),
       demeanor: initialDemeanor(),
+      demeanorTurnCount: emptyDemeanorTurnCount(),
+      lastDemeanorChangeTurn: emptyLastDemeanorChangeTurn(),
       board: [],
       verdict: null,
       revealed: false,

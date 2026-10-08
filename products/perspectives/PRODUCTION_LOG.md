@@ -640,3 +640,66 @@ Current limitations / next step
   vs. guided matching" distinction even more visible using similar
   behavior-sign language. Noted, not acted on this round — the existing
   action-cue text and the fallback banner already partially cover it.
+
+---
+
+## 2026-10-08 — Demeanor hysteresis: mood stopped flickering
+
+What changed
+- Oriol's report: demeanor was changing "up and down" after nearly every
+  question, reading as unnatural. Root cause: demeanor was a direct
+  mirror of whatever the most-recently-reached stage's authored
+  `demeanor` field said, with zero memory — bouncing between different
+  topics (each carrying its own one-off authored mood for that specific
+  moment) produced visible whiplash with no sense of emotional momentum.
+- Added real hysteresis: escalation (a state judged more intense than the
+  current one) always applies immediately — a sharp question should land
+  sharp. De-escalation (calmer, or sideways between similarly-intense
+  states) is held back until 3 real turns have passed since the last
+  visible change, so a witness doesn't instantly "reset" to calm the
+  moment the topic turns gentle — they visibly stay keyed up for a few
+  exchanges first, then settle. A `DEMEANOR_SEVERITY` ranking
+  (`composed` < `guarded`/`resigned` < `nervous` < `defensive` <
+  `shaken` < `panicking`) decides which direction a given proposed
+  change is.
+- Found and fixed a related gap while implementing: an unsupported
+  accusation previously didn't touch demeanor at all — only a
+  subsequent *real* stage advance (if any) would. Now the accusation
+  itself proposes an immediate "defensive" reaction, so "ask a pointy
+  question, he reacts badly right away" actually happens — and, as a
+  bonus, now visibly pairs with last round's emotion portraits: an
+  accusation now pops Tom's defensive portrait immediately.
+- Applies everywhere demeanor is set — `advanceTopic` (shared by
+  `askWitness`/`presentEvidence`/Tom's evidence-unlock path),
+  `relayRevelation`, and the new accusation/still-defensive branches in
+  `resolveFreeformTurn` — via one shared `resolveDemeanorUpdate`
+  function, so the rule is consistent everywhere, not reimplemented
+  per call site.
+
+Why
+- Direct playtest feedback: mood swings felt random/unnatural rather
+  than legible as "this witness is actually getting upset."
+
+Files
+- `src/game/store.ts` (`DEMEANOR_SEVERITY`, `DEMEANOR_COOLDOWN_TURNS`,
+  `resolveDemeanorUpdate`, `countTurnAndResolveDemeanor`, new
+  `demeanorTurnCount`/`lastDemeanorChangeTurn` state)
+
+How to test
+- `npm run dev` or the live Vercel URL — accuse Tom without evidence
+  (defensive shows immediately), then ask a few calmer/unrelated
+  questions in a row and confirm he stays visibly defensive for a few
+  exchanges before settling, rather than flipping every line.
+- `npx tsx scripts/selftest.ts` → 89/89 (grew from 80) — added explicit
+  tests for both halves: a real escalation landing immediately, and
+  calmer proposals being held for exactly the cooldown window before
+  finally taking effect (not suppressed forever).
+
+Current limitations / next step
+- The severity ranking is a simple fixed ordering, not per-witness or
+  context-sensitive — reasonable for this case's authored range, may
+  need revisiting if a future witness's emotional arc doesn't fit a
+  single linear "calm to intense" scale.
+- Browser automation still unavailable in this environment — the actual
+  felt pacing (does 3 turns feel right, too slow, too fast) hasn't been
+  played live by anyone yet; worth Oriol's read once he plays it.
