@@ -103,6 +103,29 @@ export interface TestimonyTopic {
   stages: TestimonyStage[];
 }
 
+/**
+ * A fact significant enough that telling another witness about it could
+ * plausibly change what they say — the belief-propagation substrate.
+ * "Known" is derived purely from existing stage-reach state (the same
+ * signal `requiresWitnessStage` already uses), never a new flag to keep
+ * in sync by hand.
+ */
+export type RevelationId =
+  | "tom_returned"
+  | "tom_confessed"
+  | "sofia_visited"
+  | "elena_shoved"
+  | "daniel_lied_to_both"
+  | "sofia_contact_hidden";
+
+export interface RevelationDef {
+  id: RevelationId;
+  /** Shown on the relay picker and in the "you tell them" chat line. */
+  label: string;
+  /** The stage that, once reached by the player, makes this fact known. */
+  source: { witness: WitnessId; topic: string; minStage: number };
+}
+
 export interface WitnessConfig {
   id: WitnessId;
   name: string;
@@ -116,8 +139,22 @@ export interface WitnessConfig {
   accentColor: string; // tailwind-ish hex for their theme tint
   baselineDemeanor: Demeanor;
   topics: TestimonyTopic[];
+  /**
+   * This witness's one-shot reaction if the player relays a given
+   * revelation to them, authored per (witness, revelation) pair. Not
+   * every witness reacts to every revelation — only `text`,
+   * `addsBoardEntries`, and `demeanor` are meaningful here; the gating
+   * fields on `TestimonyStage` don't apply to a one-shot reaction.
+   */
+  reactions?: Partial<Record<RevelationId, TestimonyStage>>;
   /** Line used when the player's question doesn't match any topic. Rotates. */
   deflections: string[];
+  /**
+   * Shown when a topic gets locked by an unsupported accusation (free-form
+   * conversation only — see ConversationIntent). Rotates like deflections.
+   * Witnesses without this never enter the accusation/defensive mechanic.
+   */
+  defensiveLines?: string[];
 }
 
 export type ResponsibleParty = "elena" | "sofia" | "tom" | "someone_else" | "insufficient_evidence";
@@ -127,4 +164,58 @@ export interface PlayerVerdict {
   theory: string;
   responsible: ResponsibleParty;
   elenaVerdict: ElenaVerdict;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Free-form conversation (currently: Tom only — see DECISIONS.md).
+//
+// Strict separation, per the brief: authored facts → character knowledge →
+// validated scene transitions → generated dialogue. The model NEVER
+// decides what happened; it only (a) classifies what the player's free
+// text is trying to do, cross-validated against real state before it's
+// trusted, and (b) performs an already-authored, already-validated line —
+// it does not invent the line's factual content.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** What the engine believes the player's free-text message is doing — proposed by interpretation, then validated before anything acts on it. */
+export type ConversationIntent =
+  | "accusation" // confronts without evidence/admission backing it
+  | "evidence_challenge" // cites real, already-known evidence
+  | "empathetic_appeal" // acknowledges Tom's position, with or without evidence
+  | "general_question"
+  | "off_topic"
+  | "unclear";
+
+export interface InterpretationResult {
+  intent: ConversationIntent;
+  /** Best-matching authored topic id, if any — must exist on the witness or it's discarded. */
+  topicId: string | null;
+  /** Evidence the message appears to reference — cross-checked against what's actually known before being trusted. */
+  citedEvidenceIds: EvidenceId[];
+  confidence: number;
+}
+
+/** The validated, authored outcome of one free-form turn — never something the model decided on its own. */
+export type TurnEventKind =
+  | "defensive_lock" // unsupported accusation closed a topic down
+  | "evidence_admission" // evidence-backed contradiction produced a limited admission
+  | "empathetic_recovery" // validated empathetic appeal reopened a defensive topic
+  | "normal_advance" // an ordinary, already-reachable stage advance
+  | "no_change"; // understood, but nothing new was reachable
+
+export interface ConversationEvent {
+  witnessId: WitnessId;
+  t: number;
+  kind: TurnEventKind;
+  topicId: string | null;
+  citedEvidenceIds: EvidenceId[];
+  /** Plain-language note for the reveal's "what you established" summary. */
+  summary: string;
+}
+
+export interface PerformanceCue {
+  /** Short bracketed stage direction, e.g. "Tom looks away, then meets your eyes." Optional — not every beat earns one. */
+  action?: string;
+  /** Cosmetic pause before the line renders; never stacked on real network latency, always skippable. */
+  pauseMs?: number;
 }

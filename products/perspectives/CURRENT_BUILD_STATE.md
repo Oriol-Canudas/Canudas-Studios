@@ -10,15 +10,16 @@ what should happen next** without reconstructing context from chat history.
 Read [REVIEW_HANDOFF.md](REVIEW_HANDOFF.md) for Codex's prior playtest findings,
 acceptance criteria and the implementation/review exchange. Oriol has selected
 repository-based coordination: Claude implements, Codex reviews; one code editor
-at a time. The agreed sequence in that handoff is integrity fixes, then actual
-OpenAI conversation for Tom, then measured validation. **Claude has filled in
-the "Claude result" section of that handoff — integrity fixes (step 1) are
-implemented and self-tested; step 2 (OpenAI conversation for Tom) has not been
-started.** The older “Next build step” and “Open product questions” below
-describe the previous baseline; reconcile them after the active iteration
-rather than treating them as the latest priority. No automatic agent
-notification or execution is configured — Oriol still needs to trigger Codex's
-review pass.
+at a time. **Both step 1 (integrity fixes) and step 2 (Tom's free-form
+conversation scene) are now implemented and self-tested — see "Claude result"
+in REVIEW_HANDOFF.md for the full, honest breakdown of what's verified vs.
+not.** Headline: the scene is fully built and works end-to-end in
+deterministic-fallback mode (no `OPENAI_API_KEY` exists in this environment —
+confirmed, see below); real OpenAI calls have NOT been live-tested. The older
+"Next build step" and "Open product questions" below describe the previous
+baseline; reconciled where still relevant. No automatic agent notification is
+configured — Oriol still needs to trigger Codex's review pass, and needs to
+set `OPENAI_API_KEY` in Vercel for the live-AI path to actually activate.
 
 ## Ownership
 
@@ -55,16 +56,23 @@ Primary validation questions (from the original brief, H1–H8):
 ## Current build stage
 
 **Stage:** Deterministic vertical slice complete, self-tested, deployed and
-playable, plus four passes: (1) portraits, scene art, paced dialogue
+playable, plus five passes: (1) portraits, scene art, paced dialogue
 reveal, demeanor states, Case Clarity meter, cross-witness reactions; (2)
 tap-to-inspect character dossiers, an animated cold-open intro, a
 text-density pass, and ambient/SFX sound; (3) intro expanded into two
-slower steps — case hook, then a dedicated cast-introduction sequence
-after "Begin the case"; (4) an investigation-integrity pass — spoiler-free
+slower steps; (4) an investigation-integrity pass — spoiler-free
 suggestion chips, in-chat evidence presentation, honest 3-outcome verdict
-grading, authored (not parsed) board facts, and removal of the Case
-Clarity %. Real LLM-driven witness dialogue (Step 6) is designed for but
-not yet implemented.
+grading, authored board facts, removal of the Case Clarity %, plus a
+generalized belief-propagation system (relay known facts to any witness,
+not just 3 hardcoded reactions); (5) **Tom's free-form conversation
+scene** — free text is now the primary interface for Tom specifically:
+an unsupported accusation makes him defensive on that topic (recoverable,
+never permanent); a real evidence citation produces a limited, authored
+admission; empathy alone never unlocks anything. Built with a hard
+validation boundary between interpretation and committed state (see
+DECISIONS.md), a server-side OpenAI adapter (`api/witness-chat.ts`,
+inert without a key), and a deterministic fallback that is what actually
+runs today, end to end, with no key configured.
 
 **Explicit scope call (Oriol, 2026-10-07):** go deep on this one case before
 going wide. Backlogged, not forgotten: RPG-style mastery/seniority
@@ -104,19 +112,31 @@ recognition + a conversational "talking avatar" witness.
 
 ## What is NOT being built yet
 
-- Real LLM-driven witness conversation (Step 6).
+- Real-model-generated dialogue TEXT for Tom — the model's only creative
+  output this round is a short performance cue; the dialogue itself stays
+  the authored line verbatim. See DECISIONS.md for why this scope line
+  was drawn where it was.
+- Free-form conversation for any witness other than Tom.
+- A general belief/trust-score engine, or any numeric persuasion mechanic
+  — explicitly out of scope (Codex's "charisma dice"/metagame exclusion).
 - Cinematic (portrait-led) reveal — still a text-based reveal screen.
-- RPG mastery/seniority meta-progression, multi-case content, voice
-  recognition + conversational avatar — all explicitly backlogged by Oriol.
-- Authentication, payments, multiplayer, persistence/database.
+- RPG mastery/seniority meta-progression, multi-case content, voice,
+  multiplayer — all explicitly backlogged.
+- Authentication, payments, persistence/database.
 - Generalized case-authoring system (only Case 002 exists; it's hand-authored
   data, not a generator).
 
 ## Current runnable state
 
 - `npm install && npm run dev` → http://localhost:5173 (or whichever port is free)
-- `npx tsx scripts/selftest.ts` → 49/49 assertions pass
+- `npx tsx scripts/selftest.ts` → 75/75 assertions pass
+- `npm run build` → clean; `npm run lint` → clean
 - Live at https://gamexperspectives.vercel.app, auto-deploys from `main`.
+- **No `OPENAI_API_KEY` is configured anywhere** (checked: not in the repo,
+  no `.env`, no Vercel CLI access in the dev environment to set one) — Tom's
+  scene runs entirely on the deterministic fallback right now. Setting that
+  key as a Vercel project environment variable is the one remaining step to
+  light up the live-AI path; nothing else needs to change.
 
 ## Current architecture
 
@@ -125,10 +145,18 @@ GROUND_TRUTH + TIMELINE + EVIDENCE + WITNESSES   (src/game/caseData.ts)
         ↓
 witnessEngine.ts  —  matches free text → topic, resolves furthest
                      truthfully-reachable testimony stage given discovered
-                     evidence + cross-witness state + ask count
+                     evidence + cross-witness state + ask count; also the
+                     validation boundary (validateInterpretation) that
+                     every free-form turn must pass through
         ↓
-store.ts (Zustand)  —  session state: discovered evidence, witness stages,
-                       chat history, case board, verdict
+interpreter.ts  —  Tom only: classifies a free-text message (intent / topic /
+                   cited evidence) via api/witness-chat.ts if an OpenAI key
+                   exists, else a deterministic keyword fallback — same
+                   contract either way, always validated before use
+        ↓
+store.ts (Zustand)  —  session state incl. defensiveTopics, conversationEventLog;
+                       resolveFreeformTurn() decides the validated outcome,
+                       reusing the same advanceTopic() every other witness uses
         ↓
 components/*  —  CaseHome → Hear/Examine/Reason tabs → Verdict → Reveal
 ```
@@ -157,49 +185,54 @@ and must stay that way to avoid spoiling the case.
   and the ambient track 6MB before resizing/re-encoding).
 - `src/game/audio.ts` — SFX/ambient; guarded for the Node-based self-test.
 - `src/components/CharacterDossier.tsx`, `IntroSequence.tsx`,
-  `EvidencePicker.tsx` — full-screen/overlay experiences.
-- `scripts/selftest.ts` — regression harness (49 assertions); run this after
-  any change to `caseData.ts`, `witnessEngine.ts`, or `store.ts`.
+  `EvidencePicker.tsx`, `RelayPicker.tsx` — full-screen/overlay experiences.
+- `src/game/interpreter.ts` — free-text interpretation for Tom: deterministic
+  fallback + the client side of the AI call, always degrading silently.
+- `api/witness-chat.ts` — the server-side OpenAI adapter. Reads
+  `OPENAI_API_KEY` only; returns 503 (treated as "use fallback") when it's
+  absent or `AI_WITNESS_CHAT_DISABLED=1` is set.
+- `scripts/selftest.ts` — regression harness (75 assertions); run this after
+  any change to `caseData.ts`, `witnessEngine.ts`, `store.ts`, or `interpreter.ts`.
 - `REVIEW_HANDOFF.md` — shared review queue with Codex (playtesting/review);
   read before starting the next iteration.
 
 ## Open product questions
 
-- Should Step 6 fully replace deterministic dialogue with LLM output, or
-  layer the LLM on top (rephrase/extend within the same stage boundaries)?
-  Current design assumption: layer on top, deterministic stays as fallback
-  and ground truth — not yet confirmed with Oriol.
+- Should the "perform" pass eventually generate the witness's actual
+  dialogue text, not just a cue? Deliberately deferred — see DECISIONS.md.
+  Needs real-key testing to validate safely, which hasn't been possible yet.
+- Should Tom's free-form scene extend to other witnesses? Explicitly
+  backlog this iteration per Oriol's instruction — not yet confirmed as
+  a next step.
 - No decision yet on whether future cases will be hand-authored (like this
   one) or machine-assisted. Per the brief, do not build a case-generation
   system yet.
 
 ## Next build step
 
-Two independent tracks are queued; which goes first is Oriol's call.
+Three tracks are queued; which goes first is Oriol's call.
 
-**A. Rest of the visual/UX ranked list** (items 5–8, since 1–4 are done):
+**A. Verify the AI path for real.** Needs `OPENAI_API_KEY` set as a Vercel
+project environment variable (Oriol's action — no dashboard/CLI access from
+this environment). Once set: play the deployed scene, confirm `source: "ai"`
+appears in messages instead of `"fallback"`, check the Vercel function logs
+for the latency/token diagnostics `api/witness-chat.ts` already emits, and
+validate the "perform" pass's cue quality feels right before considering any
+expansion of the model's creative scope.
+
+**B. Rest of the visual/UX ranked list** (items 5–8, since 1–4 are done):
 1. Cinematic reveal — rebuild `RevealScreen.tsx` as a portrait-led
-   walkthrough of the true timeline instead of a text wall.
+   walkthrough instead of a text wall.
 2. Living portraits — subtle demeanor-driven visual feedback on the
-   portrait images themselves (glow/shake/desaturate).
-3. Key-line voice acting — TTS for the 2–3 most dramatic lines per
-   witness (e.g. Tom's confession), as a lighter-weight stand-in for the
-   backlogged full voice/avatar feature.
-4. Transition polish — motion between Hear/Examine/Reason instead of
-   instant tab-swaps.
+   portrait images themselves.
+3. Key-line voice acting.
+4. Transition polish.
 
-**B. Step 6 — add player-facing AI**, per the original brief:
-1. Add a Vercel serverless function (e.g. `api/witness-chat.ts`) that reads
-   `OPENAI_API_KEY` server-side only.
-2. Feed it: the witness's `knows`/`beliefs`/the stage text already
-   authored/`revealedSecrets` so far/conversation history — ask it to
-   produce a natural-language utterance consistent with that stage, not a
-   new one.
-3. Keep the deterministic engine as the fallback and as the hard boundary
-   on what can be revealed — the model rephrases/extends, it does not
-   decide new facts.
-4. Needs from Oriol: confirm `OPENAI_API_KEY` is set as a Vercel environment
-   variable on this project (recommended over pasting it in chat).
+**C. General belief propagation beyond Tom's scene** — the relay system
+(Section "investigation-integrity pass" below) already generalizes
+cross-witness reactions; extending the accusation/evidence/empathy
+mechanic itself to other witnesses is a deliberate backlog item, not
+started.
 
 ## Sync protocol
 

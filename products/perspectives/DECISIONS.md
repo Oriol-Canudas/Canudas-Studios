@@ -334,3 +334,106 @@ into a UI pass.
   the evidence picker sheet, draft preservation, an insufficient-evidence
   playthrough end-to-end) has NOT been visually verified this round and
   needs a real phone/browser pass before calling this fully validated.
+
+## Tom's free-form conversation scene (2026-10-08)
+
+Oriol's direction superseded the queued general belief-propagation work
+mid-session: build the one consequential scene (Tom, free text as the
+interface, authored facts stay authoritative) before any further UI
+polish or generalization. The propagation system already in flight was
+finished first (abandoning it half-done would have shipped a real
+regression — see the entry above) but NOT extended further this round;
+it remains backlog for other witnesses.
+
+**The trust boundary, and where it actually lives.** Every free-form turn
+passes through exactly one gate: `validateInterpretation()`
+(`witnessEngine.ts`). It runs on BOTH the AI-proposed interpretation and
+the deterministic fallback's own output — there is one boundary, not two,
+so a future change to the AI path can't accidentally skip validation.
+Concretely: a `topicId` the witness doesn't actually have is dropped; a
+`citedEvidenceIds` entry not already known in that exact conversation
+context is dropped; an unrecognized `intent` string (including anything
+that looks like a prompt-injection attempt — tested explicitly, see
+`scripts/selftest.ts` Playthrough 19) degrades to `"unclear"`. Nothing the
+model says about intent, topic, or evidence is acted on until it survives
+this function.
+
+**Scope line drawn around dialogue generation.** The brief asks for
+"generated dialogue," and the full version of that would have the model
+write Tom's actual reply text, constrained to authorized disclosures. I
+did not build that version. Instead, the model's only creative output
+this round is a short performance cue (`"Tom looks away, then meets your
+eyes."`) — the dialogue text is always the authored `TestimonyStage.text`
+/ `presentedText` verbatim, exactly as every other witness in this app
+already works. Reasoning: validating that a model-generated paraphrase of
+an authored line hasn't silently dropped or added a fact is a real,
+non-trivial problem ("do not assume schema validation alone guarantees
+factual consistency," per the brief itself), and I have no way to test
+that validation against real model behavior — there is no
+`OPENAI_API_KEY` anywhere in this environment (checked: not in the repo,
+no `.env` file, no Vercel CLI access to inspect or set one). Shipping an
+unvalidated version of the riskiest integrity boundary in this entire
+feature, sight-unseen, was the wrong trade. The narrower version ships a
+complete, testable, genuinely free-text-driven scene today; widening the
+model's scope to full dialogue generation is flagged as the natural next
+step once real-key testing is possible, with the validation approach
+(anchor-token comparison between authored and generated text, described
+inline in `api/witness-chat.ts`) already sketched for whoever picks it up.
+
+**The three behavioral test cases map onto existing machinery, not new
+systems.** Section 3's accusation/evidence/empathy cases are implemented
+as: a `defensiveTopics: Record<WitnessId, Set<string>>` per-topic lock,
+set only by an unsupported accusation, cleared only by real evidence
+(with or without empathy) — and once cleared, resolution runs through the
+EXACT same `advanceTopic()` call every other witness interaction already
+uses. There is no separate "AI confession path" — evidence-backed
+disclosure can never produce more than what that evidence is already
+authored to unlock via `requiresEvidence`. This was a deliberate choice
+over building a parallel resolution system: it means the AI layer cannot,
+even in principle, grant a disclosure the deterministic engine wouldn't
+also allow through the picker or a lucky chip tap.
+
+**Chips stay deterministic and now respect the lock too.** Suggestion
+chips route through the pre-existing `askWitness` (topic already known
+from `topicIdHint`, zero interpretation ambiguity) for every witness,
+Tom included — free text is the only thing that goes through
+interpretation. `askWitness` now also checks `defensiveTopics`, so a
+locked topic can't be quietly bypassed by tapping its chip instead of
+typing — same rule, both entry points.
+
+**Reading evidence privately vs. presenting it.** `knownEvidenceIds` for
+citation-validation purposes is `discoveredEvidence` (anything the player
+has acquired/read), not `presentedEvidence[tom]` — because citing a
+document BY NAME in a message to Tom is itself the explicit transmission
+event (same principle as the evidence picker). Validated above the
+`!topic` branch in `resolveFreeformTurn`: a citation is still recorded
+into `presentedEvidence[tom]` even when the message's topic doesn't
+resolve to anything, since saying "your phone records say otherwise" to
+Tom is presenting it to him regardless of whether the engine found
+something to advance.
+
+**Server-side adapter is real code, not a stub — but genuinely untested
+against the real API.** `api/witness-chat.ts` makes actual
+`fetch()` calls to `api.openai.com`, with one retry on transient failure,
+bounded `max_tokens`, a server-side disable switch
+(`AI_WITNESS_CHAT_DISABLED`), and metadata-only diagnostics logging
+(witness/action/model/latency/token counts — never raw message or
+dialogue content, per the brief's privacy note). It returns 503 when no
+key is configured, which `interpreter.ts` treats identically to a network
+failure: silent fallback, never a player-facing error. I could not run
+this against the real OpenAI API in this environment. Reviewed carefully
+by inspection; flagged as the one piece of this feature that genuinely
+needs a key before anyone can call it verified.
+
+**Validation**: `scripts/selftest.ts` grew from 49 to 75 assertions,
+covering: equivalent phrasings reaching the same topic (bounded claim —
+see the test's own comment on why full paraphrase-independence is the AI
+path's job), the full accusation → lock → recovery cycle, empathy-without-
+evidence never unlocking anything, private-reading vs. presenting being
+genuinely distinct, a simulated hallucinated/injected model response being
+stripped by validation, duplicate-submission prevention, a minimal
+Catalan phrasing hook, and chips respecting the defensive lock. All pass.
+`npm run build` and `npm run lint` both clean. Browser automation remains
+unavailable in this environment — the rendered scene (composer, loading/
+retry states, performance-cue timing, mobile keyboard behavior) has NOT
+been visually verified, same caveat as every round this session.

@@ -28,15 +28,19 @@ const JUDGMENT_LABEL: Record<Judgment, string> = {
   insufficient: "Called insufficient",
 };
 
+const MEANINGFUL_EVENT_KINDS = new Set(["defensive_lock", "evidence_admission", "empathetic_recovery"]);
+
 export default function RevealScreen({ onReset }: RevealScreenProps) {
   const verdict = useGameStore((s) => s.verdict);
   const board = useGameStore((s) => s.board);
   const inspectedEvidence = useGameStore((s) => s.inspectedEvidence);
+  const conversationEventLog = useGameStore((s) => s.conversationEventLog);
   const [showFullStory, setShowFullStory] = useState(false);
   if (!verdict) return null;
 
   const graded = gradeVerdict(verdict);
   const duration = formatDuration(sessionDurationMs());
+  const meaningfulEvents = conversationEventLog.filter((e) => MEANINGFUL_EVENT_KINDS.has(e.kind));
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 pb-16 pt-10 text-white">
@@ -67,6 +71,21 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
           <p className="text-base font-medium text-white/70">What you wrote at the time</p>
           <p className="mt-2 text-[17px] leading-relaxed text-white/75 italic">“{verdict.theory.trim()}”</p>
           <p className="mt-2 text-sm text-white/40">Shown as you left it — not scored against the account below.</p>
+        </div>
+      )}
+
+      {meaningfulEvents.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p className="text-base font-medium text-white/70">What your questioning of Tom established</p>
+          <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/85">
+            {meaningfulEvents.map((e, i) => (
+              <li key={i}>• {e.summary}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-sm text-white/40">
+            These are his disclosures, not independently verified facts — the Case Board separates claims from
+            confirmed evidence.
+          </p>
         </div>
       )}
 

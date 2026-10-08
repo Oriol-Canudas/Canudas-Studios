@@ -11,11 +11,24 @@
 //
 // A witness can NEVER say something that isn't an authored stage. There is
 // no free generation here — this is the "ground truth cannot be invented"
-// rule enforced structurally. See llmAdapter.ts for where a real model
-// could later slot in to rephrase (not invent) these same stage texts.
+// rule enforced structurally.
+//
+// For Tom only, interpreter.ts adds an optional AI-backed layer on top:
+// it may PROPOSE an interpretation of free text (intent/topic/cited
+// evidence), but validateInterpretation() below is what actually decides
+// whether any of that is trusted — cross-checked against real state, same
+// as everything else in this file.
 // ─────────────────────────────────────────────────────────────────────────
 
-import type { EvidenceId, TestimonyTopic, WitnessConfig, WitnessId } from "./types";
+import type {
+  ConversationIntent,
+  EvidenceId,
+  InterpretationResult,
+  RevelationDef,
+  TestimonyTopic,
+  WitnessConfig,
+  WitnessId,
+} from "./types";
 
 export interface WitnessStageState {
   // topicId -> highest stage index reached (−1 = never asked / not reachable yet)
@@ -121,6 +134,12 @@ export function isTopicReachable(topic: TestimonyTopic, allStages: AllWitnessSta
   return (allStages[witness]?.[otherTopic] ?? -1) >= minStage;
 }
 
+/** Whether the player has actually learned this revelation yet — derived, never a separate flag. */
+export function isRevelationKnown(revelation: RevelationDef, allStages: AllWitnessStages): boolean {
+  const { witness, topic, minStage } = revelation.source;
+  return (allStages[witness]?.[topic] ?? -1) >= minStage;
+}
+
 /** Which of this witness's topics the given evidence is authored to speak to, if any. */
 export function topicForEvidence(witness: WitnessConfig, evidenceId: EvidenceId): TestimonyTopic | null {
   for (const topic of witness.topics) {
@@ -137,4 +156,47 @@ export function getDeflection(witness: WitnessConfig): string {
   const n = deflectionCounters.get(witness.id) ?? 0;
   deflectionCounters.set(witness.id, n + 1);
   return witness.deflections[n % witness.deflections.length];
+}
+
+const defensiveCounters = new Map<WitnessId, number>();
+
+export function getDefensiveLine(witness: WitnessConfig): string {
+  const lines = witness.defensiveLines ?? witness.deflections;
+  const n = defensiveCounters.get(witness.id) ?? 0;
+  defensiveCounters.set(witness.id, n + 1);
+  return lines[n % lines.length];
+}
+
+const VALID_INTENTS: ConversationIntent[] = [
+  "accusation",
+  "evidence_challenge",
+  "empathetic_appeal",
+  "general_question",
+  "off_topic",
+  "unclear",
+];
+
+/**
+ * The hard trust boundary between "what the model proposed" and "what the
+ * engine will act on." A `topicId` that doesn't exist on this witness is
+ * dropped; `citedEvidenceIds` are filtered down to only evidence actually
+ * known in this context (never the model's claim about what was shown);
+ * an unrecognized `intent` string degrades to "unclear" rather than being
+ * passed through. This runs on BOTH the AI-proposed and the deterministic-
+ * fallback result, so there is exactly one trust boundary, not two.
+ */
+export function validateInterpretation(
+  raw: Partial<InterpretationResult> | null | undefined,
+  witness: WitnessConfig,
+  knownEvidenceIds: ReadonlySet<EvidenceId>
+): InterpretationResult {
+  const intent: ConversationIntent =
+    raw?.intent && VALID_INTENTS.includes(raw.intent) ? raw.intent : "unclear";
+  const topicId =
+    raw?.topicId && witness.topics.some((t) => t.id === raw.topicId) ? raw.topicId : null;
+  const citedEvidenceIds = Array.isArray(raw?.citedEvidenceIds)
+    ? raw!.citedEvidenceIds.filter((id): id is EvidenceId => knownEvidenceIds.has(id as EvidenceId))
+    : [];
+  const confidence = typeof raw?.confidence === "number" ? Math.max(0, Math.min(1, raw.confidence)) : 0;
+  return { intent, topicId, citedEvidenceIds, confidence };
 }

@@ -8,7 +8,7 @@
 // to stay consistent with.
 // ─────────────────────────────────────────────────────────────────────────
 
-import type { EvidenceFact, EvidenceId, EvidenceItem, WitnessConfig } from "./types";
+import type { EvidenceFact, EvidenceId, EvidenceItem, RevelationDef, RevelationId, WitnessConfig } from "./types";
 
 export const CASE_META = {
   title: "The Last Message",
@@ -369,23 +369,23 @@ export const WITNESSES: WitnessConfig[] = [
           },
         ],
       },
-      {
-        id: "others_returned",
-        chipLabel: "Did you know Sofia and Tom both went back that night?",
-        tone: "accusative",
-        keywords: ["sofia", "tom", "both went back", "came back", "returned", "after you"],
-        stages: [
-          {
-            text: "What? No — I had no idea anyone else went back there. I just left. I thought that was the end of it for the night. If someone else was there after me, that's... that changes things, doesn't it?",
-            requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
-            demeanor: "shaken",
-            addsBoardEntries: [
-              { type: "claim", text: "Elena, told Tom also returned that night: genuinely surprised, had no knowledge of it.", source: "elena" },
-            ],
-          },
+    ],
+    reactions: {
+      tom_returned: {
+        text: "What? No — I had no idea anyone else went back there. I just left. I thought that was the end of it for the night. If someone else was there after me, that's... that changes things, doesn't it?",
+        demeanor: "shaken",
+        addsBoardEntries: [
+          { type: "claim", text: "Elena, told Tom also returned that night: genuinely surprised, had no knowledge of it.", source: "elena" },
         ],
       },
-    ],
+      sofia_visited: {
+        text: "Sofia was there too? After I'd gone? ...I didn't know that. God, if Daniel told her what he told me — if he finally said it to both of us the same night — no wonder everything happened the way it did.",
+        demeanor: "shaken",
+        addsBoardEntries: [
+          { type: "claim", text: "Elena, told Sofia also visited that night: surprised, starts connecting it to what Daniel admitted to her.", source: "elena" },
+        ],
+      },
+    },
   },
 
   // ───────────────────────────── SOFIA ─────────────────────────────
@@ -490,23 +490,23 @@ export const WITNESSES: WitnessConfig[] = [
           },
         ],
       },
-      {
-        id: "tom_reaction",
-        chipLabel: "Tom says he came back to the apartment too, after you left",
-        tone: "neutral",
-        keywords: ["tom", "came back", "returned", "after you left", "also went back"],
-        stages: [
-          {
-            text: "Tom? He went back? ...I didn't know that. I swear, when I left, Daniel was fine — upset, but fine. If Tom went up there after me, I have no idea what happened once I was gone.",
-            requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
-            demeanor: "shaken",
-            addsBoardEntries: [
-              { type: "claim", text: "Sofia, told Tom also returned that night: genuinely surprised, reaffirms Daniel was alive and fine when she left.", source: "sofia" },
-            ],
-          },
+    ],
+    reactions: {
+      tom_returned: {
+        text: "Tom? He went back? ...I didn't know that. I swear, when I left, Daniel was fine — upset, but fine. If Tom went up there after me, I have no idea what happened once I was gone.",
+        demeanor: "shaken",
+        addsBoardEntries: [
+          { type: "claim", text: "Sofia, told Tom also returned that night: genuinely surprised, reaffirms Daniel was alive and fine when she left.", source: "sofia" },
         ],
       },
-    ],
+      daniel_lied_to_both: {
+        text: "...So even his own brother knew. Great. That makes two people who could've warned me before I wasted five months on him.",
+        demeanor: "shaken",
+        addsBoardEntries: [
+          { type: "claim", text: "Sofia, told Marco already knew Daniel was lying to both women: bitter, feels like she was the only one left in the dark.", source: "sofia" },
+        ],
+      },
+    },
   },
 
   // ───────────────────────────── TOM ─────────────────────────────
@@ -530,6 +530,11 @@ export const WITNESSES: WitnessConfig[] = [
       "I already told you — I went home.",
       "I don't know what else you want from me.",
       "Why does that matter?",
+    ],
+    defensiveLines: [
+      "I didn't do anything. I don't know why you're coming at me like this.",
+      "That's not fair. You're putting words in my mouth.",
+      "I've told you what I know. I'm not going to just agree with whatever you throw at me.",
     ],
     topics: [
       {
@@ -668,6 +673,15 @@ export const WITNESSES: WitnessConfig[] = [
         ],
       },
     ],
+    reactions: {
+      sofia_contact_hidden: {
+        text: "She lied too? ...Doesn't surprise me, honestly. Seems like everyone was keeping something back that night. Myself included, I suppose.",
+        demeanor: "resigned",
+        addsBoardEntries: [
+          { type: "claim", text: "Tom, told Sofia also hid something that night: unsurprised, draws a parallel to his own lie.", source: "tom" },
+        ],
+      },
+    },
   },
 
   // ───────────────────────────── MARCO ─────────────────────────────
@@ -743,23 +757,23 @@ export const WITNESSES: WitnessConfig[] = [
           },
         ],
       },
-      {
-        id: "tom_confession_reaction",
-        chipLabel: "Tom says it was an accident during a struggle with Daniel",
-        tone: "soft",
-        keywords: ["tom", "accident", "struggle", "what tom said", "confession", "knife"],
-        stages: [
-          {
-            text: "Tom... he was practically family to us. If that's true — if it was an accident — God. I don't know what to do with that. But it doesn't surprise me that Daniel grabbed a knife mid-argument. He always had to be holding something when he felt cornered. Never knew what to do with his hands when he was scared.",
-            requiresWitnessStage: { witness: "tom", topic: "the_knife", minStage: 1 },
-            demeanor: "shaken",
-            addsBoardEntries: [
-              { type: "claim", text: "Marco, told Tom's account: devastated but not surprised Daniel would grab something when cornered in an argument.", source: "marco" },
-            ],
-          },
+    ],
+    reactions: {
+      tom_confessed: {
+        text: "Tom... he was practically family to us. If that's true — if it was an accident — God. I don't know what to do with that. But it doesn't surprise me that Daniel grabbed a knife mid-argument. He always had to be holding something when he felt cornered. Never knew what to do with his hands when he was scared.",
+        demeanor: "shaken",
+        addsBoardEntries: [
+          { type: "claim", text: "Marco, told Tom's account: devastated but not surprised Daniel would grab something when cornered in an argument.", source: "marco" },
         ],
       },
-    ],
+      elena_shoved: {
+        text: "She put her hands on him? ...That doesn't shock me, if I'm honest. Things always got loud when those two were in a room together. Doesn't mean she did anything more than that.",
+        demeanor: "composed",
+        addsBoardEntries: [
+          { type: "claim", text: "Marco, told Elena admitted shoving Daniel: unsurprised given their history, but doesn't read more into it.", source: "marco" },
+        ],
+      },
+    },
   },
 
   // ───────────────────────────── JULIA ─────────────────────────────
@@ -841,3 +855,45 @@ export const WITNESS_BY_ID: Record<string, WitnessConfig> = Object.fromEntries(
 export const EVIDENCE_BY_ID: Record<string, EvidenceItem> = Object.fromEntries(
   EVIDENCE.map((e) => [e.id, e])
 );
+
+/**
+ * Cross-witness belief propagation: facts significant enough that relaying
+ * them to another witness is authored to matter. Each `source` points at
+ * the exact stage that makes the fact "known" — nothing here is a new flag
+ * to keep in sync, it's derived from the same stage-reach state the rest
+ * of the engine already tracks. A revelation with no authored `reactions`
+ * entry on a given witness simply isn't offered for that pairing (see
+ * WitnessChat's relay picker) rather than producing a blank/generic line.
+ */
+export const REVELATIONS: Record<RevelationId, RevelationDef> = {
+  tom_returned: {
+    id: "tom_returned",
+    label: "Tom actually came back to the apartment that night.",
+    source: { witness: "tom", topic: "after_that", minStage: 1 },
+  },
+  tom_confessed: {
+    id: "tom_confessed",
+    label: "Tom says the knife went into Daniel by accident, during a struggle.",
+    source: { witness: "tom", topic: "the_knife", minStage: 1 },
+  },
+  sofia_visited: {
+    id: "sofia_visited",
+    label: "Sofia also went to the apartment that night, after Elena left.",
+    source: { witness: "sofia", topic: "went_to_apartment", minStage: 1 },
+  },
+  elena_shoved: {
+    id: "elena_shoved",
+    label: "Elena admits she shoved Daniel during their argument.",
+    source: { witness: "elena", topic: "argument", minStage: 1 },
+  },
+  daniel_lied_to_both: {
+    id: "daniel_lied_to_both",
+    label: "Daniel told his brother, a week before he died: “I've lied to both of them.”",
+    source: { witness: "marco", topic: "the_lies", minStage: 0 },
+  },
+  sofia_contact_hidden: {
+    id: "sofia_contact_hidden",
+    label: "Sofia initially denied any contact with Daniel after his 23:06 text — phone records say otherwise.",
+    source: { witness: "sofia", topic: "contact_after_text", minStage: 1 },
+  },
+};

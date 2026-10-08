@@ -471,3 +471,101 @@ Current limitations / next step
   something fixable from app code. Browser automation still unavailable
   in this environment, so this is verified by code review, not by
   actually hearing it.
+
+---
+
+## 2026-10-08 — Tom's free-form conversation scene (the AI-conversation iteration)
+
+What changed
+- **Free text is now the real interface for Tom.** The player can type
+  anything — English or Catalan, short or long — and the engine
+  interprets it as one of: an unsupported accusation, an evidence-backed
+  contradiction, an empathetic appeal, an ordinary question, or
+  off-topic. Three behavioral rules, all backed by the same authored
+  stage data every other witness already uses, nothing invented:
+  - **Accusing Tom without evidence** makes him defensive on that
+    specific topic — he stonewalls, but it's never a permanent lock.
+  - **Citing real evidence** (by name, in free text, or via the existing
+    evidence picker) produces a limited, authored admission — exactly
+    what that evidence is already gated to unlock, never more.
+  - **Empathy alone, with no evidence, unlocks nothing.** Politeness is
+    not a key. Empathy *combined with* real evidence can reopen a
+    defensive topic.
+- **A hard validation boundary** (`validateInterpretation` in
+  `witnessEngine.ts`) sits between "what the model (or the deterministic
+  fallback) proposed" and "what the engine will act on" — topic ids,
+  evidence citations, and intent strings are all cross-checked against
+  real state before anything happens. Runs identically whether the
+  proposal came from a live model call or the fallback.
+- **Server-side OpenAI adapter** (`api/witness-chat.ts`, new) — real
+  `fetch()` calls to OpenAI, one retry on transient failure, bounded
+  output, a disable switch, metadata-only diagnostics logging. Returns
+  503 when no key is configured; the client treats that identically to
+  any other failure — silent fallback, the scene never breaks.
+- **The model's creative scope is deliberately narrow this round**: it
+  classifies the player's intent and may add a short performance cue
+  ("Tom looks away, then meets your eyes.") — it does NOT write Tom's
+  actual dialogue. That stays the authored line verbatim. See
+  DECISIONS.md for why this line was drawn here.
+- **Chat UI rebuilt** (`WitnessChat.tsx`): prominent free-text composer,
+  a loading state while a turn is in flight, a retry affordance if a
+  turn fails end-to-end, an honest "guided matching — live AI not
+  connected" indicator when running on fallback, performance cues shown
+  as brief italic stage directions, reduced-motion support throughout,
+  and the evidence/relay pickers both still available alongside typing.
+  Chips remain available as a reliable shortcut and now respect a
+  defensive lock the same as free text does.
+- **Reveal extended**: a new "what your questioning of Tom established"
+  section built from a real event log (`conversationEventLog`),
+  explicitly labeled as his disclosures, not independently verified
+  facts.
+- Finished the belief-propagation generalization that was already in
+  flight when this request landed (3 hardcoded cross-witness reactions →
+  a data-driven relay system covering 6 revelations across all 5
+  witnesses) rather than leaving it half-migrated — further expansion of
+  that system is backlog, per Oriol's explicit "focus on Tom" scope call.
+
+Why
+- Direct product request: build the actual differentiator ("I discovered
+  this because I knew how to conduct the conversation") as one complete,
+  playable scene — not another plan, not a general simulation for every
+  witness first.
+
+Files
+- New: `api/witness-chat.ts`, `src/game/interpreter.ts`,
+  `src/components/RelayPicker.tsx`
+- Rewritten: `src/components/WitnessChat.tsx`
+- Extended: `src/game/types.ts`, `witnessEngine.ts`, `store.ts`,
+  `caseData.ts` (Tom's `defensiveLines`, `REVELATIONS`), `analytics.ts`,
+  `RevealScreen.tsx`, `TypewriterText.tsx` (reduced-motion `instant` prop)
+- Config: `tsconfig.node.json` now also type-checks `api/**/*.ts`
+
+How to test
+- `npm run dev` or the live Vercel URL → open Tom → type freely:
+  - Try "you went back after you left and killed him, didn't you" (locks
+    `after_that` defensive) then "after you left, your phone records
+    show you actually went back" once E07 is discovered (lifts it).
+  - Try empathy with zero evidence while locked — confirm nothing moves.
+  - Try presenting evidence through the 📄 picker instead — same
+    recovery, different entry point.
+- `npx tsx scripts/selftest.ts` → 75/75 (grew from 49).
+- `npm run build` && `npm run lint` → both clean.
+
+Real API tested? No — no `OPENAI_API_KEY` exists in this environment
+(confirmed: not in the repo, no `.env`, no Vercel CLI access). Everything
+above runs on and is verified against the deterministic fallback, which
+is what the deployed app actually runs today. Setting the key as a
+Vercel environment variable is the one remaining step for the live path;
+see REVIEW_HANDOFF.md's "Claude result" for the full honest breakdown
+(automated / manual-browser / live-API / human-validation, reported
+separately as asked).
+
+Current limitations / next step
+- Model-generated dialogue text (not just a cue) is explicitly deferred —
+  needs real-key testing to validate safely first.
+- Browser automation still unavailable in this environment — the
+  rendered composer, loading/retry states, cue timing, and mobile
+  keyboard behavior have NOT been visually verified.
+- Free-form conversation is Tom-only; other witnesses are unchanged.
+  Extending it further, and whether to widen the model's dialogue scope,
+  are both open product questions for Oriol.

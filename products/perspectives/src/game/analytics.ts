@@ -12,7 +12,11 @@ export type AnalyticsEvent =
   | "witness_opened"
   | "witness_questioned"
   | "decision_selected"
-  | "session_completed";
+  | "session_completed"
+  | "revelation_relayed"
+  | "freeform_message_sent"
+  | "freeform_turn_resolved"
+  | "freeform_turn_failed";
 
 export interface AnalyticsRecord {
   event: AnalyticsEvent;

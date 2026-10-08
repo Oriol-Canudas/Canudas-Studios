@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { WITNESS_BY_ID } from "../game/caseData";
+import { REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
-import { isTopicReachable } from "../game/witnessEngine";
-import type { EvidenceId, QuestionTone, WitnessId } from "../game/types";
+import { isRevelationKnown, isTopicReachable } from "../game/witnessEngine";
+import type { EvidenceId, QuestionTone, RevelationId, WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
 import TypewriterText from "./TypewriterText";
 import TypingIndicator from "./TypingIndicator";
 import EvidencePicker from "./EvidencePicker";
+import RelayPicker from "./RelayPicker";
 
 const MAX_VISIBLE_CHIPS = 3;
 
@@ -19,6 +20,14 @@ const TONE_STYLE: Record<QuestionTone, string> = {
   accusative: "border-red-400/30 bg-red-400/10 text-red-200",
 };
 
+function prefersReducedMotion(): boolean {
+  try {
+    return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+}
+
 interface WitnessChatProps {
   witnessId: WitnessId;
   onBack: () => void;
@@ -27,37 +36,48 @@ interface WitnessChatProps {
 
 export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessChatProps) {
   const witness = WITNESS_BY_ID[witnessId];
+  const isFreeform = witnessId === "tom"; // this iteration: Tom only — see DECISIONS.md
+
   const askWitness = useGameStore((s) => s.askWitness);
   const presentEvidence = useGameStore((s) => s.presentEvidence);
+  const relayRevelation = useGameStore((s) => s.relayRevelation);
+  const sendFreeformMessage = useGameStore((s) => s.sendFreeformMessage);
+  const retryFreeformMessage = useGameStore((s) => s.retryFreeformMessage);
   const openWitness = useGameStore((s) => s.openWitness);
   const setDraft = useGameStore((s) => s.setDraft);
   const messages = useGameStore((s) => s.chatHistory[witnessId]);
   const witnessStages = useGameStore((s) => s.witnessStages);
   const currentDemeanor = useGameStore((s) => s.demeanor[witnessId]);
   const discoveredEvidence = useGameStore((s) => s.discoveredEvidence);
+  const relayedRevelations = useGameStore((s) => s.relayedRevelations[witnessId]);
+  const pending = useGameStore((s) => s.pendingWitnesses.has(witnessId));
   const draft = useGameStore((s) => s.drafts[witnessId]);
 
   const [typingIndex, setTypingIndex] = useState<number | null>(null);
   const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [evidencePickerOpen, setEvidencePickerOpen] = useState(false);
+  const [relayPickerOpen, setRelayPickerOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const prevLenRef = useRef(messages.length);
+  const reducedMotionRef = useRef(prefersReducedMotion());
   // Whether the player is currently parked at (or near) the bottom of the
   // scroll area. Read inside the ResizeObserver below so a reply growing
   // character-by-character never fights someone who scrolled up to reread
   // earlier testimony.
   const stickToBottomRef = useRef(true);
 
-  const busy = typingIndex !== null || animatingIndex !== null;
+  const busy = typingIndex !== null || animatingIndex !== null || pending;
 
   useEffect(() => {
     openWitness(witnessId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [witnessId]);
 
-  // When a new witness line appears, hold it behind a brief "typing" beat,
-  // then reveal it at a human reading/typing pace. Historical lines (from
+  // When a new witness line appears, hold it behind a brief "typing" beat
+  // — longer for a line carrying a dramatic cue (a considered pause before
+  // a difficult answer), shorter for an ordinary one, and always short
+  // when the device asks for reduced motion. Historical lines (from
   // before this screen mounted, or the player's own messages) render
   // instantly — only the single freshest witness reply animates.
   useEffect(() => {
@@ -66,11 +86,12 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
       const lastIdx = newLen - 1;
       const last = messages[lastIdx];
       if (last.role === "witness") {
+        const pauseMs = reducedMotionRef.current ? 80 : Math.min(last.cue?.pauseMs ?? 450, 900);
         setTypingIndex(lastIdx);
         const t = setTimeout(() => {
           setTypingIndex(null);
           setAnimatingIndex(lastIdx);
-        }, 450);
+        }, pauseMs);
         prevLenRef.current = newLen;
         return () => clearTimeout(t);
       }
@@ -113,17 +134,37 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
     if (stickToBottomRef.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
-  }, [messages, typingIndex, animatingIndex]);
+  }, [messages, typingIndex, animatingIndex, pending]);
+
+  function skipPause() {
+    if (typingIndex === null) return;
+    setTypingIndex(null);
+    setAnimatingIndex(typingIndex);
+  }
 
   function send(text: string, topicId?: string) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    askWitness(witnessId, trimmed, topicId);
+    // Chips always carry a known topicId and go through the same
+    // deterministic, defensive-lock-aware path as every other witness —
+    // they're a reliable shortcut INTO the conversation, not a different
+    // conversation. Free text on Tom's screen is the only thing that goes
+    // through interpretation.
+    if (isFreeform && !topicId) {
+      void sendFreeformMessage(witnessId, trimmed);
+    } else {
+      askWitness(witnessId, trimmed, topicId);
+    }
   }
 
   function handlePresent(evidenceId: EvidenceId, excerptIndex: number) {
     presentEvidence(witnessId, evidenceId, excerptIndex);
-    setPickerOpen(false);
+    setEvidencePickerOpen(false);
+  }
+
+  function handleRelay(revelationId: RevelationId) {
+    relayRevelation(witnessId, revelationId);
+    setRelayPickerOpen(false);
   }
 
   // Cap the row at 3 chips so it never eats the screen. Not-yet-asked
@@ -138,6 +179,15 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
       return askedA - askedB;
     })
     .slice(0, MAX_VISIBLE_CHIPS);
+
+  const availableRelays = (Object.keys(REVELATIONS) as RevelationId[]).filter(
+    (id) =>
+      isRevelationKnown(REVELATIONS[id], witnessStages) &&
+      !relayedRevelations.has(id) &&
+      Boolean(witness.reactions?.[id])
+  );
+
+  const lastWitnessSource = [...messages].reverse().find((m) => m.role === "witness")?.source;
 
   return (
     <div className="flex h-full flex-col pb-[calc(env(safe-area-inset-bottom)+0px)]">
@@ -162,13 +212,6 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
 
         <div ref={contentRef} className="space-y-3">
           {messages.map((m, i) => {
-            if (i === typingIndex) {
-              return (
-                <div key={i} className="flex justify-start">
-                  <TypingIndicator />
-                </div>
-              );
-            }
             if (m.role === "evidence") {
               return (
                 <div key={i} className="flex justify-center">
@@ -179,24 +222,67 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
                 </div>
               );
             }
-            return (
-              <div key={i} className={`flex ${m.role === "player" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-[17px] leading-relaxed ${
-                    m.role === "player"
-                      ? "bg-amber-400 text-black rounded-br-sm"
-                      : "bg-white/10 text-white rounded-bl-sm"
-                  }`}
-                >
-                  {i === animatingIndex ? (
-                    <TypewriterText text={m.text} onDone={() => setAnimatingIndex(null)} />
-                  ) : (
-                    m.text
-                  )}
+            if (m.role === "relay") {
+              return (
+                <div key={i} className="flex justify-center">
+                  <div className="max-w-[90%] rounded-xl border border-sky-300/25 bg-sky-300/[0.07] px-4 py-2.5 text-center text-sm text-sky-100/90">
+                    {"\u{1F5E3}️ You tell them: "}
+                    {m.text}
+                  </div>
                 </div>
+              );
+            }
+
+            const isPlayer = m.role === "player";
+            const isPending = i === typingIndex;
+            const isFailedPlayerMsg = isPlayer && m.failed === true;
+
+            return (
+              <div key={i} className={`flex flex-col ${isPlayer ? "items-end" : "items-start"}`}>
+                {/* A short authored/generated stage direction — shown for
+                    the whole lifetime of this line (pause, typing, and
+                    settled), never duplicated across those phases. */}
+                {!isPlayer && m.cue?.action && (
+                  <p className="mb-1 max-w-[85%] text-xs italic leading-snug text-white/35">{m.cue.action}</p>
+                )}
+                {isPending ? (
+                  <button onClick={skipPause} aria-label="Skip pause">
+                    <TypingIndicator />
+                  </button>
+                ) : (
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-[17px] leading-relaxed ${
+                      isPlayer
+                        ? isFailedPlayerMsg
+                          ? "border border-red-400/40 bg-red-400/10 text-red-100 rounded-br-sm"
+                          : "bg-amber-400 text-black rounded-br-sm"
+                        : "bg-white/10 text-white rounded-bl-sm"
+                    }`}
+                  >
+                    {i === animatingIndex ? (
+                      <TypewriterText text={m.text} onDone={() => setAnimatingIndex(null)} instant={reducedMotionRef.current} />
+                    ) : (
+                      m.text
+                    )}
+                  </div>
+                )}
+                {isFailedPlayerMsg && (
+                  <button
+                    onClick={() => void retryFreeformMessage(witnessId)}
+                    disabled={busy}
+                    className="mt-1 rounded-full border border-red-400/40 bg-red-400/10 px-3 py-1 text-xs font-medium text-red-200 active:scale-95 disabled:opacity-50"
+                  >
+                    Couldn't reach the record — tap to retry
+                  </button>
+                )}
               </div>
             );
           })}
+          {pending && (
+            <div className="flex justify-start">
+              <TypingIndicator />
+            </div>
+          )}
           {messages.length === 0 && (
             <p className="py-8 text-center text-base text-white/40">No questions yet. Try one below.</p>
           )}
@@ -207,6 +293,10 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
           (chips + input) from "what was said" (the conversation above),
           which otherwise read as one continuous dark surface. */}
       <div className="border-t border-white/10 bg-[#171319] px-3 pb-3 pt-2">
+        {isFreeform && lastWitnessSource === "fallback" && (
+          <p className="mb-1.5 text-center text-[11px] text-white/30">Guided matching active — live AI not connected</p>
+        )}
+
         <div className="mb-2 flex flex-wrap gap-2">
           {visibleTopics.map((t) => {
             const asked = (witnessStages[witnessId][t.id] ?? -1) >= 0;
@@ -234,16 +324,28 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
         >
           <button
             type="button"
-            onClick={() => setPickerOpen(true)}
+            onClick={() => setEvidencePickerOpen(true)}
             aria-label="Present evidence"
-            className="shrink-0 rounded-full border border-white/15 bg-white/[0.05] p-3 text-lg text-white/70 active:text-white"
+            disabled={busy}
+            className="shrink-0 rounded-full border border-white/15 bg-white/[0.05] p-3 text-lg text-white/70 active:text-white disabled:opacity-50"
           >
             {"\u{1F4C4}"}
           </button>
+          {availableRelays.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setRelayPickerOpen(true)}
+              aria-label="Tell them what you've learned"
+              disabled={busy}
+              className="shrink-0 rounded-full border border-sky-300/25 bg-sky-300/[0.06] p-3 text-lg text-sky-200 active:text-white disabled:opacity-50"
+            >
+              {"\u{1F5E3}️"}
+            </button>
+          )}
           <input
             value={draft}
             onChange={(e) => setDraft(witnessId, e.target.value)}
-            placeholder="Ask in your own words, or tap a suggestion"
+            placeholder={isFreeform ? "Ask in your own words — English or Català" : "Ask in your own words, or tap a suggestion"}
             aria-label={`Ask ${witness.name} a question`}
             disabled={busy}
             className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-4 py-3 text-[17px] text-white placeholder:text-white/35 outline-none focus:border-amber-300/50 disabled:opacity-60"
@@ -253,13 +355,16 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
             disabled={busy || !draft.trim()}
             className="shrink-0 rounded-full bg-amber-400 px-5 py-3 text-base font-semibold text-black active:scale-95 transition-transform disabled:opacity-40"
           >
-            Ask
+            {pending ? "…" : "Ask"}
           </button>
         </form>
       </div>
 
-      {pickerOpen && (
-        <EvidencePicker discoveredIds={discoveredEvidence} onPresent={handlePresent} onClose={() => setPickerOpen(false)} />
+      {evidencePickerOpen && (
+        <EvidencePicker discoveredIds={discoveredEvidence} onPresent={handlePresent} onClose={() => setEvidencePickerOpen(false)} />
+      )}
+      {relayPickerOpen && (
+        <RelayPicker options={availableRelays} witnessId={witnessId} onRelay={handleRelay} onClose={() => setRelayPickerOpen(false)} />
       )}
     </div>
   );
