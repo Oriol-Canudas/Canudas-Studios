@@ -105,10 +105,10 @@ Out of scope for this iteration: new cases, voice/avatar, charisma dice, metagam
 ## Claude result — updated 2026-10-10 (conversational-depth round) by Claude
 
 - Status: **implemented, self-tested, and live-verified on the deployed endpoint.**
-- Commit: `4cb2471` on `main` (preceded by `7cd9bd1` for the feature itself,
-  `bbd1008` and `4cb2471` for the production-incident fix and a
-  language-matching fix found during live testing — see below). Nothing
-  left uncommitted in application code at hand-off.
+- Commits: `7cd9bd1` (the feature), `bbd1008` (production-incident fix —
+  see below), `4cb2471` and `094d6eb` (two rounds of a language-matching
+  fix found during live testing — see below), `0cd7481` (this handoff).
+  All on `main`. Nothing left uncommitted in application code at hand-off.
 - Deployed URL: https://gamexperspectives.vercel.app, auto-deploys from `main`.
 
 ### Production incident (found and fixed this round, not new to this round)
@@ -241,12 +241,23 @@ just how repetitive replies sound.
      variety across the authored menu of behaviors would need many more
      samples to confirm statistically; one run only shows it's not
      robotic repetition).
-   - **Catalan found a real bug**: a Catalan message got an English
-     reply the first time. Root cause: the language-matching instruction
-     existed but was buried mid-paragraph and lost out to "convey this
-     authored [English] content." Fixed by making language-matching its
-     own leading, explicit instruction (commit `4cb2471`); re-tested live
-     and confirmed fixed (Catalan in, Catalan out, correct substance).
+   - **Language-matching found two real issues, not one**: (a) a Catalan
+     message first got an English reply — the instruction existed but was
+     buried mid-paragraph and lost out to "convey this authored [English]
+     content"; fixed by making it its own leading, explicit instruction
+     (`4cb2471`), re-tested and confirmed (Catalan in, Catalan out). (b)
+     Broader re-testing afterward (9 varied English messages to Sofia)
+     found the OPPOSITE drift intermittently — English in, Catalan out,
+     ~2/9 times, with zero Catalan text anywhere in the authored source,
+     so genuine model stochasticity (temperature 0.5) rather than a
+     prompt-logic bug; Tom did not reproduce it in the same small sample.
+     Added an explicit negative constraint ("do not switch... even for a
+     single word... unless the player's own message was actually written
+     in that language," `094d6eb`); a follow-up batch of 6 more varied
+     English messages to Sofia came back 6/6 clean. **Reported honestly,
+     not as a guarantee**: this is a probabilistic improvement against a
+     non-deterministic model, not a provable fix — worth an occasional
+     spot-check, not a closed case.
 4. **Human product validation**: none, same as every prior round — still
    needs real players, per Oriol's own repeated framing of what this
    round's testing cannot substitute for.
