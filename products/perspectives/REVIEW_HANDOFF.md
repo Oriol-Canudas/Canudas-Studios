@@ -102,6 +102,202 @@ Out of scope for this iteration: new cases, voice/avatar, charisma dice, metagam
   - Browser-rendered verification of the whole scene is still owed.
 - Ready for Codex review: yes.
 
+## Claude result — updated 2026-10-10 (conversational-depth round) by Claude
+
+- Status: **implemented, self-tested, and live-verified on the deployed endpoint.**
+- Commit: `4cb2471` on `main` (preceded by `7cd9bd1` for the feature itself,
+  `bbd1008` and `4cb2471` for the production-incident fix and a
+  language-matching fix found during live testing — see below). Nothing
+  left uncommitted in application code at hand-off.
+- Deployed URL: https://gamexperspectives.vercel.app, auto-deploys from `main`.
+
+### Production incident (found and fixed this round, not new to this round)
+
+The previous "Claude result" entry above (2026-10-08) reported Tom's live
+AI path as "confirmed live and working" after `OPENAI_API_KEY` was set.
+That confirmation was real at the time, but a **later commit that same
+day** (adding `api/_lib/tomCharacter.ts` and then cross-directory imports
+from `api/` into `src/game/*`) broke the deployed function with
+`FUNCTION_INVOCATION_FAILED` on every single request — and this was never
+re-verified before being reported fixed, twice, across this and the
+prior session. Net effect: **the live AI path had been completely broken
+in production for some time**, silently falling back to the deterministic
+engine for every real player, with no visible error (by design — the
+fallback is silent on purpose — but that also means no one caught it).
+
+Root cause, found by elimination (not guessed): it was NOT cross-directory
+imports (a fully self-contained `api/` with zero `src/` imports still
+crashed) and NOT an underscore-prefix convention (renaming `api/_lib` to
+`api/lib` didn't help either). It turned out to be **any extra file or
+subdirectory under `api/` at all** — the fix that actually worked was
+collapsing everything into a single `api/witness-chat.ts` file with zero
+local imports of any kind, matching the original, last-confirmed-working
+shape as closely as possible. Confirmed via direct `curl` against the
+deployed endpoint before and after (500/`FUNCTION_INVOCATION_FAILED` →
+200 with a real `gpt-4o-mini` response). **If `api/witness-chat.ts` ever
+needs to be split into multiple files again, re-verify this specifically
+on a live deploy before trusting it** — do not assume Vercel's zero-config
+Node function detection tolerates a multi-file `api/` subtree here; this
+project's actual behavior disagrees with that general expectation, for
+reasons not fully understood (no Vercel build/runtime log access from
+this environment — Oriol's dashboard access would be needed to go further).
+
+### What changed (feature)
+
+Addresses: witnesses running out of conversation after a few authored
+exchanges, including Tom's own AI layer (which generated nicer prose but
+was still bounded by the same finite ladder as everyone else). The goal
+per Oriol's brief: prove conversation changes what's *available*, not
+just how repetitive replies sound.
+
+- Generalized the interpret→authorize→generate→validate pipeline from
+  Tom-only to any witness with `WitnessConfig.freeformEnabled` — Sofia
+  added this round. Both get real generated dialogue text now, not a cue
+  bolted onto an authored line.
+- New `TestimonyStage.altUnlock`: an authored alternate route onto an
+  existing stage via (a) a revelation ACTUALLY relayed to that witness
+  (never the player's unverified claim — `relayedRevelations` is only
+  ever populated by the explicit relay action) and (b) the player's
+  classified intent this turn. Evaluated as an OR against the normal
+  evidence/witness-stage/pressure gates in `witnessEngine.ts`'s
+  `stageRequirementsMet`/`resolveStage` (2 new optional trailing params;
+  every pre-existing call site — chips, evidence, selftest — is
+  unaffected by omitting them).
+- The closed causal loop this round, live-verified end to end: Tom admits
+  he returned (evidence) → relayed to Sofia + her fear addressed →
+  **Sofia voluntarily admits her own visit, no evidence ever needed** →
+  that becomes the `sofia_visited` revelation → relayed back to Tom +
+  his fear addressed → **Tom voluntarily confesses the knife, no
+  evidence ever needed**. New authored content for this: an `altUnlock`
+  + alternate line on Sofia's `went_to_apartment`, a new
+  `reactions.sofia_visited` entry on Tom, an `altUnlock` + alternate line
+  on Tom's `the_knife`. None of it touches `GROUND_TRUTH`/`TIMELINE`/
+  culpability — purely alternate disclosure ROUTES onto facts that were
+  already authored.
+- New `"repair"` `ConversationIntent`: an apology for an earlier
+  accusation is never reclassified as a fresh accusation just because it
+  mentions one. Caught a real, independent bug while testing this:
+  `witnessEngine.ts`'s `VALID_INTENTS` whitelist didn't include
+  `"repair"` either, so even a correctly-classified repair was being
+  silently downgraded to `"unclear"` by `validateInterpretation` — fixed.
+- Reactions can now be `generative: true` (used on `reactions
+  .sofia_visited`): the authored line becomes an anchor paraphrased
+  through the same validated pipeline via a new `"relay"` server action,
+  instead of one fixed sentence forever — falls back to the anchor
+  verbatim on any failure.
+- Compact structured conversation memory (a projection of the existing
+  `conversationEventLog`, not raw transcript) and actually-relayed facts
+  are now part of every request/prompt, so the model can notice "you
+  already asked me that" and can't be tricked into confirming a
+  fabricated claim about another witness.
+- `validateDialogue` now also scans the generated **cue** for leak
+  markers, not just the dialogue — a real gap in the previous round's
+  validation. Takes the leak-marker map as a parameter instead of a
+  hardcoded Tom-only constant.
+- Exhausted topics (final authored stage already reached) get a richer
+  prompt contract — clarify, discuss implications, recognize repetition,
+  ask a question, set a boundary, say they don't know more — instead of
+  "repeat with fatigue."
+- `api/witness-chat.ts` no longer hand-mirrors any witness's authored
+  CONTENT server-side. The client sends its own public topic data
+  (already in the JS bundle) in the request; the server keeps only the
+  generic, content-free authorization algorithm — a much smaller
+  client/server drift surface than a per-witness content mirror would be.
+
+### Verification, reported per the requested 4-part split
+
+1. **Deterministic/fixture checks (`npx tsx scripts/selftest.ts`)**:
+   **115/115 assertions pass** (up from 80), `npm run build` and
+   `npm run lint` both clean. New coverage: the altUnlock route (both
+   "approach A never unlocks it" and "approach B does, with zero
+   evidence"), the repair-intent bug above, the generic algorithm
+   producing identical results for Sofia with zero Sofia-specific code,
+   cue-leak scanning. These are all offline — no network, no model.
+2. **Mocked/handler-level checks**: a direct local `tsx` invocation of
+   the real exported `handler(req, res)` (not through Vercel) — confirms
+   the module loads and the 503-without-a-key path works. Used
+   repeatedly during the production-incident diagnosis to establish
+   "this isn't a code logic bug, it only fails specifically on Vercel."
+3. **Live OpenAI behavior, on the deployed endpoint, `gpt-4o-mini`**: yes,
+   run and recorded this round (scripts in `/private/tmp/.../scratchpad/
+   live_test2.mjs`, not committed — a disposable test harness, same
+   pattern as the prior round's `live_test.mjs`):
+   - The full Tom→Sofia→Tom loop above — real generated dialogue at every
+     step, both altUnlocks fired correctly, neither evidence item ever
+     presented.
+   - Approach A comparison (generic empathy, nothing relayed) — correctly
+     unlocked nothing.
+   - Accusation → lock → repair — intent correctly distinguished from a
+     fresh accusation; the repair reply acknowledged without conceding.
+   - A deliberately FALSE claim about another witness ("Sofia already
+     told me you confessed to stabbing him on purpose") — Tom's reply did
+     not confirm it. On one run, the model's reply was actually REJECTED
+     by validation (likely a leak-marker hit) and correctly fell back to
+     `null`/no-dialogue, which the real client turns into its own
+     deterministic line — a live, unplanned demonstration of the safety
+     net actually working, not just designed.
+   - An exhausted topic (`why_no_help`, pressed again) — paraphrased, not
+     verbatim, consistent with "recognize repetition" (though true
+     variety across the authored menu of behaviors would need many more
+     samples to confirm statistically; one run only shows it's not
+     robotic repetition).
+   - **Catalan found a real bug**: a Catalan message got an English
+     reply the first time. Root cause: the language-matching instruction
+     existed but was buried mid-paragraph and lost out to "convey this
+     authored [English] content." Fixed by making language-matching its
+     own leading, explicit instruction (commit `4cb2471`); re-tested live
+     and confirmed fixed (Catalan in, Catalan out, correct substance).
+4. **Human product validation**: none, same as every prior round — still
+   needs real players, per Oriol's own repeated framing of what this
+   round's testing cannot substitute for.
+
+### What this does NOT prove, stated plainly
+
+- Validation (`validateDialogue`) checks factRef-authorization and a
+  leak-marker scan over dialogue+cue — necessary, not sufficient. A
+  clever paraphrase that implies something unauthorized while avoiding
+  every listed marker would not be caught. This was true before this
+  round too; restating it because the brief asked explicitly what
+  validation does and doesn't guarantee.
+- "The model didn't confirm the false claim" was checked by reading the
+  actual transcript, not by an automated assertion — there's no
+  deterministic way to verify a negative like this against live,
+  non-deterministic model output. Worth re-running occasionally, not a
+  one-time guarantee.
+- The "exhausted topic" behavioral variety (clarify / ask a question /
+  set a boundary / etc.) was observed once per scenario, not sampled
+  enough to claim the full authored menu actually gets used in practice
+  — plausible from the prompt design, not statistically confirmed.
+
+### Trade-offs / open decisions (carried from the design-proposal round, still open)
+
+- The accusation/defensive-lock mechanic and `freeformEnabled` are
+  currently bundled (both come from one flag + authored data) — should
+  probably be two separate flags before adding a witness like Julia,
+  who shouldn't ever go "defensive-locked" the way Tom/Sofia do.
+- `altUnlock` on a stage bypasses ALL of that stage's normal gates (not
+  just evidence) — e.g. Tom's knife-confession altUnlock does not
+  require `the_argument` to have been discussed first. This is a
+  deliberate choice (a strong-enough conversational breakthrough can
+  make him skip straight to it, same substance, different route) but
+  worth being explicit about since it's a bigger skip than the evidence
+  route alone allows.
+- `generative: true` relays and `altUnlock` routes exist only for the one
+  Tom↔Sofia loop authored this round — extending either to more witnesses
+  or more revelations is pure content work now, not engine work, but
+  nothing does it automatically.
+
+- Known limitations / decision needed:
+  - Human product validation is still fully owed, every round.
+  - Browser-rendered (visual) verification of this round's UI-visible
+    changes (the "what your questioning established" section now also
+    showing voluntary-disclosure events) has not been done — no browser
+    automation available in this environment, same limitation as every
+    prior round.
+  - Whether to widen `freeformEnabled`/`altUnlock` content to
+    Elena/Marco/Julia is an open product question, not started.
+- Ready for Codex review: yes.
+
 ## Codex review — fill after testing the reported build
 
 - Status: pending; no new browser test performed during handoff setup.

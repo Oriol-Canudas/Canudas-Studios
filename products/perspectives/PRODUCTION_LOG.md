@@ -703,3 +703,66 @@ Current limitations / next step
 - Browser automation still unavailable in this environment — the actual
   felt pacing (does 3 turns feel right, too slow, too fast) hasn't been
   played live by anyone yet; worth Oriol's read once he plays it.
+
+## 2026-10-10 — Conversational depth: a real cross-witness causal loop, and a production incident fixed
+
+What changed
+- Generalized Tom's AI conversation pipeline (interpret → authorize →
+  generate → validate) from Tom-only to any witness with
+  `freeformEnabled` — authored for Sofia this round. Both now get real
+  model-generated dialogue text, not just a cue.
+- New `TestimonyStage.altUnlock`: an authored alternate route onto an
+  existing disclosure stage via a revelation actually relayed to that
+  witness + the player's classified intent — never the player's own
+  unverified claim, never a new invented fact. Live-verified closed
+  loop: get Tom to admit he returned (evidence) → relay it to Sofia +
+  address her fear → she voluntarily admits her own visit, no evidence
+  needed → relay THAT to Tom + address his fear → he voluntarily
+  confesses the knife, no evidence needed either.
+- New `"repair"` conversational intent, so an apology for an earlier
+  accusation is never reclassified as a fresh accusation. Found and
+  fixed an independent, pre-existing bug while building this: the
+  intent whitelist in `witnessEngine.ts` was missing a value entirely.
+- Reactions can be `generative: true` — a relay's authored line becomes
+  a paraphrased, validated reply instead of one fixed sentence forever.
+- `validateDialogue` now also scans the generated cue for leaked
+  secrets, not just the dialogue (a real gap before this round).
+- **Found and fixed a live production incident, not new to this round**:
+  the deployed `api/witness-chat.ts` had been crashing with
+  `FUNCTION_INVOCATION_FAILED` on every single request since the
+  previous round's contextual-conversation work — meaning the live AI
+  path was never actually working in production despite being reported
+  "confirmed live and working" twice. Root cause, found by elimination:
+  not cross-directory imports, not an underscore-prefix convention —
+  specifically having more than one file under `api/` at all. Fixed by
+  collapsing everything into one self-contained `api/witness-chat.ts`
+  file with zero local imports.
+
+Why
+- Oriol's brief: prove conversation changes what's available to the
+  player, not just that generated replies sound less repetitive.
+- The production incident needed fixing before any of the above could
+  be verified live at all.
+
+Files
+- `src/game/types.ts`, `src/game/witnessEngine.ts`, `src/game/store.ts`,
+  `src/game/interpreter.ts`, `src/game/caseData.ts`,
+  `src/components/WitnessChat.tsx`, `src/components/RevealScreen.tsx`,
+  `api/witness-chat.ts` (now the only file under `api/`),
+  `scripts/selftest.ts`.
+
+How to test
+- `npx tsx scripts/selftest.ts` → 115/115 (grew from 80).
+- Live: on https://gamexperspectives.vercel.app, get Tom to admit he
+  returned (present his phone records), relay that to Sofia, then write
+  something empathetic to her WITHOUT ever showing the garage log —
+  she should admit her own visit anyway. Relay that admission back to
+  Tom, write something empathetic to him WITHOUT ever showing the knife
+  or forensic report — he should confess anyway.
+
+Current limitations / next step
+- Human product validation is still fully owed, every round.
+- Elena/Marco/Julia remain fully deterministic — the mechanism
+  generalizes, the content doesn't, by design this round.
+- See REVIEW_HANDOFF.md's 2026-10-10 entry for the full trade-offs list
+  and exactly what the live testing does and doesn't prove.

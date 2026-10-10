@@ -5,21 +5,40 @@ Claude. This file is the fastest way for any collaborator to understand
 **what is currently built, what is decided, what is being worked on, and
 what should happen next** without reconstructing context from chat history.
 
-## Shared review queue (2026-10-08)
+## Shared review queue (2026-10-10)
 
 Read [REVIEW_HANDOFF.md](REVIEW_HANDOFF.md) for Codex's prior playtest findings,
 acceptance criteria and the implementation/review exchange. Oriol has selected
 repository-based coordination: Claude implements, Codex reviews; one code editor
-at a time. **Step 1 (integrity fixes), step 2 (Tom's free-form conversation
-scene), and the live AI path are all implemented, deployed, and confirmed
-working.** Oriol set `OPENAI_API_KEY` and OpenAI billing after the initial
-build; the endpoint was then verified live from this session (real
-`gpt-4o-mini` responses for both the interpret and perform calls — see
-REVIEW_HANDOFF.md's "Claude result" for the original honest breakdown of
-what was/wasn't tested as of that writing; this line post-dates it). The
-older "Next build step" and "Open product questions" below describe the
-previous baseline; reconciled where still relevant. Oriol still needs to
-trigger Codex's review pass — no automatic agent notification is configured.
+at a time.
+
+**Step 7 (conversational depth / cross-witness causal loop) is implemented,
+deployed, and live-verified** — see the new "Claude result" entry in
+REVIEW_HANDOFF.md dated 2026-10-10 for the full breakdown. Headline: Tom's
+AI pipeline is now generalized to Sofia (not Tom-exclusive anymore), and a
+real conversational route — not evidence — can now change what a witness
+is willing to disclose, demonstrated end-to-end on the live deployment: a
+player can get Sofia to admit her visit, and later get Tom to confess the
+knife, **without ever presenting evidence for either**, purely by relaying
+what they learned and addressing each witness's own fear. This is on top
+of generated dialogue text itself (not just a cue) being live and verified
+for both witnesses — superseding the "cue-only, Tom-only" framing in the
+rest of this file below, which is kept as a historical record of steps 1–6.
+
+**Also worth flagging to Codex explicitly**: a genuine, significant
+production bug was found and fixed this round — `api/witness-chat.ts` had
+been returning `FUNCTION_INVOCATION_FAILED` on every single live request
+since the step-2 contextual-conversation work, meaning the live AI path
+was NEVER actually working in production despite being reported as
+"confirmed live and working" in this file and in REVIEW_HANDOFF.md's prior
+"Claude result" entry. Players were silently getting the deterministic
+fallback the entire time. Root cause and fix are in the new REVIEW_HANDOFF.md
+entry's "Production incident" section — flagging here because it means the
+confidence level on the OLD "Claude result" entry below was wrong, not
+just incomplete.
+
+Oriol still needs to trigger Codex's review pass — no automatic agent
+notification is configured.
 
 ## Ownership
 
@@ -80,6 +99,54 @@ opening a conversation and again on any real demeanor change — applies
 uniformly to both the deterministic engine and Tom's AI scene, since
 both already wrote to the same shared `demeanor` state.
 
+(7) **conversational depth / a real cross-witness causal loop** — the
+problem this round addressed: witnesses ran out of conversation after a
+few authored exchanges, and Tom's own AI layer, while generating real
+dialogue, was still bounded by the exact same finite ladder as everyone
+else, so it ran dry too once all topics hit their final authored stage.
+Rather than just making replies sound less repetitive, this round proves
+conversation can change what's actually *available*:
+- The interpret→authorize→generate→validate pipeline is generalized from
+  Tom-only to any witness with `WitnessConfig.freeformEnabled` — now Tom
+  **and Sofia**. Each gets real generated dialogue (not a cue bolted onto
+  an authored line — the dialogue text itself is model-generated,
+  validated, bounded).
+- New `TestimonyStage.altUnlock`: an authored alternate route onto an
+  *existing* stage via (a) a revelation actually relayed to that witness
+  (never the player's unverified claim) plus (b) the player's classified
+  intent (e.g. empathetic_appeal) — evaluated as a plain OR against the
+  normal evidence/witness-stage/pressure gates, never a new fact invented.
+  Live-verified closed loop: Tom admits he returned (evidence) → relayed
+  to Sofia + her fear addressed → Sofia voluntarily admits her own visit,
+  **no evidence ever needed** → that becomes `sofia_visited` → relayed
+  back to Tom + his fear addressed → Tom voluntarily confesses the knife,
+  **no evidence ever needed**. The model only ever classifies intent; the
+  deterministic engine evaluates the actual gate.
+- New `"repair"` intent: an apology for an earlier accusation is never
+  reclassified as a fresh accusation just because it mentions one (a real
+  bug existed here independent of this feature — `witnessEngine.ts`'s
+  intent whitelist didn't have `"repair"` either, caught by a new test).
+- Reactions can be `generative: true` — a relay's authored line becomes
+  an anchor paraphrased through the same validated pipeline instead of a
+  single fixed sentence forever, so the player can follow up on a
+  witness's reaction in their own words. Used for a new `reactions
+  .sofia_visited` entry on Tom.
+- `validateDialogue` now also scans the generated **cue**, not just the
+  dialogue, for leak markers — a real gap in the previous round's
+  validation, fixed as part of this one.
+- `api/witness-chat.ts` no longer hand-mirrors any witness's authored
+  content server-side — the client sends its own public topic data in
+  the request; the server keeps only the generic, content-free
+  authorization algorithm. See "Production incident" in REVIEW_HANDOFF.md
+  for why this file is now a single self-contained file with zero local
+  imports at all.
+- Live-verified (`gpt-4o-mini`, real deployed endpoint, not fixture-only):
+  the full causal loop above, an accusation→repair exchange correctly
+  distinguished from a fresh accusation, a false claim about another
+  witness correctly NOT confirmed, an exhausted topic restated without
+  being verbatim, and English/Catalan (Catalan needed one follow-up fix —
+  see REVIEW_HANDOFF.md).
+
 **Explicit scope call (Oriol, 2026-10-07):** go deep on this one case before
 going wide. Backlogged, not forgotten: RPG-style mastery/seniority
 meta-progression across cases, a multi-case content pipeline, and full voice
@@ -118,13 +185,22 @@ recognition + a conversational "talking avatar" witness.
 
 ## What is NOT being built yet
 
-- Real-model-generated dialogue TEXT for Tom — the model's only creative
-  output this round is a short performance cue; the dialogue itself stays
-  the authored line verbatim. See DECISIONS.md for why this scope line
-  was drawn where it was.
-- Free-form conversation for any witness other than Tom.
+- Free-form conversation for Elena, Marco, or Julia — this round
+  deliberately generalized the mechanism (so adding a 3rd/4th/5th witness
+  is now "author `freeformEnabled: true` + a `CHARACTER_CONTEXT` entry,"
+  not new engine code) but only actually authored it for Tom and Sofia,
+  per "generalize only what Tom and Sofia need."
+  Elena/Marco/Julia remain fully deterministic.
 - A general belief/trust-score engine, or any numeric persuasion mechanic
   — explicitly out of scope (Codex's "charisma dice"/metagame exclusion).
+  Demeanor + its authored causes remain the only "emotion" mechanic.
+- Witness-initiated conversational agency beyond the existing one-shot
+  authored reactions (e.g. a witness proactively asking the player a
+  question). Deliberately deferred — see "Trade-offs" in REVIEW_HANDOFF.md's
+  new entry.
+- More `altUnlock`/`generative` relay pairs beyond the one Tom↔Sofia loop
+  authored this round — the mechanism generalizes; the content doesn't
+  yet, by design (small slice, not "more conversation everywhere").
 - Cinematic (portrait-led) reveal — still a text-based reveal screen.
 - RPG mastery/seniority meta-progression, multi-case content, voice,
   multiplayer — all explicitly backlogged.
@@ -135,38 +211,63 @@ recognition + a conversational "talking avatar" witness.
 ## Current runnable state
 
 - `npm install && npm run dev` → http://localhost:5173 (or whichever port is free)
-- `npx tsx scripts/selftest.ts` → 80/80 assertions pass
+- `npx tsx scripts/selftest.ts` → **115/115 assertions pass** (up from 80)
 - `npm run build` → clean; `npm run lint` → clean
 - Live at https://gamexperspectives.vercel.app, auto-deploys from `main`.
 - **`OPENAI_API_KEY` is set as a Vercel Production environment variable**
   (never in the repo/`.env` — Oriol set it via the dashboard) and
-  confirmed live: both the `interpret` and `perform` calls in
-  `api/witness-chat.ts` returned real `gpt-4o-mini` responses when
-  tested directly against the deployed endpoint. Tom's scene runs on
-  live AI by default now; it still degrades silently to the
-  deterministic fallback on any transient failure, by design.
+  **re-confirmed live as of 2026-10-10** after fixing the production
+  incident described in REVIEW_HANDOFF.md: both Tom's and Sofia's
+  `converse` action return real `gpt-4o-mini`-generated dialogue (not
+  just a cue) against the deployed endpoint. Degrades silently to the
+  deterministic fallback on any transient failure, by design — and this
+  round added a live-observed example of that safety net actually
+  firing (see REVIEW_HANDOFF.md's Scenario 4).
 
 ## Current architecture
 
 ```text
 GROUND_TRUTH + TIMELINE + EVIDENCE + WITNESSES   (src/game/caseData.ts)
+  — WITNESSES now includes TestimonyStage.altUnlock (conversational
+    alt-route) and reactions[x].generative — authored for Tom + Sofia
         ↓
 witnessEngine.ts  —  matches free text → topic, resolves furthest
                      truthfully-reachable testimony stage given discovered
-                     evidence + cross-witness state + ask count; also the
-                     validation boundary (validateInterpretation) that
-                     every free-form turn must pass through
+                     evidence + cross-witness state + ask count + (NEW)
+                     relayed revelations + this turn's classified intent
+                     (altUnlock, evaluated as an OR against the normal
+                     gates — 2 new optional params, every pre-existing
+                     call site unaffected); also the validation boundary
+                     (validateInterpretation) every free-form turn passes
         ↓
-interpreter.ts  —  Tom only: classifies a free-text message (intent / topic /
-                   cited evidence) via api/witness-chat.ts if an OpenAI key
-                   exists, else a deterministic keyword fallback — same
-                   contract either way, always validated before use
+interpreter.ts  —  any witness.freeformEnabled (Tom, Sofia): classifies a
+                   free-text message via api/witness-chat.ts if an OpenAI
+                   key exists, else a deterministic keyword fallback —
+                   same contract either way, always validated before use.
+                   Sends the witness's own full public topic data + a
+                   compact conversationMemory projection + relayedFacts.
         ↓
-store.ts (Zustand)  —  session state incl. defensiveTopics, conversationEventLog;
-                       resolveFreeformTurn() decides the validated outcome,
-                       reusing the same advanceTopic() every other witness uses
+store.ts (Zustand)  —  session state incl. defensiveTopics,
+                       conversationEventLog, relayedRevelations;
+                       resolveFreeformTurn() decides the validated
+                       outcome (now incl. "repair" and "voluntary_
+                       disclosure" as distinct TurnEventKinds), reusing
+                       the same advanceTopic() every witness uses.
+                       relayRevelation() is now async: a `generative:
+                       true` reaction calls the server's "relay" action
+                       to paraphrase its authored anchor, falling back
+                       to the anchor verbatim on any failure.
         ↓
-components/*  —  CaseHome → Hear/Examine/Reason tabs → Verdict → Reveal
+api/witness-chat.ts  —  SINGLE self-contained file, zero local imports
+                        (see REVIEW_HANDOFF.md's "Production incident" —
+                        this shape is deliberate, not an oversight).
+                        "converse" (2-pass: interpret → authorize →
+                        generate → validate) and "relay" (1-pass
+                        paraphrase of an anchor) actions.
+        ↓
+components/*  —  CaseHome → Hear/Examine/Reason tabs → Verdict → Reveal.
+                 RevealScreen's "what your questioning established"
+                 section now also surfaces voluntary_disclosure events.
 ```
 
 The Case Board (`CaseBoard.tsx`) only ever renders player-discovered
@@ -197,54 +298,61 @@ and must stay that way to avoid spoiling the case.
 - `src/components/CharacterDossier.tsx`, `IntroSequence.tsx`,
   `EvidencePicker.tsx`, `RelayPicker.tsx`, `EmotionReveal.tsx` —
   full-screen/overlay experiences.
-- `src/game/interpreter.ts` — free-text interpretation for Tom: deterministic
-  fallback + the client side of the AI call, always degrading silently.
-- `api/witness-chat.ts` — the server-side OpenAI adapter. Reads
-  `OPENAI_API_KEY` only; returns 503 (treated as "use fallback") when it's
-  absent or `AI_WITNESS_CHAT_DISABLED=1` is set.
-- `scripts/selftest.ts` — regression harness (75 assertions); run this after
-  any change to `caseData.ts`, `witnessEngine.ts`, `store.ts`, or `interpreter.ts`.
+- `src/game/interpreter.ts` — free-text interpretation for any
+  `freeformEnabled` witness: deterministic fallback + the client side of
+  the AI call (`converseWithWitness`, `generateRelayReaction`), always
+  degrading silently.
+- `api/witness-chat.ts` — the server-side OpenAI adapter. **Single
+  self-contained file, intentionally zero local imports — see
+  REVIEW_HANDOFF.md's "Production incident" before adding any
+  `api/lib/*` file back; that exact shape caused a live-production
+  crash twice.** Reads `OPENAI_API_KEY` only; returns 503 (treated as
+  "use fallback") when it's absent or `AI_WITNESS_CHAT_DISABLED=1` is set.
+- `scripts/selftest.ts` — regression harness (**115 assertions**); run this
+  after any change to `caseData.ts`, `witnessEngine.ts`, `store.ts`,
+  `interpreter.ts`, or `api/witness-chat.ts`.
 - `REVIEW_HANDOFF.md` — shared review queue with Codex (playtesting/review);
   read before starting the next iteration.
 
 ## Open product questions
 
-- Should the "perform" pass eventually generate the witness's actual
-  dialogue text, not just a cue? Deliberately deferred — see DECISIONS.md.
-  Needs real-key testing to validate safely, which hasn't been possible yet.
-- Should Tom's free-form scene extend to other witnesses? Explicitly
-  backlog this iteration per Oriol's instruction — not yet confirmed as
-  a next step.
+- Should Elena, Marco, and/or Julia get `freeformEnabled` + authored
+  character context next, now that the mechanism is proven on 2
+  witnesses? The engine work is done; this is now purely a content/
+  authoring decision (and a cost/latency one — see Next build step).
+- Should more `altUnlock`/`generative` relay pairs be authored across the
+  rest of the cast, now that the Tom↔Sofia loop has proven the pattern
+  live? Each one is a deliberate, hand-authored addition, not something
+  that should be generated/inferred.
+- Should the accusation/defensive-lock mechanic stay bundled with
+  `freeformEnabled`, or become its own separate flag? Flagged as an
+  explicit trade-off in REVIEW_HANDOFF.md — e.g. Julia probably shouldn't
+  ever "lock" the way Tom/Sofia do, but could still benefit from
+  non-repetitive generated replies.
 - No decision yet on whether future cases will be hand-authored (like this
   one) or machine-assisted. Per the brief, do not build a case-generation
   system yet.
 
 ## Next build step
 
-Two tracks are queued; which goes first is Oriol's call.
+**A. Human product validation** — still the biggest gap across every
+round so far: whether players actually notice "because I shared this,
+they told me something they wouldn't have otherwise" without being told
+to look for it. Nothing in this round's automated/live-API testing can
+substitute for that.
 
-**A. ~~Verify the AI path for real.~~ Done (2026-10-08).** `OPENAI_API_KEY`
-is set and confirmed live. Still worth doing when Oriol has time: a real
-playthrough watching for `source: "ai"` vs `"fallback"` in practice, and
-checking the Vercel function logs for the latency/token diagnostics
-`api/witness-chat.ts` emits, to get a real sense of cost/latency per turn
-before considering any expansion of the model's creative scope (see
-DECISIONS.md on why dialogue generation itself is still deferred).
+**B. Decide on widening `freeformEnabled`/`altUnlock` content** to Elena/
+Marco/Julia, per the open questions above — purely an authoring decision
+now, no new engine work required.
 
-**B. Rest of the visual/UX ranked list**: "Living portraits" (item 2) is
-now done — in a bigger form than originally scoped (full distinct
-emotion portraits via `EmotionReveal`, not a subtle glow/desaturate
-treatment on one static image). Remaining:
-1. Cinematic reveal — rebuild `RevealScreen.tsx` as a portrait-led
-   walkthrough instead of a text wall.
-2. Key-line voice acting.
-3. Transition polish.
+**C. Rest of the visual/UX ranked list** (unchanged from before this
+round): cinematic portrait-led reveal, key-line voice acting, transition
+polish — all still backlogged, untouched this round.
 
-**C. General belief propagation beyond Tom's scene** — the relay system
-(Section "investigation-integrity pass" below) already generalizes
-cross-witness reactions; extending the accusation/evidence/empathy
-mechanic itself to other witnesses is a deliberate backlog item, not
-started.
+**D. Watch Vercel's function logs for real cost/latency** now that two
+witnesses generate dialogue instead of one — bounded at 2 OpenAI calls
+per turn per witness either way, but worth a real look before widening
+further.
 
 ## Sync protocol
 
