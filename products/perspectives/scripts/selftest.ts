@@ -7,8 +7,7 @@ import { WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
 import { gradeVerdict } from "../src/game/verdictGrading";
 import { getAuthorizedDisclosures, isTopicReachable, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
-import { validateDialogue } from "../api/witness-chat";
-import { LEAK_MARKERS } from "../api/lib/characterContext";
+import { LEAK_MARKERS, validateDialogue } from "../api/witness-chat";
 
 let failures = 0;
 function assert(cond: boolean, msg: string) {
