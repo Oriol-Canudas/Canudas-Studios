@@ -1,15 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────
 // Shareable result text for the Reveal screen.
 //
-// Deliberately spoiler-safe by construction: never names WHO was
-// responsible or restates any case fact — only the player's OWN graded
-// performance (correct/wrong/insufficient, not the answer itself) and a
+// Deliberately spoiler-safe by construction: never names WHICH option the
+// player picked, the true answer, or any case fact — only the player's OWN
+// graded performance (correct/wrong/insufficient, labeled by axis) and a
 // process highlight (HOW they got there, pulled from their own
-// conversationEventLog). Someone who hasn't played yet and reads a
-// shared result learns nothing about the actual case.
+// conversationEventLog). Someone who hasn't played yet and reads a shared
+// result learns nothing about the actual case. Generic over any case's
+// VerdictAxis[] — not hardcoded to this case's two axes.
 // ─────────────────────────────────────────────────────────────────────────
 
-import type { ConversationEvent } from "./types";
+import type { ConversationEvent, VerdictAxis } from "./types";
 import type { GradedVerdict, Judgment } from "./verdictGrading";
 
 const JUDGMENT_WORD: Record<Judgment, string> = {
@@ -35,6 +36,9 @@ function pickHighlight(log: ConversationEvent[]): string | null {
 }
 
 export interface ShareCardInput {
+  caseTitle: string;
+  shareUrl: string;
+  axes: VerdictAxis[];
   graded: GradedVerdict;
   documentsRead: number;
   totalDocuments: number;
@@ -46,12 +50,18 @@ export interface ShareCardInput {
 
 export function buildShareText(input: ShareCardInput): string {
   const highlight = pickHighlight(input.conversationEventLog);
+  const axisSummary = input.axes
+    .map((axis) => {
+      const grade = input.graded.axisGrades.find((g) => g.axisId === axis.id);
+      return `${axis.shortLabel ?? axis.question}: ${grade ? JUDGMENT_WORD[grade.judgment] : "—"}`;
+    })
+    .join(" · ");
   const lines = [
-    'I just closed "The Last Message" on Perspectives.',
-    `Responsible: ${JUDGMENT_WORD[input.graded.responsibleJudgment]} · Elena: ${JUDGMENT_WORD[input.graded.elenaJudgment]}`,
+    `I just closed "${input.caseTitle}" on Perspectives.`,
+    axisSummary,
     `${input.documentsRead}/${input.totalDocuments} documents · ${input.witnessesQuestioned}/${input.totalWitnesses} witnesses · ${input.durationLabel}`,
   ];
   if (highlight) lines.push(highlight);
-  lines.push("Think you can do better? https://gamexperspectives.vercel.app");
+  lines.push(`Think you can do better? ${input.shareUrl}`);
   return lines.join("\n");
 }

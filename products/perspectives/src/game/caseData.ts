@@ -8,7 +8,8 @@
 // to stay consistent with.
 // ─────────────────────────────────────────────────────────────────────────
 
-import type { EvidenceFact, EvidenceId, EvidenceItem, RevelationDef, RevelationId, WitnessConfig } from "./types";
+import type { EvidenceFact, EvidenceId, EvidenceItem, RevelationDef, RevelationId, VerdictAxis, WitnessConfig } from "./types";
+import type { VerdictGradingConfig } from "./verdictGrading";
 
 export const CASE_META = {
   title: "The Last Message",
@@ -1036,5 +1037,85 @@ export const REVELATIONS: Record<RevelationId, RevelationDef> = {
     id: "sofia_contact_hidden",
     label: "Sofia initially denied any contact with Daniel after his 23:06 text — phone records say otherwise.",
     source: { witness: "sofia", topic: "contact_after_text", minStage: 1 },
+  },
+};
+
+// ───────────────────────────── Verdict ─────────────────────────────────
+//
+// This case's two questions — who's responsible, and what's the call on
+// Elena — expressed as the generic VerdictAxis shape so VerdictScreen.tsx/
+// RevealScreen.tsx/shareCard.ts never need to know this case has exactly
+// these two axes. A future case authors its own VERDICT_AXES/VERDICT_CONFIG
+// with a different shape entirely (see verdictGrading.ts).
+
+export const VERDICT_AXES: VerdictAxis[] = [
+  {
+    id: "responsible",
+    question: "Who is responsible for Daniel's death?",
+    shortLabel: "Responsible",
+    options: [
+      { id: "elena", label: "Elena" },
+      { id: "sofia", label: "Sofia" },
+      { id: "tom", label: "Tom" },
+      { id: "someone_else", label: "Someone else" },
+      { id: "insufficient_evidence", label: "Insufficient evidence" },
+    ],
+  },
+  {
+    id: "elenaVerdict",
+    question: "Verdict on Elena",
+    shortLabel: "Elena",
+    options: [
+      { id: "guilty", label: "Guilty" },
+      { id: "not_guilty", label: "Not guilty" },
+      { id: "insufficient_evidence", label: "Insufficient evidence" },
+    ],
+  },
+];
+
+const TRUE_RESPONSIBLE = "tom";
+const TRUE_ELENA_VERDICT = "not_guilty";
+
+// Keyed `${responsibleJudgment}:${elenaJudgment}` (axes-array order) —
+// every combination gets its own honest headline. "Insufficient" is never
+// phrased as a failure: declining to commit without enough evidence is a
+// legitimate outcome, distinct from actively getting it wrong.
+export const VERDICT_CONFIG: VerdictGradingConfig = {
+  axes: VERDICT_AXES,
+  judge: (axisId, chosen) => {
+    if (chosen === "insufficient_evidence") return "insufficient";
+    if (axisId === "responsible") return chosen === TRUE_RESPONSIBLE ? "correct" : "wrong";
+    if (axisId === "elenaVerdict") return chosen === TRUE_ELENA_VERDICT ? "correct" : "wrong";
+    return "wrong";
+  },
+  headlines: {
+    "correct:correct": "You reconstructed it. Elena didn't do this — and you knew who did.",
+    "correct:wrong": "You knew who was really responsible — but still couldn't quite let Elena off the hook.",
+    "correct:insufficient": "You knew who was really responsible, and rightly wouldn't commit on Elena without being sure — a defensible, cautious read.",
+    "wrong:correct": "You cleared the right person — but the real story still slipped past you.",
+    "wrong:wrong": "The story the prosecution told you is exactly the one you walked away believing.",
+    "wrong:insufficient": "You weren't ready to convict Elena, which is the right instinct — but you pointed the finger at the wrong person anyway.",
+    "insufficient:correct": "You cleared Elena and rightly stopped short of naming who was responsible — honest, if incomplete.",
+    "insufficient:wrong": "You convicted Elena, yet weren't confident enough in who was actually responsible to say — those two don't sit well together.",
+    "insufficient:insufficient": "You called it open on both counts. Fair, given how the evidence is laid out — but the case was more resolvable than that.",
+  },
+};
+
+// Small, hand-authored notes per structured verdict choice — not inferred
+// from the player's board, which can't honestly establish "this supports
+// my conclusion" on its own. Shown in the Reveal alongside the headline.
+// Keyed axisId -> optionId -> note.
+export const VERDICT_REVEAL_NOTES: Record<string, Record<string, string>> = {
+  responsible: {
+    tom: "You landed on Tom. The garage log placing him back at the apartment at 23:59, his own phone records contradicting his first “I went straight home,” and his eventual account of the knife all point the same way.",
+    elena: "You landed on Elena. But she left at 23:52 — before the fatal struggle ever happened — and the entrance camera and her own phone records both put her away from the building afterward.",
+    sofia: "You landed on Sofia. She was there, and the conversation that night was raw, but every record has her leaving by 23:57, before Tom ever arrived.",
+    someone_else: "You pointed past the three people in this case. Nothing in the evidence suggests anyone beyond Elena, Sofia, and Tom was in that apartment that night.",
+    insufficient_evidence: "You judged the evidence on who was responsible as incomplete. It's dense, but the garage log and Tom's own account do converge on one person.",
+  },
+  elenaVerdict: {
+    not_guilty: "You cleared Elena. She left the apartment well before the fatal struggle began, with the entrance camera and the garage log agreeing on the timing.",
+    guilty: "You convicted Elena. But she was gone by 23:52 — before Sofia even arrived, let alone Tom.",
+    insufficient_evidence: "You called the evidence on Elena insufficient. There's actually a clean, corroborated exit time for her — 23:52, confirmed by both the entrance camera and her own phone activity.",
   },
 };

@@ -7,7 +7,10 @@
 // defines the shapes.
 // ─────────────────────────────────────────────────────────────────────────
 
-export type WitnessId = "elena" | "sofia" | "tom" | "marco" | "julia";
+// A plain string, not a literal union — this engine is meant to run more
+// than one case. The single source of truth for which ids actually exist
+// is always WITNESSES in the active case's data file, never this type.
+export type WitnessId = string;
 
 /**
  * Fixed vocabulary so the UI can style these consistently. Roughly ordered
@@ -24,20 +27,15 @@ export type Demeanor =
   | "panicking"
   | "resigned";
 
-export type EvidenceId =
-  | "E01_knife"
-  | "E02_msg_sofia_2306"
-  | "E03_entrance_camera"
-  | "E04_forensic_prelim"
-  | "E05_daniel_phone_records"
-  | "E06_elena_phone_records"
-  | "E07_tom_phone_records"
-  | "E08_garage_access_log";
+// Same reasoning as WitnessId — plain string, source of truth is EVIDENCE
+// in the active case's data file.
+export type EvidenceId = string;
 
 export interface EvidenceItem {
   id: EvidenceId;
   title: string;
-  category: "physical" | "message" | "video" | "forensic" | "records";
+  /** Plain string, not a fixed union — each case picks its own categories. EvidenceScreen.tsx's CATEGORY_ICON falls back to a generic icon for one it doesn't recognize. */
+  category: string;
   /** Shown on the card before it's opened. */
   summary: string;
   /** Full content shown once opened. Can be multi-line. */
@@ -191,13 +189,27 @@ export interface WitnessConfig {
   freeformEnabled?: boolean;
 }
 
-export type ResponsibleParty = "elena" | "sofia" | "tom" | "someone_else" | "insufficient_evidence";
-export type ElenaVerdict = "guilty" | "not_guilty" | "insufficient_evidence";
+// Generic, N-axis verdict shape — not hardcoded to "responsible" +
+// "elenaVerdict" (Case 002's specific two questions). Each case authors
+// its own VerdictAxis[] (see verdictGrading.ts's VerdictGradingConfig for
+// how a case pairs axes with grading logic and headlines).
+export interface VerdictOption {
+  id: string;
+  label: string;
+}
+export interface VerdictAxis {
+  id: string;
+  /** Shown as the screen's prompt for this axis, e.g. "Who is responsible for Daniel's death?" */
+  question: string;
+  /** Compact label for contexts with little room (share text, result badges) — e.g. "Responsible" vs. the full question. Defaults to the axis id if omitted. */
+  shortLabel?: string;
+  options: VerdictOption[];
+}
 
 export interface PlayerVerdict {
   theory: string;
-  responsible: ResponsibleParty;
-  elenaVerdict: ElenaVerdict;
+  /** axisId -> the chosen optionId on that axis. */
+  choices: Record<string, string>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

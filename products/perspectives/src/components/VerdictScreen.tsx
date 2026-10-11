@@ -1,25 +1,12 @@
 import { useState } from "react";
+import { EVIDENCE, VERDICT_AXES, WITNESSES } from "../game/caseData";
 import { useGameStore } from "../game/store";
-import type { ElenaVerdict, PlayerVerdict, ResponsibleParty } from "../game/types";
+import type { PlayerVerdict } from "../game/types";
 
 interface VerdictScreenProps {
   onBack: () => void;
   onSubmitted: () => void;
 }
-
-const RESPONSIBLE_OPTIONS: { id: ResponsibleParty; label: string }[] = [
-  { id: "elena", label: "Elena" },
-  { id: "sofia", label: "Sofia" },
-  { id: "tom", label: "Tom" },
-  { id: "someone_else", label: "Someone else" },
-  { id: "insufficient_evidence", label: "Insufficient evidence" },
-];
-
-const ELENA_OPTIONS: { id: ElenaVerdict; label: string }[] = [
-  { id: "guilty", label: "Guilty" },
-  { id: "not_guilty", label: "Not guilty" },
-  { id: "insufficient_evidence", label: "Insufficient evidence" },
-];
 
 type Step = "statement" | "verdict";
 
@@ -30,16 +17,15 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
   const board = useGameStore((s) => s.board);
   const [step, setStep] = useState<Step>("statement");
   const [theory, setTheory] = useState("");
-  const [responsible, setResponsible] = useState<ResponsibleParty | null>(null);
-  const [elenaVerdict, setElenaVerdict] = useState<ElenaVerdict | null>(null);
+  const [choices, setChoices] = useState<Record<string, string>>({});
 
   const documentsRead = inspectedEvidence.size;
   const witnessesQuestioned = Object.values(chatHistory).filter((h) => h.length > 0).length;
-  const canSubmit = responsible !== null && elenaVerdict !== null;
+  const canSubmit = VERDICT_AXES.every((axis) => choices[axis.id] != null);
 
   function handleSubmit() {
     if (!canSubmit) return;
-    const v: PlayerVerdict = { theory, responsible, elenaVerdict };
+    const v: PlayerVerdict = { theory, choices };
     submitVerdict(v);
     onSubmitted();
   }
@@ -118,7 +104,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
           <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5">
             <span className="text-sm text-white/55">Where you stand right now</span>
             <span className="text-base font-medium text-white/80">
-              {documentsRead}/8 documents read · {witnessesQuestioned}/5 witnesses
+              {documentsRead}/{EVIDENCE.length} documents read · {witnessesQuestioned}/{WITNESSES.length} witnesses
             </span>
           </div>
 
@@ -126,43 +112,26 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
             <p className="text-base font-medium text-red-200">This is final — it closes the case and reveals the truth.</p>
           </div>
 
-          <div className="mt-6">
-            <p className="text-base font-medium text-white/70">Who is responsible for Daniel's death?</p>
-            <div className="mt-2 space-y-2">
-              {RESPONSIBLE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => setResponsible(opt.id)}
-                  className={`w-full rounded-xl border px-4 py-3.5 text-left text-[17px] transition-colors ${
-                    responsible === opt.id
-                      ? "border-amber-300/60 bg-amber-300/10 text-amber-100"
-                      : "border-white/10 bg-white/[0.02] text-white/75"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+          {VERDICT_AXES.map((axis) => (
+            <div key={axis.id} className="mt-6">
+              <p className="text-base font-medium text-white/70">{axis.question}</p>
+              <div className="mt-2 space-y-2">
+                {axis.options.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setChoices((c) => ({ ...c, [axis.id]: opt.id }))}
+                    className={`w-full rounded-xl border px-4 py-3.5 text-left text-[17px] transition-colors ${
+                      choices[axis.id] === opt.id
+                        ? "border-amber-300/60 bg-amber-300/10 text-amber-100"
+                        : "border-white/10 bg-white/[0.02] text-white/75"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div className="mt-6">
-            <p className="text-base font-medium text-white/70">Verdict on Elena</p>
-            <div className="mt-2 space-y-2">
-              {ELENA_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => setElenaVerdict(opt.id)}
-                  className={`w-full rounded-xl border px-4 py-3.5 text-left text-[17px] transition-colors ${
-                    elenaVerdict === opt.id
-                      ? "border-amber-300/60 bg-amber-300/10 text-amber-100"
-                      : "border-white/10 bg-white/[0.02] text-white/75"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 

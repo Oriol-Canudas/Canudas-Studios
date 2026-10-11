@@ -10,6 +10,7 @@ const CATEGORY_ICON: Record<string, string> = {
   forensic: "\u{1F9EA}",
   records: "\u{1F4C4}",
 };
+const DEFAULT_CATEGORY_ICON = "\u{1F4CB}"; // a case can author its own categories; this is the fallback
 
 // "Pending" replaces the old "Locked" — the document isn't forbidden, it
 // just hasn't been pulled from the record yet, and tapping it is exactly
@@ -93,7 +94,7 @@ export default function EvidenceScreen() {
                 >
                   {badge.label}
                 </span>
-                <span className={`text-2xl ${status === "pending" ? "opacity-60" : ""}`}>{CATEGORY_ICON[e.category]}</span>
+                <span className={`text-2xl ${status === "pending" ? "opacity-60" : ""}`}>{CATEGORY_ICON[e.category] ?? DEFAULT_CATEGORY_ICON}</span>
                 <span className="pr-14 text-base font-medium text-white">{e.title}</span>
                 {isDiscovered ? (
                   <span className="text-sm text-white/50">{e.summary}</span>

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { GROUND_TRUTH, TIMELINE, WITNESS_BY_ID } from "../game/caseData";
+import { CASE_META, EVIDENCE, GROUND_TRUTH, TIMELINE, VERDICT_AXES, VERDICT_CONFIG, VERDICT_REVEAL_NOTES, WITNESSES, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
-import { ELENA_REVEAL_NOTES, RESPONSIBLE_REVEAL_NOTES, gradeVerdict, type Judgment } from "../game/verdictGrading";
+import { gradeVerdict, type Judgment } from "../game/verdictGrading";
 import { sessionDurationMs, track } from "../game/analytics";
 import { buildShareText } from "../game/shareCard";
 import IntroSequence, { type IntroSlide } from "./IntroSequence";
@@ -87,7 +87,7 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
     return <IntroSequence slides={REVEAL_SLIDES} onDone={() => setCinematicDone(true)} />;
   }
 
-  const graded = gradeVerdict(verdict);
+  const graded = gradeVerdict(VERDICT_CONFIG, verdict);
   const duration = formatDuration(sessionDurationMs());
   const meaningfulEvents = conversationEventLog.filter((e) => MEANINGFUL_EVENT_KINDS.has(e.kind));
   const witnessesQuestioned = Object.values(chatHistory).filter((h) => h.length > 0).length;
@@ -99,11 +99,14 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
   // user simply cancelling the native sheet, which is left alone.
   async function handleShare() {
     const text = buildShareText({
+      caseTitle: CASE_META.title,
+      shareUrl: "https://gamexperspectives.vercel.app",
+      axes: VERDICT_AXES,
       graded,
       documentsRead: inspectedEvidence.size,
-      totalDocuments: 8,
+      totalDocuments: EVIDENCE.length,
       witnessesQuestioned,
-      totalWitnesses: 5,
+      totalWitnesses: WITNESSES.length,
       durationLabel: duration,
       conversationEventLog,
     });
@@ -132,22 +135,27 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
       <h1 className="mt-2 text-3xl font-semibold leading-tight">{graded.headline}</h1>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <div className={`rounded-xl border p-3.5 ${JUDGMENT_STYLE[graded.responsibleJudgment]}`}>
-          <p className="text-sm text-white/60">Responsible</p>
-          <p className="mt-0.5 text-base font-medium capitalize text-white">{verdict.responsible.replace("_", " ")}</p>
-          <p className="mt-1 text-sm font-medium">{JUDGMENT_LABEL[graded.responsibleJudgment]}</p>
-        </div>
-        <div className={`rounded-xl border p-3.5 ${JUDGMENT_STYLE[graded.elenaJudgment]}`}>
-          <p className="text-sm text-white/60">Elena</p>
-          <p className="mt-0.5 text-base font-medium capitalize text-white">{verdict.elenaVerdict.replace("_", " ")}</p>
-          <p className="mt-1 text-sm font-medium">{JUDGMENT_LABEL[graded.elenaJudgment]}</p>
-        </div>
+        {VERDICT_AXES.map((axis) => {
+          const grade = graded.axisGrades.find((g) => g.axisId === axis.id);
+          const judgment = grade?.judgment ?? "wrong";
+          const chosenLabel = axis.options.find((o) => o.id === verdict.choices[axis.id])?.label ?? "—";
+          return (
+            <div key={axis.id} className={`rounded-xl border p-3.5 ${JUDGMENT_STYLE[judgment]}`}>
+              <p className="text-sm text-white/60">{axis.shortLabel ?? axis.question}</p>
+              <p className="mt-0.5 text-base font-medium text-white">{chosenLabel}</p>
+              <p className="mt-1 text-sm font-medium">{JUDGMENT_LABEL[judgment]}</p>
+            </div>
+          );
+        })}
       </div>
 
       <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <p className="text-base font-medium text-white/70">On your choices</p>
-        <p className="mt-2 text-[17px] leading-relaxed text-white/85">{RESPONSIBLE_REVEAL_NOTES[verdict.responsible]}</p>
-        <p className="mt-2 text-[17px] leading-relaxed text-white/85">{ELENA_REVEAL_NOTES[verdict.elenaVerdict]}</p>
+        {VERDICT_AXES.map((axis) => (
+          <p key={axis.id} className="mt-2 text-[17px] leading-relaxed text-white/85">
+            {VERDICT_REVEAL_NOTES[axis.id]?.[verdict.choices[axis.id]]}
+          </p>
+        ))}
       </div>
 
       {verdict.theory.trim() && (
@@ -227,7 +235,7 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
       )}
 
       <div className="mt-4 text-center text-sm text-white/35">
-        You pinned {board.length} item{board.length === 1 ? "" : "s"} to the case board · actually read {inspectedEvidence.size} of 8 documents · session {duration}
+        You pinned {board.length} item{board.length === 1 ? "" : "s"} to the case board · actually read {inspectedEvidence.size} of {EVIDENCE.length} documents · session {duration}
       </div>
 
       <button

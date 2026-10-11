@@ -3,7 +3,7 @@
 // would, and asserts the ground-truth-consistency invariants from the brief.
 
 import { useGameStore } from "../src/game/store";
-import { WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
+import { VERDICT_AXES, VERDICT_CONFIG, WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
 import { gradeVerdict } from "../src/game/verdictGrading";
 import { getAuthorizedDisclosures, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
@@ -24,6 +24,17 @@ function lastWitnessLine(witnessId: string): string {
   const hist = useGameStore.getState().chatHistory[witnessId as "tom"];
   const last = hist[hist.length - 1];
   return last?.text ?? "";
+}
+
+/** Case 002's verdict only ever has these two axes — a small test-only convenience over the generic N-axis gradeVerdict. */
+function gradeCase002(responsible: string, elenaVerdict: string) {
+  const graded = gradeVerdict(VERDICT_CONFIG, { theory: "", choices: { responsible, elenaVerdict } });
+  const judgmentFor = (axisId: string) => graded.axisGrades.find((g) => g.axisId === axisId)!.judgment;
+  return {
+    headline: graded.headline,
+    responsibleJudgment: judgmentFor("responsible"),
+    elenaJudgment: judgmentFor("elenaVerdict"),
+  };
 }
 
 // ── Playthrough 1: naive order (talk first, never look at evidence) ──────
@@ -166,11 +177,11 @@ console.log("\n=== Playthrough 5: off-topic free text ===");
 // ── Playthrough 6: verdict grading matches locked ground truth ───────────
 console.log("\n=== Playthrough 6: verdict grading ===");
 {
-  const correct = gradeVerdict({ theory: "", responsible: "tom", elenaVerdict: "not_guilty" });
-  assert(correct.responsibleCorrect && correct.elenaVerdictCorrect, "Correct verdict grades as fully correct");
+  const correct = gradeCase002("tom", "not_guilty");
+  assert(correct.responsibleJudgment === "correct" && correct.elenaJudgment === "correct", "Correct verdict grades as fully correct");
 
-  const wrong = gradeVerdict({ theory: "", responsible: "elena", elenaVerdict: "guilty" });
-  assert(!wrong.responsibleCorrect && !wrong.elenaVerdictCorrect, "Prosecution's theory grades as fully incorrect");
+  const wrong = gradeCase002("elena", "guilty");
+  assert(wrong.responsibleJudgment !== "correct" && wrong.elenaJudgment !== "correct", "Prosecution's theory grades as fully incorrect");
 }
 
 // ── Playthrough 7: reset actually clears session state ───────────────────
@@ -360,14 +371,14 @@ console.log("\n=== Playthrough 13: presenting evidence in conversation ===");
 // ── Playthrough 14: insufficient-evidence verdicts grade honestly ────────
 console.log("\n=== Playthrough 14: insufficient-evidence verdicts are not 'wrong' ===");
 {
-  const bothInsufficient = gradeVerdict({ theory: "", responsible: "insufficient_evidence", elenaVerdict: "insufficient_evidence" });
+  const bothInsufficient = gradeCase002("insufficient_evidence", "insufficient_evidence");
   assert(
     !bothInsufficient.headline.toLowerCase().includes("prosecution"),
     "Calling both insufficient does not produce the harshest 'you believed the prosecution' headline"
   );
   assert(bothInsufficient.responsibleJudgment === "insufficient" && bothInsufficient.elenaJudgment === "insufficient", "Both axes are graded as insufficient, not wrong");
 
-  const correctButCautious = gradeVerdict({ theory: "", responsible: "tom", elenaVerdict: "insufficient_evidence" });
+  const correctButCautious = gradeCase002("tom", "insufficient_evidence");
   assert(correctButCautious.responsibleJudgment === "correct", "Knowing the real culprit still grades as correct even when Elena's axis is called insufficient");
 }
 
@@ -819,8 +830,18 @@ console.log("\n=== Playthrough 30: Sofia gets the same authorization machinery a
 // ── Playthrough 31: the shareable result text is spoiler-safe and prioritizes the right highlight ──
 console.log("\n=== Playthrough 31: buildShareText never spoils the case, picks the strongest highlight ===");
 {
-  const correct = gradeVerdict({ theory: "", responsible: "tom", elenaVerdict: "not_guilty" });
-  const base = { graded: correct, documentsRead: 5, totalDocuments: 8, witnessesQuestioned: 3, totalWitnesses: 5, durationLabel: "12m 4s" };
+  const correct = gradeVerdict(VERDICT_CONFIG, { theory: "", choices: { responsible: "tom", elenaVerdict: "not_guilty" } });
+  const base = {
+    caseTitle: "The Last Message",
+    shareUrl: "https://gamexperspectives.vercel.app",
+    axes: VERDICT_AXES,
+    graded: correct,
+    documentsRead: 5,
+    totalDocuments: 8,
+    witnessesQuestioned: 3,
+    totalWitnesses: 5,
+    durationLabel: "12m 4s",
+  };
 
   const withVoluntary = buildShareText({
     ...base,
