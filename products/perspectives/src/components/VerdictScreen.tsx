@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { EVIDENCE, VERDICT_AXES, VERDICT_HERO_IMAGE, WITNESSES } from "../game/caseData";
+import { CASE_META, EVIDENCE, VERDICT_AXES, VERDICT_HERO_IMAGE, WITNESSES } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import type { PlayerVerdict } from "../game/types";
 
@@ -47,7 +47,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
           <button onClick={handleBack} className="text-2xl text-white/70 active:text-white">
             {"←"}
           </button>
-          <p className="text-lg font-medium text-white">Your closing statement</p>
+          <p className="text-lg font-medium text-white">{CASE_META.statementHeader}</p>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -57,7 +57,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
           </div>
 
           <div className="px-5 pb-5 pt-6">
-            <p className="text-2xl font-semibold leading-tight text-white">Before you decide, say what you believe happened.</p>
+            <p className="text-2xl font-semibold leading-tight text-white">{CASE_META.statementHeadline}</p>
             <p className="mt-2 text-base leading-relaxed text-white/55">
               This is yours alone — it won't be graded against the record, and nothing you write here changes what
               actually happened. It's a record of where YOU landed, for you to look back on.
@@ -70,7 +70,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
             <textarea
               value={theory}
               onChange={(e) => setTheory(e.target.value)}
-              placeholder="Tell the room what you believe happened, and why…"
+              placeholder={CASE_META.statementPlaceholder}
               rows={8}
               autoFocus
               className="mt-5 w-full rounded-2xl border border-white/15 bg-white/[0.04] p-4 text-[17px] leading-relaxed text-white placeholder:text-white/35 outline-none focus:border-amber-300/50"
@@ -83,7 +83,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
             onClick={() => setStep("verdict")}
             className="w-full rounded-2xl bg-amber-400 py-4 text-lg font-semibold text-black active:scale-[0.98] transition-transform"
           >
-            {theory.trim() ? "Continue to verdict" : "Continue without writing a statement"}
+            {theory.trim() ? `Continue to ${CASE_META.decisionLabel.toLowerCase()}` : "Continue without writing a statement"}
           </button>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
         <button onClick={handleBack} className="text-2xl text-white/70 active:text-white">
           {"←"}
         </button>
-        <p className="text-lg font-medium text-white">Deliver your verdict</p>
+        <p className="text-lg font-medium text-white">{CASE_META.decisionHeader}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -109,7 +109,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
           </div>
 
           <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/[0.04] p-4">
-            <p className="text-base font-medium text-red-200">This is final — it closes the case and reveals the truth.</p>
+            <p className="text-base font-medium text-red-200">{CASE_META.finalWarning}</p>
           </div>
 
           {VERDICT_AXES.map((axis) => (
@@ -141,7 +141,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
           disabled={!canSubmit}
           className="w-full rounded-2xl bg-amber-400 py-4 text-lg font-semibold text-black disabled:opacity-30 active:scale-[0.98] transition-transform"
         >
-          Deliver verdict
+          {CASE_META.submitLabel}
         </button>
       </div>
     </div>

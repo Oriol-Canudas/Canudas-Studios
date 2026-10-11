@@ -31,6 +31,19 @@ export const CASE_META = {
   standingLine: "She denies killing him.",
   roleIcon: "⚖️",
   roleLine: "You're the Judge. Question, examine, decide — whenever you're ready.",
+  // The verdict/decision flow's copy — generic field names so a case whose
+  // final choice isn't a courtroom verdict (e.g. a plan, not a judgment)
+  // can say so without VerdictScreen.tsx/RevealScreen.tsx/TabBar.tsx
+  // hardcoding courtroom language.
+  decisionLabel: "Verdict",
+  decisionIcon: "⚖️",
+  statementHeader: "Your closing statement",
+  statementHeadline: "Before you decide, say what you believe happened.",
+  statementPlaceholder: "Tell the room what you believe happened, and why…",
+  decisionHeader: "Deliver your verdict",
+  finalWarning: "This is final — it closes the case and reveals the truth.",
+  submitLabel: "Deliver verdict",
+  revealKicker: "Verdict delivered",
   prosecutionTheory: [
     "Elena and Daniel had been together for years.",
     "Daniel had moved on with Sofia.",

@@ -1,3 +1,5 @@
+import { CASE_META } from "../game/caseData";
+
 export type TabId = "hear" | "examine" | "reason";
 
 interface TabBarProps {
@@ -38,8 +40,8 @@ export default function TabBar({ active, onChange, onVerdict, boardCount }: TabB
           onClick={onVerdict}
           className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[13px] font-semibold text-red-300"
         >
-          <span className="text-xl leading-none">{"⚖️"}</span>
-          Verdict
+          <span className="text-xl leading-none">{CASE_META.decisionIcon}</span>
+          {CASE_META.decisionLabel}
         </button>
       </div>
     </div>

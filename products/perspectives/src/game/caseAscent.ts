@@ -58,6 +58,15 @@ export const CASE_META = {
   standingLine: "The call is yours. The team isn't unanimous, and not everyone's told you everything yet.",
   roleIcon: "🏔️",
   roleLine: "You're Acting Leader, by Ingrid's own call — not by seniority. Question the team, weigh what they're not saying, and decide.",
+  decisionLabel: "Decision",
+  decisionIcon: "🏔️",
+  statementHeader: "Your reasoning",
+  statementHeadline: "Before you call it, say what you believe is actually true.",
+  statementPlaceholder: "Tell the team what you believe is really going on, and why…",
+  decisionHeader: "Make the call",
+  finalWarning: "This is final — it commits the team to a plan and reveals how it plays out.",
+  submitLabel: "Make the call",
+  revealKicker: "Decision made",
 };
 
 /**
@@ -844,12 +853,12 @@ export const REVELATIONS: Record<RevelationId, RevelationDef> = {
 // ───────────────────────────── Intro / reveal cinematics ─────────────────
 
 export const CASE_INTRO_SLIDES: IntroSlide[] = [
-  { image: "/scenes/ascent/ridge.jpg", line: "Ingrid just fell." },
-  { image: "/scenes/ascent/ridge.jpg", line: "She's stable, short-roped down to a lower camp. Out of the decision." },
-  { image: "/scenes/ascent/ridge.jpg", line: "Before she went down, she gave the call to you. Not Rae. Not Soren. You." },
+  { image: "/scenes/ascent/injured_climber.jpg", line: "Ingrid just fell." },
+  { image: "/scenes/ascent/lower_camp.jpg", line: "She's stable, short-roped down to a lower camp. Out of the decision." },
+  { image: "/scenes/ascent/radio_handoff.jpg", line: "Before she went down, she gave the call to you. Not Rae. Not Soren. You." },
   { image: "/scenes/ascent/ridge.jpg", line: "A storm is closing on the summit ridge. Nobody fully agrees on how much time that actually leaves." },
-  { image: "/scenes/ascent/ridge.jpg", line: "Five people are on this mountain. Not everyone's told you everything yet." },
-  { image: "/scenes/ascent/ridge.jpg", line: "What the team does next, and how much you find out first, is up to you." },
+  { image: "/scenes/ascent/team_group.jpg", line: "Five people are on this mountain. Not everyone's told you everything yet." },
+  { image: "/scenes/ascent/decided.jpg", line: "What the team does next, and how much you find out first, is up to you." },
 ];
 
 export const CHARACTER_INTRO_OUTRO: IntroSlide = {
