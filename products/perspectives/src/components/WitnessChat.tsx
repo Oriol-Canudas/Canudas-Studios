@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isRevelationKnown, isTopicReachable } from "../game/witnessEngine";
-import type { Demeanor, EvidenceId, QuestionTone, RevelationId, TestimonyTopic, WitnessId } from "../game/types";
+import type { Demeanor, EvidenceId, RevelationId, TestimonyTopic, WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
 import TypewriterText from "./TypewriterText";
@@ -12,14 +12,6 @@ import RelayPicker from "./RelayPicker";
 import EmotionReveal from "./EmotionReveal";
 
 const MAX_VISIBLE_CHIPS = 3;
-
-// Cosmetic only — color signals the question's tone, never changes what
-// the witness can say or how the engine gates anything.
-const TONE_STYLE: Record<QuestionTone, string> = {
-  soft: "border-sky-300/30 bg-sky-300/10 text-sky-200",
-  neutral: "border-amber-300/30 bg-amber-300/10 text-amber-200",
-  accusative: "border-red-400/30 bg-red-400/10 text-red-200",
-};
 
 function prefersReducedMotion(): boolean {
   try {
@@ -353,23 +345,31 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
           <p className="mb-1.5 text-center text-[11px] text-white/30">Guided matching active — live AI not connected</p>
         )}
 
-        <div className="mb-2 flex flex-wrap gap-2">
-          {visibleTopics.map((t) => {
-            const asked = (witnessStages[witnessId][t.id] ?? -1) >= 0;
-            return (
-              <button
-                key={t.id}
-                onClick={() => handleSuggestionTap(t)}
-                disabled={busy}
-                className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition-colors disabled:opacity-50 ${
-                  asked ? "border-white/10 bg-white/[0.02] text-white/40" : TONE_STYLE[t.tone ?? "neutral"]
-                }`}
-              >
-                {t.chipLabel}
-              </button>
-            );
-          })}
-        </div>
+        {/* Deliberately quiet — no per-tone color-coding, so this reads as
+            an occasional nudge for when you're stuck, not a menu of
+            scripted "correct" moves to pick from. */}
+        {visibleTopics.length > 0 && (
+          <div className="mb-2">
+            <p className="mb-1.5 px-1 text-[11px] text-white/30">If you're stuck, try asking about —</p>
+            <div className="flex flex-wrap gap-2">
+              {visibleTopics.map((t) => {
+                const asked = (witnessStages[witnessId][t.id] ?? -1) >= 0;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => handleSuggestionTap(t)}
+                    disabled={busy}
+                    className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition-colors disabled:opacity-50 ${
+                      asked ? "border-white/10 bg-white/[0.02] text-white/35" : "border-white/15 bg-white/[0.04] text-white/60"
+                    }`}
+                  >
+                    {t.chipLabel}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <form
           onSubmit={(e) => {
