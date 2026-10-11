@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isRevelationKnown, isTopicReachable } from "../game/witnessEngine";
-import type { Demeanor, EvidenceId, QuestionTone, RevelationId, WitnessId } from "../game/types";
+import type { Demeanor, EvidenceId, QuestionTone, RevelationId, TestimonyTopic, WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
 import TypewriterText from "./TypewriterText";
@@ -58,6 +58,16 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
   const [evidencePickerOpen, setEvidencePickerOpen] = useState(false);
   const [relayPickerOpen, setRelayPickerOpen] = useState(false);
+  // A tapped suggestion pre-fills the input rather than sending instantly
+  // — "here's a starting point," not "pick a branch." Remembers which
+  // topic it came from so an UNEDITED send still carries the same
+  // reliable hint a chip always gave a deterministic witness; any edit
+  // at all drops it and the message is treated as organic free text,
+  // same as typing from scratch. Freeform witnesses (Tom, Sofia) never
+  // use this hint at all — see `send` below — every message to them
+  // goes through real generation, suggested or not.
+  const [lastSuggestion, setLastSuggestion] = useState<{ text: string; topicId: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   // Shows once on open (an "establishing shot" of their current state) and
   // again whenever demeanor actually changes mid-conversation — never on
   // every line. WitnessChat remounts per witness (App.tsx unmounts it when
@@ -157,19 +167,35 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
     setAnimatingIndex(typingIndex);
   }
 
-  function send(text: string, topicId?: string) {
+  function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    // Chips always carry a known topicId and go through the same
-    // deterministic, defensive-lock-aware path as every other witness —
-    // they're a reliable shortcut INTO the conversation, not a different
-    // conversation. Free text on Tom's screen is the only thing that goes
-    // through interpretation.
-    if (isFreeform && !topicId) {
+    // Freeform witnesses always go through real generation — a tapped
+    // suggestion is a starting point for the SAME conversation, not a
+    // shortcut around it, so it never bypasses interpretation.
+    if (isFreeform) {
       void sendFreeformMessage(witnessId, trimmed);
-    } else {
-      askWitness(witnessId, trimmed, topicId);
+      setLastSuggestion(null);
+      return;
     }
+    // Deterministic witnesses: an UNEDITED suggestion still carries the
+    // exact topic hint a chip always guaranteed (matchTopic's keyword
+    // overlap isn't always reliable enough on its own — see
+    // scripts/selftest.ts history for real examples of ambiguous
+    // phrasing matching the wrong topic). Any edit at all means the
+    // player wrote their own question, so it's resolved fresh, same as
+    // typing from scratch always has been.
+    const hintTopicId =
+      lastSuggestion && lastSuggestion.text.trim() === trimmed ? lastSuggestion.topicId : undefined;
+    askWitness(witnessId, trimmed, hintTopicId);
+    setLastSuggestion(null);
+  }
+
+  function handleSuggestionTap(topic: TestimonyTopic) {
+    if (busy) return;
+    setDraft(witnessId, topic.chipLabel);
+    setLastSuggestion({ text: topic.chipLabel, topicId: topic.id });
+    inputRef.current?.focus();
   }
 
   function handlePresent(evidenceId: EvidenceId, excerptIndex: number) {
@@ -318,7 +344,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
             return (
               <button
                 key={t.id}
-                onClick={() => send(t.chipLabel, t.id)}
+                onClick={() => handleSuggestionTap(t)}
                 disabled={busy}
                 className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition-colors disabled:opacity-50 ${
                   asked ? "border-white/10 bg-white/[0.02] text-white/40" : TONE_STYLE[t.tone ?? "neutral"]
@@ -358,6 +384,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
             </button>
           )}
           <input
+            ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(witnessId, e.target.value)}
             placeholder={isFreeform ? "Ask in your own words — English or Català" : "Ask in your own words, or tap a suggestion"}
