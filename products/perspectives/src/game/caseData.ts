@@ -262,10 +262,16 @@ export const WITNESSES: WitnessConfig[] = [
     portraitImage: "/portraits/elena.jpg",
     accentColor: "#c084fc",
     baselineDemeanor: "guarded",
+    freeformEnabled: true,
     deflections: [
       "I've already told you what happened. I didn't kill him.",
       "I know how this looks. I know. But that's not what happened.",
       "Ask me something else. I don't know what you want me to say.",
+    ],
+    defensiveLines: [
+      "I'm not going to sit here and let you decide I did this before you've even heard me out.",
+      "That's not fair. I came here. I'm answering you. I didn't kill him.",
+      "I know what it looks like. I'm not going to pretend it's what happened just because you want it to be.",
     ],
     demeanorImages: {
       guarded: "/portraits/elena.jpg",
@@ -335,6 +341,14 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "I used it earlier — cutting lime for a drink, I think. Before things got bad. I didn't touch it again after that.",
             requiresEvidence: ["E01_knife"],
+            // Alternate route: once she knows Tom has confessed to the
+            // stabbing himself, her single biggest fear — being the
+            // convenient story because her prints are on the weapon —
+            // is already addressed, so she doesn't need to be confronted
+            // with the fingerprint report to explain them.
+            altUnlock: { requiresRelayed: ["tom_confessed"], requiresIntent: ["empathetic_appeal"] },
+            altUnlockText:
+              "...If Tom's already told you what actually happened — if you already know it wasn't me — then fine. I used it earlier that night, cutting a lime for a drink. Before any of this. I never touched it again after that.",
             demeanor: "guarded",
             addsBoardEntries: [
               { type: "claim", text: "Elena: touched the knife earlier in the evening for an unrelated reason, before the argument escalated.", source: "elena" },
@@ -371,6 +385,7 @@ export const WITNESSES: WitnessConfig[] = [
     reactions: {
       tom_returned: {
         text: "What? No — I had no idea anyone else went back there. I just left. I thought that was the end of it for the night. If someone else was there after me, that's... that changes things, doesn't it?",
+        generative: true,
         demeanor: "shaken",
         addsBoardEntries: [
           { type: "claim", text: "Elena, told Tom also returned that night: genuinely surprised, had no knowledge of it.", source: "elena" },
@@ -378,6 +393,7 @@ export const WITNESSES: WitnessConfig[] = [
       },
       sofia_visited: {
         text: "Sofia was there too? After I'd gone? ...I didn't know that. God, if Daniel told her what he told me — if he finally said it to both of us the same night — no wonder everything happened the way it did.",
+        generative: true,
         demeanor: "shaken",
         addsBoardEntries: [
           { type: "claim", text: "Elena, told Sofia also visited that night: surprised, starts connecting it to what Daniel admitted to her.", source: "elena" },

@@ -216,7 +216,7 @@ console.log("\n=== Playthrough 9: relaying revelations between witnesses ===");
   const { askWitness, discoverEvidence, relayRevelation } = useGameStore.getState();
 
   // Can't relay what the player hasn't actually learned yet.
-  relayRevelation("elena", "tom_returned");
+  await relayRevelation("elena", "tom_returned");
   assert(
     !lastWitnessLine("elena").includes("had no idea anyone else"),
     "Elena cannot react to Tom's return before Tom has actually admitted it"
@@ -230,7 +230,11 @@ console.log("\n=== Playthrough 9: relaying revelations between witnesses ===");
 
   // Elena's reactive line should now be reachable, carried by the player
   // (the Judge), not by Elena magically knowing something she couldn't.
-  relayRevelation("elena", "tom_returned");
+  // Elena's reaction is generative now (see caseData.ts) — the AI call
+  // always fails under plain Node (no relative-URL base), so this still
+  // resolves to the exact static fallback line, but it does so
+  // asynchronously, so it must be awaited before reading the result.
+  await relayRevelation("elena", "tom_returned");
   assert(
     lastWitnessLine("elena").includes("had no idea anyone else"),
     "Elena reacts to being told (by the Judge) that Tom also returned that night"
@@ -240,11 +244,13 @@ console.log("\n=== Playthrough 9: relaying revelations between witnesses ===");
 
   // Never re-tellable: a second relay of the same fact does nothing new.
   const boardLenBefore = useGameStore.getState().board.length;
-  relayRevelation("elena", "tom_returned");
+  await relayRevelation("elena", "tom_returned");
   assert(useGameStore.getState().board.length === boardLenBefore, "Re-relaying an already-told revelation adds nothing");
 
-  // Sofia should react the same way, independently.
-  relayRevelation("sofia", "tom_returned");
+  // Sofia should react the same way, independently (her tom_returned
+  // reaction is NOT generative, so this is actually synchronous — awaited
+  // anyway since relayRevelation's signature is uniformly async now).
+  await relayRevelation("sofia", "tom_returned");
   assert(
     lastWitnessLine("sofia").includes("I didn't know that"),
     "Sofia reacts to being told Tom also returned, independently of Elena's reaction"
@@ -252,7 +258,7 @@ console.log("\n=== Playthrough 9: relaying revelations between witnesses ===");
 
   // A revelation with no authored reaction for a given witness still logs
   // as relayed, but moves nothing — never a silent crash or a fabricated line.
-  relayRevelation("julia", "tom_returned");
+  await relayRevelation("julia", "tom_returned");
   assert(useGameStore.getState().relayedRevelations.julia.has("tom_returned"), "Relaying to a witness with no authored reaction still records the relay");
 }
 
@@ -836,6 +842,51 @@ console.log("\n=== Playthrough 31: buildShareText never spoils the case, picks t
     !noHighlight.includes("no evidence needed") && !noHighlight.includes("contradiction"),
     "With no meaningful events logged, no highlight is fabricated — the text degrades to stats only"
   );
+}
+
+// ── Playthrough 32: Elena's causal loop — Tom's confession eases her fingerprint explanation ──
+console.log("\n=== Playthrough 32: Elena voluntarily explains the knife once Tom's confession is relayed ===");
+{
+  useGameStore.getState().reset();
+  const { discoverEvidence, askWitness, relayRevelation, sendFreeformMessage } = useGameStore.getState();
+  assert(Boolean(WITNESS_BY_ID.elena.freeformEnabled), "Elena is freeformEnabled this round");
+
+  // Approach A: empathy with NOTHING relayed — must not unlock anything,
+  // same rule as every other altUnlock route.
+  await sendFreeformMessage("elena", "I understand how scared you must have been — can you explain the prints on the knife?");
+  const noRoute = useGameStore.getState();
+  assert((noRoute.witnessStages.elena.knife ?? -1) < 0, "Generic empathy with nothing relayed still unlocks nothing for Elena either");
+
+  useGameStore.getState().reset();
+  // Build up Tom's full confession (evidence-backed, as in Playthrough 26).
+  discoverEvidence("E07_tom_phone_records");
+  discoverEvidence("E01_knife");
+  discoverEvidence("E04_forensic_prelim");
+  askWitness("tom", "what did you do after you left");
+  askWitness("tom", "what happened between you and daniel");
+  askWitness("tom", "what really happened with the knife");
+  assert((useGameStore.getState().witnessStages.tom.the_knife ?? -1) >= 1, "Setup: Tom has confessed to the knife");
+
+  // Relay tom_confessed to Elena. She has no authored canned reaction to
+  // THIS specific revelation (only to tom_returned/sofia_visited) — still
+  // a legitimate, recorded relay, and the altUnlock gate only checks
+  // relayedRevelations, not whether a reaction line exists.
+  await relayRevelation("elena", "tom_confessed");
+  assert(useGameStore.getState().relayedRevelations.elena.has("tom_confessed"), "Relaying Tom's confession to Elena is recorded even with no canned reaction line");
+
+  // Tom's confession above required discovering E01/E04 — strip them back
+  // out before testing Elena so her own unlock can ONLY have come from
+  // the relay + empathy, never from E01 happening to already be known.
+  useGameStore.setState({ discoveredEvidence: new Set(["E07_tom_phone_records"]) });
+  await sendFreeformMessage("elena", "I understand how scared you must have been — can you explain the prints on the knife?");
+  const afterEmpathy = useGameStore.getState();
+  assert(
+    (afterEmpathy.witnessStages.elena.knife ?? -1) >= 0,
+    "Empathy, backed by Tom's confession actually being relayed, voluntarily unlocks Elena's fingerprint explanation"
+  );
+  assert(!afterEmpathy.discoveredEvidence.has("E01_knife"), "This happened WITHOUT the knife ever being presented as evidence");
+  const voluntaryEvent = afterEmpathy.conversationEventLog.find((e) => e.witnessId === "elena" && e.kind === "voluntary_disclosure");
+  assert(Boolean(voluntaryEvent), "Recorded specifically as a voluntary disclosure for Elena too, not just Tom/Sofia");
 }
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
