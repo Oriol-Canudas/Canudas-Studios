@@ -309,6 +309,136 @@ just how repetitive replies sound.
     Elena/Marco/Julia is an open product question, not started.
 - Ready for Codex review: yes.
 
+## Claude result — updated 2026-10-11 (four engagement/moat proposals, incl. Elena's loop) by Claude
+
+- Status: **all four implemented, self-tested, and live-verified on the deployed endpoint.**
+- Commits on `main`: `963a5ff` (closing statement), `a31b2ec` (shareable
+  result card), `b392c7c` (cinematic reveal opener), `5fd3d8f` (Elena's
+  causal loop), `d4622d6` (a prompt fix found while live-testing Elena's
+  loop). Nothing left uncommitted at hand-off.
+- Context: following the "what's missing to be engaging / have a moat"
+  discussion, Oriol asked for all four proposed features, leaving
+  sequencing to me. Built one at a time (not all-in-one), each with its
+  own build/lint/test/deploy-verify cycle, in this order: closing
+  statement → share card → cinematic reveal → Elena's causal loop
+  (biggest and most content-heavy, done last).
+
+### 1. Closing statement as its own ritual step
+
+`VerdictScreen.tsx` split into two sequential steps: a full-screen
+"Your closing statement" step (honestly framed — "won't be graded
+against the record" — larger textarea, references how many board items
+the player actually pinned) followed by the existing structured
+responsible/Elena picks. Back navigation is sequential (step 2's back
+returns to the statement, not out of the flow). No `PlayerVerdict`/
+`submitVerdict` changes — purely presentation on top of the unchanged
+data shape.
+
+### 2. Spoiler-safe shareable result card
+
+New `src/game/shareCard.ts` (pure, tested) builds share text from the
+player's own graded performance (correct/wrong/insufficient) and a
+process highlight pulled from `conversationEventLog` — **never** the
+actual responsible party or any case fact. This is proven by a
+dedicated test (Playthrough 31), not just asserted by convention. Uses
+the Web Share API where available, falls back to clipboard with visible
+"Copied" feedback; a user cancelling the native share sheet is
+respected, not treated as a reason to fall back anyway.
+
+### 3. Portrait-led cinematic reveal opener
+
+Reuses `IntroSequence` (the same component the case's cold-open already
+uses) rather than inventing new sequencing — 5 slides staging the
+already-authored truth (paraphrased `GROUND_TRUTH.theNight`/
+`culpability`, nothing new invented), tap-anywhere-to-skip, before the
+existing detailed text breakdown, which is completely unchanged
+underneath it. Confirmed the 4 referenced portrait files actually exist
+on disk before relying on them (not just that the code compiles).
+
+### 4. Elena's causal loop — the biggest piece
+
+`freeformEnabled: true` + a `CHARACTER_CONTEXT`/`LEAK_MARKERS` entry for
+Elena (inlined into the single-file `api/witness-chat.ts`, same
+constraint as Tom/Sofia — see the Production incident section above).
+New `altUnlock` on her `knife` topic: once Tom's confession
+(`tom_confessed`) is relayed to her and met with empathy, she
+voluntarily explains her fingerprints without `E01_knife` ever being
+presented — closing a three-way web (Tom↔Sofia, Tom→Elena) rather than
+just the one loop from the previous round. Her two existing authored
+reactions (`tom_returned`, `sofia_visited`) are now `generative: true`
+too.
+
+**A real bug caught while building this, fixed properly, not papered
+over**: `scripts/selftest.ts`'s long-standing Playthrough 9 called
+`relayRevelation` for Elena without awaiting it — harmless while her
+reactions were synchronous, but once `tom_returned` became generative
+(async), the assertion immediately after was reading stale pending
+state. Fixed by awaiting every `relayRevelation` call in that block.
+
+New Playthrough 32 proves the loop end-to-end, mirroring Playthrough
+28's structure: generic empathy with nothing relayed unlocks nothing;
+once Tom's confession is genuinely relayed, the same empathetic message
+unlocks Elena's explanation with `E01_knife` deliberately never
+discovered in that run, recorded as `voluntary_disclosure` same as
+Tom/Sofia.
+
+**A live-testing finding only partially resolved — reported honestly,
+not hidden**: live calls against the real deployed endpoint showed
+Elena's `knife` altUnlock reveal coming back nearly verbatim to the
+authored line, despite the surrounding prompt branch supposedly
+instructing natural paraphrasing. Checked: the OTHER prompt branch
+(plain-authorized, non-altUnlock) already said "in your own natural
+words (not verbatim)" — the altUnlock branch never did. Added the same
+instruction there (commit `d4622d6`) and re-verified live — **3 repeated
+calls after the fix still came back byte-identical to the authored
+line**. Likely explanation: that specific line ("I used it earlier —
+cutting lime for a drink...") is already about as colloquial as a
+paraphrase could make it, so the model has little incentive to deviate
+regardless of instruction. Decided NOT to keep chasing this with more
+prompt edits (diminishing returns against an LLM-behavior nuance, not a
+logic bug) — documenting it plainly instead. This does NOT affect the
+separately-covered "exhausted topic, pressed again" anti-repetition
+behavior, which was verified non-verbatim in the previous round and is
+a different code path (the `disclosureList` exhausted-framing already
+explicitly says "do NOT just repeat the line verbatim either," and
+that instruction wasn't the one found missing here).
+
+### Verification, 4-part split
+
+1. **Fixture**: `npx tsx scripts/selftest.ts` → **125/125** (up from
+   120), `npm run build`/`lint` clean throughout all 5 commits.
+2. **Mocked/handler-level**: not separately needed this round — no
+   server-side structural changes beyond the two prompt-wording edits
+   (anti-verbatim, language-matching already covered in the prior round).
+3. **Live, on the deployed endpoint, `gpt-4o-mini`**: Elena's full
+   altUnlock loop (confirmed working mechanically: correct intent,
+   correct topic, correct unlock, zero evidence needed, validation
+   never triggered) — see the verbatim-echo finding above for the one
+   honest caveat on generation RICHNESS, not correctness. Share card and
+   cinematic reveal have no live-model dependency (pure client-side/
+   presentation), so "live" verification for those is the deploy
+   succeeding and the code being inspected directly, not an API call.
+4. **Human product validation**: none, same as every round — still
+   needs real players.
+
+### Known limitations / decision needed
+
+- Human product validation still fully owed.
+- No browser automation available in this environment — none of the
+  four features' actual visual/interaction behavior (the closing-
+  statement step transition, the share button's native-sheet-vs-
+  clipboard behavior, the cinematic slide pacing/transitions) has been
+  watched play out, only reasoned through from the code and (for Elena)
+  the live API behavior.
+- The verbatim-echo nuance above is unresolved, not just undocumented —
+  a product call on whether it's worth further investment (e.g. a
+  stronger per-line "paraphrase budget," varying authored lines
+  themselves to be less already-idiomatic) is open, not decided.
+- `generative`/`altUnlock` content now exists for a three-way Tom/Sofia/
+  Elena web; Marco and Julia remain fully deterministic — still a
+  content decision, not an engine one.
+- Ready for Codex review: yes.
+
 ## Codex review — fill after testing the reported build
 
 - Status: pending; no new browser test performed during handoff setup.

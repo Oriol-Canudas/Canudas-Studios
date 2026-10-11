@@ -5,25 +5,28 @@ Claude. This file is the fastest way for any collaborator to understand
 **what is currently built, what is decided, what is being worked on, and
 what should happen next** without reconstructing context from chat history.
 
-## Shared review queue (2026-10-10)
+## Shared review queue (2026-10-11)
 
 Read [REVIEW_HANDOFF.md](REVIEW_HANDOFF.md) for Codex's prior playtest findings,
 acceptance criteria and the implementation/review exchange. Oriol has selected
 repository-based coordination: Claude implements, Codex reviews; one code editor
 at a time.
 
-**Step 7 (conversational depth / cross-witness causal loop) is implemented,
-deployed, and live-verified** — see the new "Claude result" entry in
-REVIEW_HANDOFF.md dated 2026-10-10 for the full breakdown. Headline: Tom's
-AI pipeline is now generalized to Sofia (not Tom-exclusive anymore), and a
-real conversational route — not evidence — can now change what a witness
-is willing to disclose, demonstrated end-to-end on the live deployment: a
-player can get Sofia to admit her visit, and later get Tom to confess the
-knife, **without ever presenting evidence for either**, purely by relaying
-what they learned and addressing each witness's own fear. This is on top
-of generated dialogue text itself (not just a cue) being live and verified
-for both witnesses — superseding the "cue-only, Tom-only" framing in the
-rest of this file below, which is kept as a historical record of steps 1–6.
+**Step 7 (conversational depth / cross-witness causal loop) and step 8
+(four engagement/moat proposals, including extending step 7's mechanism
+to Elena) are both implemented, deployed, and live-verified** — see the
+"Claude result" entries in REVIEW_HANDOFF.md dated 2026-10-10 and
+2026-10-11. Headline: all three freeform witnesses (Tom, Sofia, Elena)
+now get real generated dialogue, and a real conversational route — not
+evidence — can change what any of the three is willing to disclose: Tom
+admits returning (evidence) → relayed to Sofia + her fear addressed →
+Sofia voluntarily admits her visit → relayed back to Tom + his fear
+addressed → Tom voluntarily confesses the knife → relayed to Elena + her
+fear addressed → Elena voluntarily explains her fingerprints — a full
+three-way web, **none of the three admissions after the first ever
+needing evidence presented**. This supersedes the "cue-only, Tom-only"
+framing in the rest of this file below, which is kept as a historical
+record of steps 1–6.
 
 **Also worth flagging to Codex explicitly**: a genuine, significant
 production bug was found and fixed this round — `api/witness-chat.ts` had
@@ -147,6 +150,33 @@ conversation can change what's actually *available*:
   being verbatim, and English/Catalan (Catalan needed one follow-up fix —
   see REVIEW_HANDOFF.md).
 
+(8) **four engagement/moat proposals, all four shipped** — from an
+explicit "what's missing to be engaging / have a moat" discussion:
+closing statement as its own ritual step before the verdict (was a
+small "(optional)" textarea, now a dedicated full-screen moment);
+a spoiler-safe shareable result card on the Reveal screen (shares the
+player's own graded performance and a process highlight — e.g. "got a
+confession with zero evidence" — never the actual culprit or any case
+fact, proven by a dedicated test, not just by convention); a
+portrait-led cinematic opener on the Reveal screen (reuses the existing
+cold-open `IntroSequence` component, tap-anywhere-to-skip, before the
+existing detailed text breakdown, which is unchanged underneath it);
+and the causal-loop mechanism from step 7 extended to **Elena** — the
+defendant, highest stakes in the cast — closing a three-way web rather
+than just the Tom↔Sofia loop: Tom's confession, once relayed to Elena
+and met with empathy, lets her voluntarily explain her fingerprints on
+the knife without it ever being presented as evidence. Live-verified on
+the real deployed endpoint. One honest nuance found and only partially
+resolved: a targeted "not verbatim" prompt fix was added after live
+testing caught Elena's altUnlock reveal echoing the authored line
+almost word-for-word — verified afterward that the fix did NOT change
+this specific case (3/3 repeated live calls, still near-verbatim),
+likely because that particular line is already about as colloquial as
+a paraphrase could make it. Judged not worth further prompt-chasing;
+see REVIEW_HANDOFF.md's new entry for the full reasoning. Doesn't affect
+the separately-covered "exhausted topic, asked again" anti-repetition
+behavior, which was verified non-verbatim earlier.
+
 **Explicit scope call (Oriol, 2026-10-07):** go deep on this one case before
 going wide. Backlogged, not forgotten: RPG-style mastery/seniority
 meta-progression across cases, a multi-case content pipeline, and full voice
@@ -211,7 +241,7 @@ recognition + a conversational "talking avatar" witness.
 ## Current runnable state
 
 - `npm install && npm run dev` → http://localhost:5173 (or whichever port is free)
-- `npx tsx scripts/selftest.ts` → **115/115 assertions pass** (up from 80)
+- `npx tsx scripts/selftest.ts` → **125/125 assertions pass** (up from 80)
 - `npm run build` → clean; `npm run lint` → clean
 - Live at https://gamexperspectives.vercel.app, auto-deploys from `main`.
 - **`OPENAI_API_KEY` is set as a Vercel Production environment variable**
@@ -308,7 +338,7 @@ and must stay that way to avoid spoiling the case.
   `api/lib/*` file back; that exact shape caused a live-production
   crash twice.** Reads `OPENAI_API_KEY` only; returns 503 (treated as
   "use fallback") when it's absent or `AI_WITNESS_CHAT_DISABLED=1` is set.
-- `scripts/selftest.ts` — regression harness (**115 assertions**); run this
+- `scripts/selftest.ts` — regression harness (**125 assertions**); run this
   after any change to `caseData.ts`, `witnessEngine.ts`, `store.ts`,
   `interpreter.ts`, or `api/witness-chat.ts`.
 - `REVIEW_HANDOFF.md` — shared review queue with Codex (playtesting/review);

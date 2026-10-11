@@ -766,3 +766,55 @@ Current limitations / next step
   generalizes, the content doesn't, by design this round.
 - See REVIEW_HANDOFF.md's 2026-10-10 entry for the full trade-offs list
   and exactly what the live testing does and doesn't prove.
+
+## 2026-10-11 — Four engagement/moat proposals: closing statement, share card, cinematic reveal, Elena's causal loop
+
+What changed
+- Split the verdict flow's small "(optional)" theory textarea into its
+  own full-screen "closing statement" ritual step before the structured
+  responsible/Elena picks.
+- Added a spoiler-safe shareable result card on the Reveal screen — the
+  player's own graded performance plus a process highlight, never the
+  actual culprit or any case fact (proven by a test, not just asserted).
+- Added a portrait-led cinematic opener to the Reveal screen, reusing
+  the existing cold-open `IntroSequence` component, before the existing
+  detailed text breakdown (unchanged underneath it).
+- Extended the causal-loop mechanism (from the 2026-10-10 round) to
+  Elena: `freeformEnabled`, a `CHARACTER_CONTEXT`/`LEAK_MARKERS` entry,
+  and a new `altUnlock` on her `knife` topic — once Tom's confession is
+  relayed to her and met with empathy, she voluntarily explains her
+  fingerprints without the knife ever being presented as evidence.
+  Closes a three-way web (Tom↔Sofia, Tom→Elena), not just one loop.
+- Found and fixed a real pre-existing test bug (Playthrough 9 didn't
+  await `relayRevelation`, which only mattered once a reaction became
+  generative/async) and a real prompt gap (the altUnlock branch never
+  told the model to paraphrase, unlike the plain-authorized branch).
+
+Why
+- Direct follow-up to "what's missing to make this more engaging / have
+  a moat" — Oriol asked for all four, left sequencing to Claude's
+  judgment. Built one at a time, not all-in-one, each independently
+  verified end to end (build/lint/test/deploy) before starting the next.
+
+Files
+- `src/components/VerdictScreen.tsx`, `src/components/RevealScreen.tsx`,
+  new `src/game/shareCard.ts`, `src/game/analytics.ts`,
+  `src/game/caseData.ts`, `api/witness-chat.ts`, `scripts/selftest.ts`.
+
+How to test
+- `npx tsx scripts/selftest.ts` → 125/125 (grew from 115).
+- Live: relay Tom's knife confession to Elena, then write something
+  empathetic about the fingerprints WITHOUT ever presenting the knife —
+  she should explain them anyway.
+
+Current limitations / next step
+- Human product validation still fully owed.
+- No browser automation available this round either — none of the four
+  features' actual visual/interaction behavior has been watched play
+  out, only reasoned through from code and (for Elena) live API calls.
+- One honest, unresolved nuance: Elena's altUnlock reveal came back
+  near-verbatim to the authored line on 3/3 live calls even after a
+  targeted anti-verbatim prompt fix — judged not worth further
+  prompt-chasing (likely the line is already maximally colloquial), but
+  flagged as open rather than silently accepted. See REVIEW_HANDOFF.md's
+  2026-10-11 entry for the full reasoning and the rest of the trade-offs.
