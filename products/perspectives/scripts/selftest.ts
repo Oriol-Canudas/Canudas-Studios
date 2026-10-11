@@ -3,12 +3,19 @@
 // would, and asserts the ground-truth-consistency invariants from the brief.
 
 import { useGameStore } from "../src/game/store";
-import { VERDICT_AXES, VERDICT_CONFIG, WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
+// Case-002-specific suite: hardcodes this case's own witness ids (tom,
+// sofia, elena, marco, julia) and axis ids (responsible, elenaVerdict)
+// throughout, so it imports its case directly rather than through the
+// swappable "../src/game/caseData" pointer — that pointer may be aimed at
+// a different case entirely (see caseData.ts), and this suite would fail
+// for reasons that have nothing to do with a real regression. The Last
+// Ascent's own mechanics are covered by scripts/selftest.ascent.ts.
+import { VERDICT_AXES, VERDICT_CONFIG, WITNESS_BY_ID, WITNESSES } from "../src/game/case002";
 import { gradeVerdict } from "../src/game/verdictGrading";
 import { getAuthorizedDisclosures, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
 import { buildShareText } from "../src/game/shareCard";
-import { LEAK_MARKERS, validateDialogue } from "../api/witness-chat";
+import { LEAK_MARKERS, validateDialogue, buildInterpretTopicList, buildGenerateSystemPrompt } from "../api/witness-chat";
 
 let failures = 0;
 function assert(cond: boolean, msg: string) {
@@ -702,6 +709,70 @@ console.log("\n=== Playthrough 27: validateDialogue catches leaks and invented a
 
   const valid = validateDialogue("I went straight home, same as I told you before.", null, ["after_that"], authorized, tomMarkers);
   assert(valid.ok, "A dialogue line that stays within authorized content and cites it correctly passes validation");
+}
+
+// ── Playthrough 27b: free-form AI prompts stay grounded (real reported bug) ──
+console.log("\n=== Playthrough 27b: free-form AI prompts forward keywords and never fabricate prior dialogue ===");
+{
+  useGameStore.getState().reset();
+  const tom = WITNESS_BY_ID.tom;
+  const state = useGameStore.getState();
+
+  // The actual bug: the server built its topic list from {id, chipLabel}
+  // alone, silently dropping each topic's authored `keywords` — starving
+  // the classifier of exactly the signal a paraphrase or a translated
+  // question needs (a live Catalan paraphrase of Tom's "earlier_visit"
+  // question fell through to a generic deflection, even though the exact
+  // suggested chip text worked). Assert the topic list the model actually
+  // sees includes those hints for every topic that has them.
+  const topicList = buildInterpretTopicList(tom.topics);
+  for (const topic of tom.topics) {
+    if (topic.keywords.length === 0) continue;
+    assert(
+      topicList.includes(topic.keywords[0]),
+      `Interpreter's topic list for Tom includes a keyword hint for "${topic.id}" (e.g. "${topic.keywords[0]}"), not just its chip label`
+    );
+  }
+
+  // The same real failure's response text claimed "I already told
+  // you..." about something that was never said — on the FIRST message
+  // of the session. Assert the unconditional grounding rule (present no
+  // matter which branch — matched, locked, or no-topic — applies)
+  // explicitly rules this out, keyed off the same "(start of
+  // conversation)" placeholder the real prompt uses when history is empty.
+  const authorized = getAuthorizedDisclosures(tom, state.witnessStages, state.askCounts.tom, state.discoveredEvidence, new Set());
+  const freshPrompt = buildGenerateSystemPrompt(
+    "tom",
+    null,
+    authorized,
+    tom.topics,
+    [],
+    "What worried you about Daniel that afternoon?",
+    "general_question",
+    [],
+    [],
+    false,
+    tom.defensiveLines ?? [],
+    tom.deflections
+  );
+  assert(freshPrompt.includes("(start of conversation)"), "A first-turn prompt shows the model an explicit empty-history marker");
+  assert(
+    /already told|already said/i.test(freshPrompt) && /have said nothing/i.test(freshPrompt),
+    "The prompt explicitly forbids claiming prior dialogue that didn't happen, tied to the empty-history case"
+  );
+
+  // Same real failure's second half: a follow-up correction ("that didn't
+  // answer my question") still fell into a generic deflection. Assert the
+  // grounding/no-topic-matched instructions explicitly tell the model to
+  // engage with a correction rather than deflect again.
+  assert(
+    /correction|didn't actually address|seemed confused/i.test(freshPrompt),
+    "The no-topic-matched branch instructs the model to engage with a correction, not deflect again"
+  );
+
+  // And it must still be allowed to use plain PUBLIC facts even when no
+  // specific gated topic matched — "guarded" isn't "mute."
+  assert(/PUBLIC FACTS/i.test(freshPrompt), "The model may still draw on public facts when no specific topic matched");
 }
 
 // ── Playthrough 28: altUnlock — a conversational route that isn't evidence ──

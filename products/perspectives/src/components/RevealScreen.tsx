@@ -1,49 +1,27 @@
 import { useState } from "react";
-import { CASE_META, EVIDENCE, GROUND_TRUTH, TIMELINE, VERDICT_AXES, VERDICT_CONFIG, VERDICT_REVEAL_NOTES, WITNESSES, WITNESS_BY_ID } from "../game/caseData";
+import {
+  CASE_META,
+  EVIDENCE,
+  GROUND_TRUTH_REVEAL,
+  MISLEADING_SIGNALS,
+  REVEAL_SLIDES,
+  TIMELINE,
+  VERDICT_AXES,
+  VERDICT_CONFIG,
+  VERDICT_REVEAL_NOTES,
+  WITNESSES,
+  buildRevealNarrative,
+  buildVerdictContext,
+} from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { gradeVerdict, type Judgment } from "../game/verdictGrading";
 import { sessionDurationMs, track } from "../game/analytics";
 import { buildShareText } from "../game/shareCard";
-import IntroSequence, { type IntroSlide } from "./IntroSequence";
+import IntroSequence from "./IntroSequence";
 
 interface RevealScreenProps {
   onReset: () => void;
 }
-
-// A portrait-led cinematic open, reusing the exact same component the
-// case's cold-open intro uses — staging the already-authored truth
-// (GROUND_TRUTH.theNight/culpability, paraphrased, nothing new) instead
-// of leading with a text wall. Tapping anywhere skips straight to the
-// detailed breakdown below; nothing here is reachable any other way, so
-// the detailed text reveal that follows stays the actual source of
-// record, this is just how it opens.
-const REVEAL_SLIDES: IntroSlide[] = [
-  {
-    image: WITNESS_BY_ID.elena.demeanorImages?.composed ?? WITNESS_BY_ID.elena.portraitImage,
-    eyebrow: "Elena Rossi",
-    line: "She argued with Daniel. She left him alive, a little after 23:52.",
-  },
-  {
-    image: WITNESS_BY_ID.sofia.demeanorImages?.shaken ?? WITNESS_BY_ID.sofia.portraitImage,
-    eyebrow: "Sofia Mendes",
-    line: "She came and went too. Daniel was still standing when she left, at 23:57.",
-  },
-  {
-    image: WITNESS_BY_ID.tom.demeanorImages?.resigned ?? WITNESS_BY_ID.tom.portraitImage,
-    eyebrow: "Tom Becker",
-    line: "He went back. Just after midnight.",
-  },
-  {
-    image: WITNESS_BY_ID.tom.demeanorImages?.panicking ?? WITNESS_BY_ID.tom.portraitImage,
-    title: "What really happened",
-    line: "A struggle over a knife Daniel had grabbed himself. One second neither of them chose.",
-  },
-  {
-    image: WITNESS_BY_ID.tom.demeanorImages?.resigned ?? WITNESS_BY_ID.tom.portraitImage,
-    title: "The truth",
-    line: "Not murder. Not Elena. An accident — and a man who ran instead of calling for help.",
-  },
-];
 
 function formatDuration(ms: number | null): string {
   if (ms == null) return "—";
@@ -87,7 +65,9 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
     return <IntroSequence slides={REVEAL_SLIDES} onDone={() => setCinematicDone(true)} />;
   }
 
-  const graded = gradeVerdict(VERDICT_CONFIG, verdict);
+  const verdictContext = buildVerdictContext(useGameStore.getState());
+  const graded = gradeVerdict(VERDICT_CONFIG, verdict, verdictContext);
+  const narrative = buildRevealNarrative(useGameStore.getState(), verdict, graded);
   const duration = formatDuration(sessionDurationMs());
   const meaningfulEvents = conversationEventLog.filter((e) => MEANINGFUL_EVENT_KINDS.has(e.kind));
   const witnessesQuestioned = Object.values(chatHistory).filter((h) => h.length > 0).length;
@@ -188,6 +168,43 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
         </div>
       )}
 
+      {narrative && (
+        <div className="mt-4 space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <p className="text-base font-medium text-white/70">Before you arrived</p>
+            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/80">
+              {narrative.before.map((line, i) => (
+                <li key={i}>• {line}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <p className="text-base font-medium text-white/70">What you discovered</p>
+            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/80">
+              {narrative.discovered.map((line, i) => (
+                <li key={i}>• {line}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <p className="text-base font-medium text-white/70">What you changed</p>
+            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/80">
+              {narrative.changed.map((line, i) => (
+                <li key={i}>• {line}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[0.04] p-4">
+            <p className="text-base font-medium text-amber-200">How it played out</p>
+            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/85">
+              {narrative.outcome.map((line, i) => (
+                <li key={i}>• {line}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {!showFullStory ? (
         <button
           onClick={() => setShowFullStory(true)}
@@ -199,38 +216,46 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
         <>
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-base font-medium text-amber-200">What actually happened</p>
-            <p className="mt-2 text-[17px] leading-relaxed text-white/85">{GROUND_TRUTH.relationshipTruth}</p>
-            <p className="mt-3 text-[17px] leading-relaxed text-white/85">{GROUND_TRUTH.theNight}</p>
-            <p className="mt-3 text-[17px] leading-relaxed text-white/60 italic">{GROUND_TRUTH.culpability}</p>
+            {GROUND_TRUTH_REVEAL.map((paragraph, i) => (
+              <p
+                key={i}
+                className={`mt-2 text-[17px] leading-relaxed ${i === GROUND_TRUTH_REVEAL.length - 1 ? "text-white/60 italic" : "text-white/85"}`}
+              >
+                {paragraph}
+              </p>
+            ))}
           </div>
 
-          <div className="mt-6">
-            <p className="text-base font-medium text-white/70 mb-2">The real timeline</p>
-            <div className="space-y-0">
-              {TIMELINE.map((ev, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-white/40" />
-                    {i < TIMELINE.length - 1 && <span className="w-px flex-1 bg-white/10" />}
+          {TIMELINE.length > 0 && (
+            <div className="mt-6">
+              <p className="text-base font-medium text-white/70 mb-2">The real timeline</p>
+              <div className="space-y-0">
+                {TIMELINE.map((ev, i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-white/40" />
+                      {i < TIMELINE.length - 1 && <span className="w-px flex-1 bg-white/10" />}
+                    </div>
+                    <div className="pb-3">
+                      <p className="text-sm font-mono text-white/40">{ev.time}</p>
+                      <p className="mt-0.5 text-base leading-snug text-white/75">{ev.label}</p>
+                    </div>
                   </div>
-                  <div className="pb-3">
-                    <p className="text-sm font-mono text-white/40">{ev.time}</p>
-                    <p className="mt-0.5 text-base leading-snug text-white/75">{ev.label}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-base font-medium text-white/70">The misleading signals</p>
-            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/75">
-              <li>• Daniel's 23:06 text to Sofia ("it's getting ugly") sounds damning — but it's timestamped while Elena was still there, and she left Daniel alive 46 minutes later.</li>
-              <li>• The knife carries only Elena's and Daniel's prints — because Tom never gripped the handle, not because he wasn't there.</li>
-              <li>• The entrance camera shows almost nothing after 23:52 — because Sofia and Tom both used the underground garage, which it doesn't cover.</li>
-              <li>• Julia's "woman in a dark coat around midnight" is an honest but imprecise sighting — easy to misread as Elena, actually consistent with Sofia leaving at 23:57.</li>
-            </ul>
-          </div>
+          {MISLEADING_SIGNALS.length > 0 && (
+            <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-base font-medium text-white/70">The misleading signals</p>
+              <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/75">
+                {MISLEADING_SIGNALS.map((line, i) => (
+                  <li key={i}>• {line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       )}
 

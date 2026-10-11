@@ -5,8 +5,6 @@ interface CaseHomeProps {
   onBegin: () => void;
 }
 
-const ADMITS = ["Was there that night", "They argued", "Touched the knife earlier"];
-
 export default function CaseHome({ onBegin }: CaseHomeProps) {
   return (
     <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0a0d] via-[#0a0a0d] to-[#121018] text-white">
@@ -14,25 +12,25 @@ export default function CaseHome({ onBegin }: CaseHomeProps) {
         <img src="/scenes/home.jpg" alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0d] via-[#0a0a0d]/40 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 px-6 pb-4">
-          <p className="text-xs uppercase tracking-[0.3em] text-amber-300/90">Perspective — Case 002</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-amber-300/90">{CASE_META.kicker}</p>
           <h1 className="mt-1 text-4xl font-semibold leading-tight drop-shadow-lg">{CASE_META.title}</h1>
         </div>
       </div>
 
       <div className="mx-auto w-full max-w-md flex-1 px-6 pb-10 pt-6">
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-sm uppercase tracking-wide text-red-300/80">The Charge</p>
+          <p className="text-sm uppercase tracking-wide text-red-300/80">{CASE_META.chargeLabel}</p>
           <p className="mt-2 text-[18px] font-medium leading-snug text-white/90">{CASE_META.charge}</p>
           <p className="mt-2 text-sm text-white/50">{CASE_META.causeOfDeath}</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {ADMITS.map((a) => (
+            {CASE_META.admits.map((a) => (
               <span key={a} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white/75">
                 {"✓"} {a}
               </span>
             ))}
           </div>
-          <p className="mt-3 text-base font-semibold text-white">She denies killing him.</p>
+          <p className="mt-3 text-base font-semibold text-white">{CASE_META.standingLine}</p>
         </div>
 
         <div className="mt-6">
@@ -48,10 +46,8 @@ export default function CaseHome({ onBegin }: CaseHomeProps) {
         </div>
 
         <div className="mt-6 flex items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-4">
-          <span className="text-2xl">{"⚖️"}</span>
-          <p className="text-base leading-snug text-amber-100">
-            You're the Judge. Question, examine, decide — whenever you're ready.
-          </p>
+          <span className="text-2xl">{CASE_META.roleIcon}</span>
+          <p className="text-base leading-snug text-amber-100">{CASE_META.roleLine}</p>
         </div>
       </div>
 

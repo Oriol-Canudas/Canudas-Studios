@@ -22,6 +22,7 @@ const FADE_MS = 450;
 export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_MS }: IntroSequenceProps) {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
+  const [imageErrored, setImageErrored] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -39,6 +40,10 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, slides.length]);
 
+  // Reset per-slide — an error on one image must not make every later
+  // slide skip straight to the no-art fallback too.
+  useEffect(() => setImageErrored(false), [index]);
+
   const slide = slides[index];
 
   // The mount-time autoplay attempt in App.tsx has no real user gesture
@@ -53,12 +58,20 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
 
   return (
     <div className="fixed inset-0 z-50 bg-black" onClick={handleTap}>
-      <img
-        src={slide.image}
-        alt=""
-        className={`h-full w-full object-cover object-top transition-opacity ease-in-out ${visible ? "opacity-70" : "opacity-0"}`}
-        style={{ transitionDuration: `${FADE_MS}ms` }}
-      />
+      {imageErrored ? (
+        // No art for this case/slide yet (e.g. a text-only-first case) —
+        // a plain dark gradient reads as deliberate staging, never as a
+        // broken image icon.
+        <div className="h-full w-full bg-gradient-to-br from-[#1a1a22] via-[#0f0f14] to-black" />
+      ) : (
+        <img
+          src={slide.image}
+          alt=""
+          onError={() => setImageErrored(true)}
+          className={`h-full w-full object-cover object-top transition-opacity ease-in-out ${visible ? "opacity-70" : "opacity-0"}`}
+          style={{ transitionDuration: `${FADE_MS}ms` }}
+        />
+      )}
       {/* Darken only the lower band the caption sits in, plus a light top
           scrim for the skip label — the face (upper ~60% of a portrait
           crop) stays clear. */}

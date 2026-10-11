@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useGameStore } from "../game/store";
 import { DEMEANOR_STYLE } from "../game/demeanor";
 import type { WitnessConfig } from "../game/types";
@@ -11,11 +12,35 @@ interface CharacterDossierProps {
 export default function CharacterDossier({ witness, onClose, onQuestion }: CharacterDossierProps) {
   const demeanor = useGameStore((s) => s.demeanor[witness.id]);
   const style = DEMEANOR_STYLE[demeanor];
+  const [imageErrored, setImageErrored] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0d]">
       <div className="relative h-[52vh] w-full shrink-0 overflow-hidden">
-        <img src={witness.portraitImage} alt={witness.name} className="h-full w-full object-cover object-top" />
+        {imageErrored ? (
+          // No portrait art for this witness yet (text-only-first case) —
+          // a tinted gradient with their initials, not a broken-image icon.
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{ background: `linear-gradient(160deg, ${witness.accentColor}33, #0a0a0d 75%)` }}
+          >
+            <span className="text-7xl font-semibold" style={{ color: witness.accentColor }}>
+              {witness.name
+                .split(" ")
+                .map((w) => w[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase()}
+            </span>
+          </div>
+        ) : (
+          <img
+            src={witness.portraitImage}
+            alt={witness.name}
+            onError={() => setImageErrored(true)}
+            className="h-full w-full object-cover object-top"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0d] via-[#0a0a0d]/10 to-black/40" />
         <button
           onClick={onClose}

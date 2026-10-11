@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Demeanor, WitnessConfig } from "../game/types";
 
 interface EmotionRevealProps {
@@ -21,6 +21,7 @@ const FADE_MS = 450;
 export default function EmotionReveal({ witness, demeanor, onDone }: EmotionRevealProps) {
   const image = witness.demeanorImages?.[demeanor] ?? witness.portraitImage;
   const line = witness.demeanorLines?.[demeanor];
+  const [imageErrored, setImageErrored] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(onDone, AUTO_ADVANCE_MS);
@@ -28,14 +29,24 @@ export default function EmotionReveal({ witness, demeanor, onDone }: EmotionReve
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demeanor]);
 
+  useEffect(() => setImageErrored(false), [image]);
+
   return (
     <div className="fixed inset-0 z-50 bg-black" onClick={onDone}>
-      <img
-        src={image}
-        alt=""
-        className="h-full w-full object-cover object-top opacity-80 transition-opacity"
-        style={{ transitionDuration: `${FADE_MS}ms` }}
-      />
+      {imageErrored ? (
+        <div
+          className="h-full w-full"
+          style={{ background: `linear-gradient(160deg, ${witness.accentColor}2a, #000 75%)` }}
+        />
+      ) : (
+        <img
+          src={image}
+          alt=""
+          onError={() => setImageErrored(true)}
+          className="h-full w-full object-cover object-top opacity-80 transition-opacity"
+          style={{ transitionDuration: `${FADE_MS}ms` }}
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/90" />
       <div className="absolute inset-x-0 bottom-16 flex flex-col items-center px-8 text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-amber-300/90">{witness.name}</p>

@@ -128,14 +128,15 @@ export interface TestimonyTopic {
  * "Known" is derived purely from existing stage-reach state (the same
  * signal `requiresWitnessStage` already uses), never a new flag to keep
  * in sync by hand.
+ *
+ * Plain string, not a literal union — same reasoning as WitnessId/
+ * EvidenceId. This was a latent bug: a prior generalization round widened
+ * WitnessId/EvidenceId but left this one hardcoded to Case 002's own six
+ * ids, which would have silently blocked any second case from authoring
+ * its own revelations. The real source of truth is always REVELATIONS in
+ * the active case's data file.
  */
-export type RevelationId =
-  | "tom_returned"
-  | "tom_confessed"
-  | "sofia_visited"
-  | "elena_shoved"
-  | "daniel_lied_to_both"
-  | "sofia_contact_hidden";
+export type RevelationId = string;
 
 export interface RevelationDef {
   id: RevelationId;
@@ -187,6 +188,8 @@ export interface WitnessConfig {
   demeanorLines?: Partial<Record<Demeanor, string>>;
   /** Whether this witness gets the AI-backed free-form conversation (interpret → authorize → generate → validate) rather than chip-only deterministic matching. Opt-in per witness; everyone defaults to deterministic-only. */
   freeformEnabled?: boolean;
+  /** One-line teaser shown on the cast-intro slide (see introSlides.ts) — e.g. their public position or relationship to the case. Case-authored, not derived. */
+  introHook?: string;
 }
 
 // Generic, N-axis verdict shape — not hardcoded to "responsible" +
@@ -210,6 +213,25 @@ export interface PlayerVerdict {
   theory: string;
   /** axisId -> the chosen optionId on that axis. */
   choices: Record<string, string>;
+}
+
+/**
+ * Optional, per-case dynamic reveal narrative — the causal picture RevealScreen
+ * renders ABOVE the static ground-truth text, built from what actually
+ * happened in THIS playthrough (never invented). A case with nothing
+ * beyond its static reveal copy (e.g. Case 002, which predates this)
+ * exports a buildRevealNarrative() that always returns null, and
+ * RevealScreen simply skips this section.
+ */
+export interface RevealNarrative {
+  /** What was true before the player ever arrived — safe-to-reveal ground truth, not news to anyone but the player. */
+  before: string[];
+  /** What the player actually discovered (or never did) — derived from real stage-reach state, never assumed. */
+  discovered: string[];
+  /** What the player changed through conversation — commitments actually secured, specifically. */
+  changed: string[];
+  /** How the final choice, discoveries, and commitments actually played out together. */
+  outcome: string[];
 }
 
 /**

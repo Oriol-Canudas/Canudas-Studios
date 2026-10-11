@@ -686,6 +686,11 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
 
     set({
       ...resolution.patch,
+      // Time is charged here, once a real answer actually lands — never at
+      // send time (a network failure below never reaches this line, so a
+      // technical fallback that produces nothing costs the player zero
+      // fictional minutes; see the catch branch).
+      ...tickClock(latest, "ask"),
       chatHistory: { ...latest.chatHistory, [witnessId]: [...latest.chatHistory[witnessId], witnessMessage] },
       presentedEvidence: nextPresented,
       defensiveTopics: nextDefensive,
@@ -693,6 +698,9 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
       conversationEventLog: [...latest.conversationEventLog, resolution.event],
     });
   } catch (err) {
+    // No tickClock call here, deliberately — a thrown exception means the
+    // player got no answer at all (the message is marked failed, offering
+    // a retry), so no fictional time is spent on it.
     track("freeform_turn_failed", { witnessId, message: err instanceof Error ? err.message : String(err) });
     const latest = get();
     const history = latest.chatHistory[witnessId];
@@ -1051,7 +1059,6 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const playerMessage: ChatMessage = { role: "player", text: trimmed };
     set({
-      ...tickClock(state, "ask"),
       chatHistory: { ...state.chatHistory, [witnessId]: [...state.chatHistory[witnessId], playerMessage] },
       drafts: { ...state.drafts, [witnessId]: "" },
       pendingWitnesses: new Set(state.pendingWitnesses).add(witnessId),

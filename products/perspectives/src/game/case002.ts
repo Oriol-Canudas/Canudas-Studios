@@ -8,20 +8,29 @@
 // to stay consistent with.
 // ─────────────────────────────────────────────────────────────────────────
 
-import type { EvidenceFact, EvidenceId, EvidenceItem, RevelationDef, RevelationId, TimePressureConfig, VerdictAxis, WitnessConfig } from "./types";
-import type { VerdictGradingConfig } from "./verdictGrading";
+import type { EvidenceFact, EvidenceId, EvidenceItem, PlayerVerdict, RevelationDef, RevelationId, RevealNarrative, TimePressureConfig, VerdictAxis, WitnessConfig } from "./types";
+import type { GradedVerdict, VerdictGradingConfig } from "./verdictGrading";
+import type { IntroSlide } from "../components/IntroSequence";
 
 // No time pressure in this case — ask as much or as little as you want,
 // per the original brief. See TimePressureConfig for what `null` means.
 export const TIME_PRESSURE: TimePressureConfig | null = null;
 
 export const CASE_META = {
+  kicker: "Perspectives — Case 002",
   title: "The Last Message",
+  chargeLabel: "The Charge",
   charge:
     "Elena Rossi, 34, is accused of murdering Daniel Costa, 37, her former partner.",
   victim: "Daniel Costa, 37",
   defendant: "Elena Rossi, 34",
   causeOfDeath: "Single stab wound to the chest.",
+  /** Shown as chips on the home screen — things already conceded, not in dispute. */
+  admits: ["Was there that night", "They argued", "Touched the knife earlier"],
+  /** The defendant's own position, shown under the admits chips. */
+  standingLine: "She denies killing him.",
+  roleIcon: "⚖️",
+  roleLine: "You're the Judge. Question, examine, decide — whenever you're ready.",
   prosecutionTheory: [
     "Elena and Daniel had been together for years.",
     "Daniel had moved on with Sofia.",
@@ -52,6 +61,27 @@ export const GROUND_TRUTH = {
   culpability:
     "Elena did not kill Daniel. Tom's legal responsibility is deliberately left open — accidental death during a struggle, reckless conduct, possible manslaughter, or failure to render aid are all live readings. But the stabbing was not an intentional attack by anyone, and it was not Elena.",
 };
+
+/** Generic reveal paragraphs RevealScreen.tsx renders in order — last one shown italic. Same content as GROUND_TRUTH above, just in the uniform shape every case provides. */
+export const GROUND_TRUTH_REVEAL: string[] = [GROUND_TRUTH.relationshipTruth, GROUND_TRUTH.theNight, GROUND_TRUTH.culpability];
+
+/** "Things that could mislead you" bullets for the reveal screen — empty array is a valid case ("nothing to flag"), RevealScreen only renders this section when non-empty. */
+export const MISLEADING_SIGNALS: string[] = [
+  "Daniel's 23:06 text to Sofia (\"it's getting ugly\") sounds damning — but it's timestamped while Elena was still there, and she left Daniel alive 46 minutes later.",
+  "The knife carries only Elena's and Daniel's prints — because Tom never gripped the handle, not because he wasn't there.",
+  "The entrance camera shows almost nothing after 23:52 — because Sofia and Tom both used the underground garage, which it doesn't cover.",
+  "Julia's \"woman in a dark coat around midnight\" is an honest but imprecise sighting — easy to misread as Elena, actually consistent with Sofia leaving at 23:57.",
+];
+
+/** This case's verdict judge ignores all playthrough context — nothing extra to derive. */
+export function buildVerdictContext(_state?: unknown): undefined {
+  return undefined;
+}
+
+/** This case uses the static VERDICT_REVEAL_NOTES lookup only — no dynamic causal narrative. */
+export function buildRevealNarrative(_state?: unknown, _verdict?: PlayerVerdict, _graded?: GradedVerdict): RevealNarrative | null {
+  return null;
+}
 
 /** Canonical, ordered, never-changes timeline of the night. */
 export const TIMELINE = [
@@ -254,6 +284,7 @@ export const WITNESSES: WitnessConfig[] = [
     id: "elena",
     name: "Elena Rossi",
     role: "The defendant — Daniel's former partner",
+    introHook: "Together with Daniel for six years. Now the one everyone's looking at.",
     age: 34,
     context:
       "Together with Daniel ~6 years. He called it a breakup 8 months ago — Elena says it was never that clean. She admits being there that night. She denies killing him.",
@@ -412,6 +443,7 @@ export const WITNESSES: WitnessConfig[] = [
     id: "sofia",
     name: "Sofia Mendes",
     role: "Daniel's girlfriend — together ~5 months",
+    introHook: "Daniel's girlfriend of five months. Says she wasn't even here that night.",
     context:
       "Dating Daniel ~5 months. He told her Elena was long in the past. She first claims no contact with Daniel after his 23:06 text.",
     keyFacts: [
@@ -578,6 +610,7 @@ export const WITNESSES: WitnessConfig[] = [
     id: "tom",
     name: "Tom Becker",
     role: "Daniel's close friend — ~9 years",
+    introHook: "Daniel's closest friend — the one who kept telling him to come clean.",
     context:
       "Daniel's friend of ~9 years. Repeatedly warned him he was stringing both women along. Claims he went home early that night.",
     keyFacts: [
@@ -780,6 +813,7 @@ export const WITNESSES: WitnessConfig[] = [
     id: "marco",
     name: "Marco Costa",
     role: "Daniel's older brother",
+    introHook: "Daniel's older brother. Not a suspect. But he knew him best.",
     context:
       "Knew Daniel better than anyone — a man who hated confrontation and kept both women on the line rather than face either honestly. Spoke to him that night.",
     keyFacts: [
@@ -899,6 +933,7 @@ export const WITNESSES: WitnessConfig[] = [
     id: "julia",
     name: "Julia Ferrer",
     role: "Neighbour, lives across the hall",
+    introHook: "The neighbour across the hall. She heard everything — she's just not sure what she saw.",
     context:
       "Heard fragments of arguments through the wall. Her account is honest but imprecise — she didn't see everything clearly.",
     keyFacts: [
@@ -1043,6 +1078,53 @@ export const REVELATIONS: Record<RevelationId, RevelationDef> = {
     source: { witness: "sofia", topic: "contact_after_text", minStage: 1 },
   },
 };
+
+// ───────────────────────────── Intro / reveal cinematics ─────────────────
+
+/** Beat 1: the mystery hook, shown once per session before the case file. */
+export const CASE_INTRO_SLIDES: IntroSlide[] = [
+  { image: "/scenes/home.jpg", line: "Daniel Costa is dead." },
+  { image: "/scenes/evidence.jpg", line: "A single stab wound. No one saw the moment itself." },
+  { image: "/scenes/evidence.jpg", line: "Three people visited his apartment that same night." },
+  { image: "/portraits/elena.jpg", line: "One of them is on trial for his murder." },
+  { image: "/portraits/elena.jpg", line: "Her prints are on the knife. The prosecution is already convinced." },
+  { image: "/scenes/verdict.jpg", line: "But is that the whole story? You decide what really happened." },
+];
+
+/** Closing beat of the cast-intro sequence, after every witness's own introHook slide. */
+export const CHARACTER_INTRO_OUTRO: IntroSlide = {
+  image: "/scenes/evidence.jpg",
+  line: "No one has the whole picture. You do — if you look hard enough.",
+};
+
+/** A portrait-led cinematic open for the Reveal screen — nothing here beyond what's already authored above, just staged. */
+export const REVEAL_SLIDES: IntroSlide[] = [
+  {
+    image: WITNESS_BY_ID.elena.demeanorImages?.composed ?? WITNESS_BY_ID.elena.portraitImage,
+    eyebrow: "Elena Rossi",
+    line: "She argued with Daniel. She left him alive, a little after 23:52.",
+  },
+  {
+    image: WITNESS_BY_ID.sofia.demeanorImages?.shaken ?? WITNESS_BY_ID.sofia.portraitImage,
+    eyebrow: "Sofia Mendes",
+    line: "She came and went too. Daniel was still standing when she left, at 23:57.",
+  },
+  {
+    image: WITNESS_BY_ID.tom.demeanorImages?.resigned ?? WITNESS_BY_ID.tom.portraitImage,
+    eyebrow: "Tom Becker",
+    line: "He went back. Just after midnight.",
+  },
+  {
+    image: WITNESS_BY_ID.tom.demeanorImages?.panicking ?? WITNESS_BY_ID.tom.portraitImage,
+    title: "What really happened",
+    line: "A struggle over a knife Daniel had grabbed himself. One second neither of them chose.",
+  },
+  {
+    image: WITNESS_BY_ID.tom.demeanorImages?.resigned ?? WITNESS_BY_ID.tom.portraitImage,
+    title: "The truth",
+    line: "Not murder. Not Elena. An accident — and a man who ran instead of calling for help.",
+  },
+];
 
 // ───────────────────────────── Verdict ─────────────────────────────────
 //
