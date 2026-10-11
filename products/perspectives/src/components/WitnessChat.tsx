@@ -11,7 +11,7 @@ import EvidencePicker from "./EvidencePicker";
 import RelayPicker from "./RelayPicker";
 import EmotionReveal from "./EmotionReveal";
 
-const MAX_VISIBLE_CHIPS = 3;
+const MAX_VISIBLE_CHIPS = 2;
 
 function prefersReducedMotion(): boolean {
   try {
@@ -59,6 +59,13 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   // use this hint at all — see `send` below — every message to them
   // goes through real generation, suggested or not.
   const [lastSuggestion, setLastSuggestion] = useState<{ text: string; topicId: string } | null>(null);
+  // Suggestions are hidden by default — tucked behind a "Suggestions"
+  // toggle instead of always sitting on screen — and once asked about, a
+  // topic drops out of the suggestion list ENTIRELY rather than lingering
+  // greyed out. suggestionPage cycles through the remaining unasked
+  // topics 2 at a time, wrapping back to the start past the end.
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [suggestionPage, setSuggestionPage] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   // Shows once on open (an "establishing shot" of their current state) and
   // again whenever demeanor actually changes mid-conversation — never on
@@ -187,6 +194,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
     if (busy) return;
     setDraft(witnessId, topic.chipLabel);
     setLastSuggestion({ text: topic.chipLabel, topicId: topic.id });
+    setSuggestionsOpen(false);
     inputRef.current?.focus();
   }
 
@@ -200,18 +208,19 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
     setRelayPickerOpen(false);
   }
 
-  // Cap the row at 3 chips so it never eats the screen. Not-yet-asked
-  // topics are prioritized (stable on authored order), so once one is
-  // used it sinks behind the others and the next reachable topic takes
-  // its place — "ask one, see 3 more" — without needing extra state.
-  const reachableTopics = witness.topics.filter((t) => isTopicReachable(t, witnessStages));
-  const visibleTopics = [...reachableTopics]
-    .sort((a, b) => {
-      const askedA = (witnessStages[witnessId][a.id] ?? -1) >= 0 ? 1 : 0;
-      const askedB = (witnessStages[witnessId][b.id] ?? -1) >= 0 ? 1 : 0;
-      return askedA - askedB;
-    })
-    .slice(0, MAX_VISIBLE_CHIPS);
+  // Once a topic has actually been asked about (via a chip OR free text),
+  // it drops out of the suggestion list entirely — it doesn't linger
+  // greyed out. 2 at a time; "Show more" cycles through the rest,
+  // wrapping back to the start past the end.
+  const unaskedReachableTopics = witness.topics.filter(
+    (t) => isTopicReachable(t, witnessStages) && (witnessStages[witnessId][t.id] ?? -1) < 0
+  );
+  const totalSuggestionPages = Math.max(1, Math.ceil(unaskedReachableTopics.length / MAX_VISIBLE_CHIPS));
+  const currentSuggestionPage = suggestionPage % totalSuggestionPages;
+  const visibleTopics = unaskedReachableTopics.slice(
+    currentSuggestionPage * MAX_VISIBLE_CHIPS,
+    currentSuggestionPage * MAX_VISIBLE_CHIPS + MAX_VISIBLE_CHIPS
+  );
 
   const availableRelays = (Object.keys(REVELATIONS) as RevelationId[]).filter(
     (id) =>
@@ -345,29 +354,58 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
           <p className="mb-1.5 text-center text-[11px] text-white/30">Guided matching active — live AI not connected</p>
         )}
 
-        {/* Deliberately quiet — no per-tone color-coding, so this reads as
-            an occasional nudge for when you're stuck, not a menu of
-            scripted "correct" moves to pick from. */}
-        {visibleTopics.length > 0 && (
+        {/* Hidden by default — an occasional nudge the player asks for,
+            not a menu that's always on screen. Once a topic's actually
+            been asked about it drops out entirely (see
+            unaskedReachableTopics above), so this never shows something
+            already covered. */}
+        {unaskedReachableTopics.length > 0 && (
           <div className="mb-2">
-            <p className="mb-1.5 px-1 text-[11px] text-white/30">If you're stuck, try asking about —</p>
-            <div className="flex flex-wrap gap-2">
-              {visibleTopics.map((t) => {
-                const asked = (witnessStages[witnessId][t.id] ?? -1) >= 0;
-                return (
+            {!suggestionsOpen ? (
+              <button
+                type="button"
+                onClick={() => setSuggestionsOpen(true)}
+                disabled={busy}
+                className="rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-sm text-white/55 transition-colors disabled:opacity-50"
+              >
+                {"\u{1F4A1} Suggestions"}
+              </button>
+            ) : (
+              <div>
+                <div className="mb-1.5 flex items-center justify-between px-1">
+                  <p className="text-[11px] text-white/30">If you're stuck, try asking about —</p>
                   <button
-                    key={t.id}
-                    onClick={() => handleSuggestionTap(t)}
-                    disabled={busy}
-                    className={`whitespace-nowrap rounded-full border px-3.5 py-2 text-sm transition-colors disabled:opacity-50 ${
-                      asked ? "border-white/10 bg-white/[0.02] text-white/35" : "border-white/15 bg-white/[0.04] text-white/60"
-                    }`}
+                    type="button"
+                    onClick={() => setSuggestionsOpen(false)}
+                    className="text-[11px] text-white/30 active:text-white/50"
                   >
-                    {t.chipLabel}
+                    Hide
                   </button>
-                );
-              })}
-            </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {visibleTopics.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => handleSuggestionTap(t)}
+                      disabled={busy}
+                      className="whitespace-nowrap rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-sm text-white/60 transition-colors disabled:opacity-50"
+                    >
+                      {t.chipLabel}
+                    </button>
+                  ))}
+                  {unaskedReachableTopics.length > MAX_VISIBLE_CHIPS && (
+                    <button
+                      type="button"
+                      onClick={() => setSuggestionPage((p) => p + 1)}
+                      disabled={busy}
+                      className="whitespace-nowrap rounded-full border border-white/10 px-3 py-2 text-sm text-white/35 transition-colors disabled:opacity-50 active:text-white/60"
+                    >
+                      {"↻ Show more"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
