@@ -1,13 +1,49 @@
 import { useState } from "react";
-import { GROUND_TRUTH, TIMELINE } from "../game/caseData";
+import { GROUND_TRUTH, TIMELINE, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { ELENA_REVEAL_NOTES, RESPONSIBLE_REVEAL_NOTES, gradeVerdict, type Judgment } from "../game/verdictGrading";
 import { sessionDurationMs, track } from "../game/analytics";
 import { buildShareText } from "../game/shareCard";
+import IntroSequence, { type IntroSlide } from "./IntroSequence";
 
 interface RevealScreenProps {
   onReset: () => void;
 }
+
+// A portrait-led cinematic open, reusing the exact same component the
+// case's cold-open intro uses — staging the already-authored truth
+// (GROUND_TRUTH.theNight/culpability, paraphrased, nothing new) instead
+// of leading with a text wall. Tapping anywhere skips straight to the
+// detailed breakdown below; nothing here is reachable any other way, so
+// the detailed text reveal that follows stays the actual source of
+// record, this is just how it opens.
+const REVEAL_SLIDES: IntroSlide[] = [
+  {
+    image: WITNESS_BY_ID.elena.demeanorImages?.composed ?? WITNESS_BY_ID.elena.portraitImage,
+    eyebrow: "Elena Rossi",
+    line: "She argued with Daniel. She left him alive, a little after 23:52.",
+  },
+  {
+    image: WITNESS_BY_ID.sofia.demeanorImages?.shaken ?? WITNESS_BY_ID.sofia.portraitImage,
+    eyebrow: "Sofia Mendes",
+    line: "She came and went too. Daniel was still standing when she left, at 23:57.",
+  },
+  {
+    image: WITNESS_BY_ID.tom.demeanorImages?.resigned ?? WITNESS_BY_ID.tom.portraitImage,
+    eyebrow: "Tom Becker",
+    line: "He went back. Just after midnight.",
+  },
+  {
+    image: WITNESS_BY_ID.tom.demeanorImages?.panicking ?? WITNESS_BY_ID.tom.portraitImage,
+    title: "What really happened",
+    line: "A struggle over a knife Daniel had grabbed himself. One second neither of them chose.",
+  },
+  {
+    image: WITNESS_BY_ID.tom.demeanorImages?.resigned ?? WITNESS_BY_ID.tom.portraitImage,
+    title: "The truth",
+    line: "Not murder. Not Elena. An accident — and a man who ran instead of calling for help.",
+  },
+];
 
 function formatDuration(ms: number | null): string {
   if (ms == null) return "—";
@@ -44,7 +80,12 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
   const chatHistory = useGameStore((s) => s.chatHistory);
   const [showFullStory, setShowFullStory] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
+  const [cinematicDone, setCinematicDone] = useState(false);
   if (!verdict) return null;
+
+  if (!cinematicDone) {
+    return <IntroSequence slides={REVEAL_SLIDES} onDone={() => setCinematicDone(true)} />;
+  }
 
   const graded = gradeVerdict(verdict);
   const duration = formatDuration(sessionDurationMs());
