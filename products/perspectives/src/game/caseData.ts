@@ -458,6 +458,28 @@ export const WITNESSES: WitnessConfig[] = [
         ],
       },
       {
+        id: "suspicions_before",
+        chipLabel: "Did you suspect something before that night?",
+        keywords: ["suspect", "suspicious", "before that night", "feeling", "doubt", "doubts", "unsure about elena"],
+        stages: [
+          {
+            text: "Honestly? A little. Nothing I could have pointed to — he'd get cagey about his phone sometimes, go quiet for a day or two. I told myself I was being paranoid. I wanted to believe him more than I wanted to be right.",
+            demeanor: "composed",
+          },
+        ],
+      },
+      {
+        id: "daniels_tone",
+        chipLabel: "How did Daniel sound when he called you back?",
+        keywords: ["sound", "sounded", "voice", "how did he sound", "tone", "upset on the phone"],
+        stages: [
+          {
+            text: "Shaken. Not like himself at all — like he'd been crying, or close to it. That's part of why I went, even that late. I'd never heard him like that before.",
+            demeanor: "composed",
+          },
+        ],
+      },
+      {
         id: "contact_after_text",
         chipLabel: "Are you sure Daniel never contacted you again that night?",
         keywords: ["after", "call", "contact", "that night", "later", "23:06", "text"],
@@ -793,6 +815,28 @@ export const WITNESSES: WitnessConfig[] = [
         ],
       },
       {
+        id: "about_tom",
+        chipLabel: "Did Daniel ever talk about Tom?",
+        keywords: ["tom", "tom becker", "about tom", "knew tom", "daniel's friend"],
+        stages: [
+          {
+            text: "They'd known each other since school. Tom was steady — the one who'd actually tell Daniel the hard truth instead of just nodding along. I always figured Daniel trusted him more than he trusted most people. Family, basically.",
+            demeanor: "composed",
+          },
+        ],
+      },
+      {
+        id: "elena_impression",
+        chipLabel: "What was your impression of Elena?",
+        keywords: ["elena", "impression", "what did you think of elena", "your impression", "met elena", "met her"],
+        stages: [
+          {
+            text: "I only met her a handful of times. Genuine, actually — more grounded than some of the people Daniel brought around. It's part of why this doesn't sit right with me. I wouldn't have guessed her, if you'd asked me before.",
+            demeanor: "composed",
+          },
+        ],
+      },
+      {
         id: "the_lies",
         chipLabel: "Did Daniel ever talk to you about Elena and Sofia?",
         keywords: ["elena", "sofia", "both of them", "lied", "lying"],
@@ -913,6 +957,31 @@ export const WITNESSES: WitnessConfig[] = [
             addsBoardEntries: [
               { type: "claim", text: "Julia, pressed: admits her “around midnight” sighting is an estimate, not a precise time.", source: "julia" },
             ],
+          },
+        ],
+      },
+      {
+        id: "other_sounds",
+        chipLabel: "Did you notice anything else, later that night?",
+        keywords: ["anything else", "besides", "afterward", "something else", "another sound", "the lift again", "later that night"],
+        stages: [
+          {
+            text: "The lift, more than once — that's not unusual, people come and go. But later, after the woman had gone, I think I heard it again. A voice, maybe, muffled — could've been a man's. I'd already gone to bed properly by then, so I really couldn't swear to it.",
+            demeanor: "composed",
+            addsBoardEntries: [
+              { type: "claim", text: "Julia: thinks she heard the lift again after the woman left, possibly a man's voice, but had already gone to bed and isn't sure.", source: "julia", timestamp: "~after midnight (imprecise)" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "know_daniel",
+        chipLabel: "Did you know Daniel well?",
+        keywords: ["did you know daniel", "know him well", "neighbour", "neighbor", "how well did you know"],
+        stages: [
+          {
+            text: "Just to say hello to, really. Friendly enough, held the door, that sort of thing. Kept to himself mostly. I'd never have pegged his place for something like this.",
+            demeanor: "composed",
           },
         ],
       },

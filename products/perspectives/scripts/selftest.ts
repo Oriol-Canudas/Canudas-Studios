@@ -5,7 +5,7 @@
 import { useGameStore } from "../src/game/store";
 import { WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
 import { gradeVerdict } from "../src/game/verdictGrading";
-import { getAuthorizedDisclosures, isTopicReachable, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
+import { getAuthorizedDisclosures, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
 import { buildShareText } from "../src/game/shareCard";
 import { LEAK_MARKERS, validateDialogue } from "../api/witness-chat";
@@ -887,6 +887,33 @@ console.log("\n=== Playthrough 32: Elena voluntarily explains the knife once Tom
   assert(!afterEmpathy.discoveredEvidence.has("E01_knife"), "This happened WITHOUT the knife ever being presented as evidence");
   const voluntaryEvent = afterEmpathy.conversationEventLog.find((e) => e.witnessId === "elena" && e.kind === "voluntary_disclosure");
   assert(Boolean(voluntaryEvent), "Recorded specifically as a voluntary disclosure for Elena too, not just Tom/Sofia");
+}
+
+// ── Playthrough 33: new authored topics (Sofia/Marco/Julia pool expansion) resolve correctly, no keyword collisions ──
+console.log("\n=== Playthrough 33: newly authored topics match their own chip text, not a sibling topic ===");
+{
+  const cases: { witnessId: "sofia" | "marco" | "julia"; topicId: string }[] = [
+    { witnessId: "sofia", topicId: "suspicions_before" },
+    { witnessId: "sofia", topicId: "daniels_tone" },
+    { witnessId: "marco", topicId: "about_tom" },
+    { witnessId: "marco", topicId: "elena_impression" },
+    { witnessId: "julia", topicId: "other_sounds" },
+    { witnessId: "julia", topicId: "know_daniel" },
+  ];
+  for (const { witnessId, topicId } of cases) {
+    const witness = WITNESS_BY_ID[witnessId];
+    const topic = witness.topics.find((t) => t.id === topicId)!;
+    const matched = matchTopic(witness, topic.chipLabel);
+    assert(
+      matched?.id === topicId,
+      `${witnessId}'s "${topicId}" chip text resolves back to itself via matchTopic, not a sibling topic (got "${matched?.id}")`
+    );
+  }
+  // Pool sizes now meet the tiered floor discussed: leads 6-8, Sofia
+  // 5-6, supporting witnesses 4-5 (was 3/3 before this round).
+  assert(WITNESS_BY_ID.sofia.topics.length === 6, "Sofia's topic pool grew from 4 to 6");
+  assert(WITNESS_BY_ID.marco.topics.length === 5, "Marco's topic pool grew from 3 to 5");
+  assert(WITNESS_BY_ID.julia.topics.length === 5, "Julia's topic pool grew from 3 to 5");
 }
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
