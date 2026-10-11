@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { EVIDENCE, EVIDENCE_BY_ID, EVIDENCE_FACTS, REVELATIONS, WITNESS_BY_ID, WITNESSES } from "./caseData";
+import { EVIDENCE, EVIDENCE_BY_ID, EVIDENCE_FACTS, REVELATIONS, TIME_PRESSURE, WITNESS_BY_ID, WITNESSES } from "./caseData";
 import { track } from "./analytics";
 import { playSfx } from "./audio";
 import { converseWithWitness, defaultCueFor, generateRelayReaction } from "./interpreter";
@@ -56,6 +56,8 @@ export interface RelayRecord {
 }
 
 interface GameState {
+  /** Opt-in per-case soft clock (see TimePressureConfig) — null when the active case has none, matching Case 002's "ask as much as you want" today exactly. Never real wall-clock time. */
+  minutesRemaining: number | null;
   discoveredEvidence: Set<EvidenceId>;
   /** Evidence whose detail view has actually been opened and read — distinct from merely having requested/acquired it. */
   inspectedEvidence: Set<EvidenceId>;
@@ -160,6 +162,24 @@ function emptyDrafts(): Record<WitnessId, string> {
 
 function boardKey(entry: Omit<BoardEntry, "id">, extra: string) {
   return `${entry.source ?? "x"}:${extra}`;
+}
+
+// ── Time pressure (opt-in per case — see TimePressureConfig) ─────────────
+// A no-op everywhere TIME_PRESSURE is null (every case until Last Ascent),
+// so this is zero behavior change for Case 002 by construction, not by
+// convention — there is no code path where a null config still consumes
+// minutes or blocks an action.
+
+/** True once this case's clock has actually run out — always false when the case has no time pressure. */
+function timeIsUp(state: GameState): boolean {
+  return TIME_PRESSURE !== null && (state.minutesRemaining ?? 0) <= 0;
+}
+
+/** The state patch for spending one action's worth of time — {} (a no-op) when this case has no clock. */
+function tickClock(state: GameState, kind: keyof NonNullable<typeof TIME_PRESSURE>["costMinutes"]): Partial<GameState> {
+  if (TIME_PRESSURE === null) return {};
+  const spent = TIME_PRESSURE.costMinutes[kind];
+  return { minutesRemaining: Math.max(0, (state.minutesRemaining ?? 0) - spent) };
 }
 
 // How "keyed up" each state reads, for deciding escalation vs. de-escalation
@@ -688,6 +708,8 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
+  minutesRemaining: TIME_PRESSURE?.totalMinutes ?? null,
+
   // Every document starts as "Request" — standardized so the Examine
   // screen has one consistent interaction (tap → brief pull animation →
   // read) instead of some items appearing pre-opened for no reason a
@@ -754,6 +776,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!witness) return;
 
     const state = get();
+    if (timeIsUp(state)) return; // the clock ran out — no further investigation, only the verdict remains
     const topic = topicIdHint
       ? witness.topics.find((t) => t.id === topicIdHint) ?? null
       : matchTopic(witness, questionText);
@@ -764,6 +787,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const line = getDeflection(witness);
       track("witness_questioned", { witnessId: id, matched: false, question: questionText });
       set({
+        ...tickClock(state, "ask"),
         chatHistory: { ...state.chatHistory, [id]: [...history, { role: "witness", text: line }] },
         drafts: { ...state.drafts, [id]: "" },
       });
@@ -780,6 +804,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const line = getDefensiveLine(witness);
       track("witness_questioned", { witnessId: id, topicId: topic.id, matched: true, stage: state.witnessStages[id][topic.id] ?? -1, advanced: false });
       set({
+        ...tickClock(state, "ask"),
         chatHistory: { ...state.chatHistory, [id]: [...history, { role: "witness", text: line, topicId: topic.id }] },
         drafts: { ...state.drafts, [id]: "" },
       });
@@ -804,6 +829,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       // once it does unlock (see scripts/selftest.ts Playthrough 2).
       const line = getDeflection(witness);
       set({
+        ...tickClock(state, "ask"),
         chatHistory: { ...state.chatHistory, [id]: [...history, { role: "witness", text: line }] },
         drafts: { ...state.drafts, [id]: "" },
       });
@@ -812,6 +838,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     set({
       ...result.patch,
+      ...tickClock(state, "ask"),
       chatHistory: { ...state.chatHistory, [id]: [...history, { role: "witness", text: result.text, topicId: topic.id }] },
       drafts: { ...state.drafts, [id]: "" },
     });
@@ -823,6 +850,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   presentEvidence: (witnessId, evidenceId, excerptIndex) => {
     const state = get();
+    if (timeIsUp(state)) return;
     if (!state.discoveredEvidence.has(evidenceId)) return; // can only present what's already been acquired
     const witness: WitnessConfig | undefined = WITNESS_BY_ID[witnessId];
     const evidence = EVIDENCE_BY_ID[evidenceId];
@@ -882,6 +910,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   relayRevelation: async (witnessId, revelationId) => {
     const state = get();
+    if (timeIsUp(state)) return;
     const witness = WITNESS_BY_ID[witnessId];
     const revelation = REVELATIONS[revelationId];
     if (!witness || !revelation) return;
@@ -889,6 +918,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (state.relayedRevelations[witnessId].has(revelationId)) return; // never re-tellable
     if (state.pendingWitnesses.has(witnessId)) return; // same duplicate-submission guard as a free-form turn
 
+    const clockPatch = tickClock(state, "relay");
     const nextRelayed = {
       ...state.relayedRevelations,
       [witnessId]: new Set(state.relayedRevelations[witnessId]).add(revelationId),
@@ -903,7 +933,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!reaction) {
       // Known, but this witness has no authored reaction to it — still a
       // legitimate relay (it's recorded), just not one that moves anything.
-      set({ chatHistory: { ...state.chatHistory, [witnessId]: history }, relayedRevelations: nextRelayed, relayLog: nextLog });
+      set({ ...clockPatch, chatHistory: { ...state.chatHistory, [witnessId]: history }, relayedRevelations: nextRelayed, relayLog: nextLog });
       return;
     }
 
@@ -937,6 +967,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (resolved.changed) playSfx("demeanor");
 
     const basePatch = {
+      ...clockPatch,
       relayedRevelations: nextRelayed,
       relayLog: nextLog,
       board: nextBoard,
@@ -1013,12 +1044,14 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   sendFreeformMessage: async (witnessId, rawText) => {
     const state = get();
+    if (timeIsUp(state)) return;
     if (state.pendingWitnesses.has(witnessId)) return; // duplicate-submission guard
     const trimmed = rawText.trim();
     if (!trimmed) return;
 
     const playerMessage: ChatMessage = { role: "player", text: trimmed };
     set({
+      ...tickClock(state, "ask"),
       chatHistory: { ...state.chatHistory, [witnessId]: [...state.chatHistory[witnessId], playerMessage] },
       drafts: { ...state.drafts, [witnessId]: "" },
       pendingWitnesses: new Set(state.pendingWitnesses).add(witnessId),
@@ -1055,6 +1088,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   reset: () => {
     track("session_started", {});
     set({
+      minutesRemaining: TIME_PRESSURE?.totalMinutes ?? null,
       discoveredEvidence: new Set(),
       inspectedEvidence: new Set(),
       presentedEvidence: emptyPresentedEvidence(),

@@ -10,6 +10,7 @@ import TabBar, { type TabId } from "./components/TabBar";
 import VerdictScreen from "./components/VerdictScreen";
 import RevealScreen from "./components/RevealScreen";
 import SoundToggle from "./components/SoundToggle";
+import TimeClock from "./components/TimeClock";
 import { useGameStore } from "./game/store";
 import { track } from "./game/analytics";
 import { playAmbient, stopAmbient } from "./game/audio";
@@ -64,6 +65,7 @@ export default function App() {
     return (
       <>
         <SoundToggle />
+        <TimeClock />
         <VerdictScreen onBack={() => setScreen("game")} onSubmitted={() => setScreen("reveal")} />
       </>
     );
@@ -90,6 +92,7 @@ export default function App() {
   return (
     <>
       <SoundToggle />
+      <TimeClock />
       {activeWitness ? (
         <WitnessChat
           witnessId={activeWitness}

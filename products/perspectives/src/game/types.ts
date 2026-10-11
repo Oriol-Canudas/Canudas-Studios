@@ -212,6 +212,26 @@ export interface PlayerVerdict {
   choices: Record<string, string>;
 }
 
+/**
+ * Opt-in, per-case soft clock — a shared resource that ticks down as the
+ * player takes actions (never real wall-clock time; see DECISIONS.md on
+ * why). A case that doesn't want time pressure exports `null` for this —
+ * Case 002 does, unchanged from today's "ask as much as you want." The
+ * engine treats `null` as "this mechanic doesn't exist for this case,"
+ * not "zero time left."
+ */
+export interface TimePressureConfig {
+  totalMinutes: number;
+  /** Minutes consumed per action kind. */
+  costMinutes: {
+    ask: number;
+    presentEvidence: number;
+    relay: number;
+  };
+  /** Shown in the clock UI, e.g. "until the storm hits the ridge". */
+  label: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Free-form conversation (currently: Tom only — see DECISIONS.md).
 //
