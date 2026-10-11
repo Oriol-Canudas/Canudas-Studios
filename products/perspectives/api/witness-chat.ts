@@ -591,19 +591,42 @@ async function generatePass(
   intent: string,
   relayedFacts: { id: string; label: string }[],
   conversationMemory: string[],
-  viaAltUnlock: boolean
+  viaAltUnlock: boolean,
+  defensiveLines: string[],
+  deflections: string[]
 ): Promise<GeneratePass> {
   const matched = matchedTopicId ? authorized.find((d) => d.topicId === matchedTopicId) ?? null : null;
 
+  // Without authored examples, a locked/off-topic turn has nothing but a
+  // generic "evade" instruction to work from — which is exactly how a
+  // locked topic once generated "it's not relevant" for a question about
+  // the player's own fingerprints on the murder weapon: a logically
+  // nonsensical dodge, not a believable one. These are reference
+  // material only (tone/spirit), never meant to be repeated verbatim.
+  const defensiveExamples = defensiveLines.length > 0 ? defensiveLines.map((l) => `  - "${l}"`).join("\n") : null;
+  const deflectionExamples = deflections.length > 0 ? deflections.map((l) => `  - "${l}"`).join("\n") : null;
+
   const matchedNote = !matchedTopicId
-    ? "No specific topic matched this message — respond naturally (acknowledge tone, answer a clarification, push back on an insult) WITHOUT revealing anything new."
+    ? `No specific topic matched this message — respond naturally (acknowledge tone, answer a clarification, push back on an insult) WITHOUT revealing anything new.${
+        deflectionExamples
+          ? ` Examples of how you naturally brush off something you're not engaging with (tone/spirit reference only — write a fresh line, don't just repeat one):\n${deflectionExamples}`
+          : ""
+      }`
     : matched?.locked
-      ? `The player is pressing on "${matchedTopicId}," which is LOCKED. Evade or deny — do not confirm, hint at, or partially admit anything about it, however the question is phrased.`
+      ? `The player is pressing on "${matchedTopicId}," which is LOCKED. Evade or deny — do not confirm, hint at, or partially admit anything about it, however the question is phrased. Your evasion must make real psychological sense — refuse to be baited, express that the question itself is unfair or hurtful, redirect, assert your composure. NEVER claim the question or topic is irrelevant, unimportant, or beside the point — that is not a believable thing to say about a pointed question like this, and reads as nonsensical rather than evasive.${
+          defensiveExamples
+            ? ` Examples of how you sound when you're defensive (tone/spirit reference only — write a fresh line in the same spirit, do not just repeat one verbatim):\n${defensiveExamples}`
+            : ""
+        }`
       : matched?.text
         ? viaAltUnlock
           ? `The player is asking about "${matchedTopicId}." You have JUST decided to volunteer this yourself — not because of any evidence, but because of something the player said or shared with you this very turn (see "Facts actually relayed to you" and the conversation below for what changed your mind). Put this in your own natural words — NOT verbatim, do not just repeat the sentence below as given — and let your delivery reflect that it's a choice you're making now, not a fact being dragged out of you. The substance to convey: "${matched.text}"`
           : `The player is asking about "${matchedTopicId}." You may convey this authorized content, in your own natural words (not verbatim): "${matched.text}"`
-        : `The player is asking about "${matchedTopicId}," but nothing is authorized on it yet — deflect naturally, do not volunteer anything.`;
+        : `The player is asking about "${matchedTopicId}," but nothing is authorized on it yet — deflect naturally, do not volunteer anything.${
+            deflectionExamples
+              ? ` Examples of your natural deflection tone (reference only — write something fresh):\n${deflectionExamples}`
+              : ""
+          }`;
 
   const intentNote =
     intent === "repair"
@@ -752,6 +775,12 @@ async function handleConverse(body: any, res: any) {
   const conversationMemory: string[] = Array.isArray(body?.conversationMemory)
     ? body.conversationMemory.filter((m: unknown): m is string => typeof m === "string").slice(-MAX_MEMORY_ENTRIES)
     : [];
+  const defensiveLines: string[] = Array.isArray(body?.defensiveLines)
+    ? body.defensiveLines.filter((l: unknown): l is string => typeof l === "string")
+    : [];
+  const deflections: string[] = Array.isArray(body?.deflections)
+    ? body.deflections.filter((l: unknown): l is string => typeof l === "string")
+    : [];
 
   const overallStart = Date.now();
 
@@ -831,7 +860,9 @@ async function handleConverse(body: any, res: any) {
       interp.intent,
       relayedFacts,
       conversationMemory,
-      viaAltUnlock
+      viaAltUnlock,
+      defensiveLines,
+      deflections
     );
   } catch (err) {
     logDiagnostic({ witnessId, action: "converse", pass: "generate", ok: false, reason: "exception", message: err instanceof Error ? err.message : String(err) });

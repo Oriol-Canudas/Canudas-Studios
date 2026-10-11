@@ -242,6 +242,14 @@ export async function converseWithWitness(ctx: ConverseContext, aiEnabled: boole
         defensiveTopicIds: ctx.defensiveTopicIds,
         relayedFacts: ctx.relayedFacts,
         conversationMemory: ctx.conversationMemory,
+        // Authored flavor for a locked/off-topic turn — without these the
+        // server has nothing but a generic "evade" instruction to work
+        // from, which is how a locked topic ended up generating "it's
+        // not relevant" (a logically nonsensical dodge for a question
+        // about the player's own fingerprints on the weapon). Both
+        // arrays are already public (same client bundle).
+        defensiveLines: ctx.witness.defensiveLines ?? [],
+        deflections: ctx.witness.deflections,
       },
       REQUEST_TIMEOUT_MS
     );
