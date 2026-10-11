@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { EVIDENCE, VERDICT_AXES, WITNESSES } from "../game/caseData";
+import { EVIDENCE, VERDICT_AXES, VERDICT_HERO_IMAGE, WITNESSES } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import type { PlayerVerdict } from "../game/types";
 
@@ -52,7 +52,7 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
 
         <div className="flex-1 overflow-y-auto">
           <div className="relative h-32 w-full overflow-hidden">
-            <img src="/scenes/verdict.jpg" alt="" className="h-full w-full object-cover" />
+            <img src={VERDICT_HERO_IMAGE} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0d] via-[#0a0a0d]/20 to-transparent" />
           </div>
 

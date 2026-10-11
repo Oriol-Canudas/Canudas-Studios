@@ -1126,6 +1126,11 @@ export const REVEAL_SLIDES: IntroSlide[] = [
   },
 ];
 
+/** Hero banners — Home/Examine/Verdict screens. Each case provides its own; CaseHome.tsx/EvidenceScreen.tsx/VerdictScreen.tsx read these instead of a hardcoded path. */
+export const HOME_HERO_IMAGE = "/scenes/home.jpg";
+export const EXAMINE_HERO_IMAGE = "/scenes/evidence.jpg";
+export const VERDICT_HERO_IMAGE = "/scenes/verdict.jpg";
+
 // ───────────────────────────── Verdict ─────────────────────────────────
 //
 // This case's two questions — who's responsible, and what's the call on

@@ -1,4 +1,4 @@
-import { CASE_META, WITNESSES } from "../game/caseData";
+import { CASE_META, HOME_HERO_IMAGE, WITNESSES } from "../game/caseData";
 import Portrait from "./Portrait";
 
 interface CaseHomeProps {
@@ -9,7 +9,7 @@ export default function CaseHome({ onBegin }: CaseHomeProps) {
   return (
     <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0a0d] via-[#0a0a0d] to-[#121018] text-white">
       <div className="relative h-48 w-full overflow-hidden">
-        <img src="/scenes/home.jpg" alt="" className="h-full w-full object-cover" />
+        <img src={HOME_HERO_IMAGE} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0d] via-[#0a0a0d]/40 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 px-6 pb-4">
           <p className="text-xs uppercase tracking-[0.3em] text-amber-300/90">{CASE_META.kicker}</p>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { EVIDENCE } from "../game/caseData";
+import { EVIDENCE, EXAMINE_HERO_IMAGE } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import type { EvidenceId } from "../game/types";
 
@@ -55,7 +55,7 @@ export default function EvidenceScreen() {
   return (
     <div className="pb-28">
       <div className="relative h-32 w-full overflow-hidden">
-        <img src="/scenes/evidence.jpg" alt="" className="h-full w-full object-cover" />
+        <img src={EXAMINE_HERO_IMAGE} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0d] via-[#0a0a0d]/30 to-transparent" />
       </div>
 

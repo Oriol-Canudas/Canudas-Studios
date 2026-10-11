@@ -223,6 +223,12 @@ export const WITNESSES: WitnessConfig[] = [
       "That's not fair — I'm telling you what I actually think, not hiding behind the mountain.",
       "I don't appreciate being accused of something I haven't done.",
     ],
+    demeanorImages: {
+      guarded: "/portraits/ascent/rae.jpg",
+      nervous: "/portraits/ascent/rae_nervous.jpg",
+      shaken: "/portraits/ascent/rae_shaken.jpg",
+      composed: "/portraits/ascent/rae_composed.jpg",
+    },
     demeanorLines: {
       guarded: "She's measured, watching you the way she'd watch a route — looking for where it holds.",
       nervous: "Something in her answer came out a beat too fast.",
@@ -374,6 +380,12 @@ export const WITNESSES: WitnessConfig[] = [
       "That's not fair. I'm doing my job, same as everyone else up here.",
       "I don't think that's a fair thing to accuse me of right now.",
     ],
+    demeanorImages: {
+      guarded: "/portraits/ascent/dev.jpg",
+      defensive: "/portraits/ascent/dev_defensive.jpg",
+      nervous: "/portraits/ascent/dev_nervous.jpg",
+      shaken: "/portraits/ascent/dev_shaken.jpg",
+    },
     demeanorLines: {
       guarded: "He's quick to answer, a little too quick — like he's already decided what he's willing to say.",
       defensive: "His jaw's tight. He's decided this is an attack.",
@@ -523,6 +535,12 @@ export const WITNESSES: WitnessConfig[] = [
       "That's not fair. I'm trying to keep this team alive.",
       "Don't put words in my mouth. I've told you what I think.",
     ],
+    demeanorImages: {
+      guarded: "/portraits/ascent/soren.jpg",
+      nervous: "/portraits/ascent/soren_nervous.jpg",
+      shaken: "/portraits/ascent/soren_shaken.jpg",
+      composed: "/portraits/ascent/soren_composed.jpg",
+    },
     demeanorLines: {
       guarded: "He answers carefully, like every word's already been weighed once before it leaves his mouth.",
       nervous: "Something you said actually got past his guard.",
@@ -688,6 +706,11 @@ export const WITNESSES: WitnessConfig[] = [
       "I don't think I deserve that — I'm doing my best here.",
       "Please don't talk to me like that. I'm on your side.",
     ],
+    demeanorImages: {
+      guarded: "/portraits/ascent/mei.jpg",
+      nervous: "/portraits/ascent/mei_nervous.jpg",
+      shaken: "/portraits/ascent/mei_shaken.jpg",
+    },
     demeanorLines: {
       guarded: "She answers quickly, a little too eager to agree with wherever the question seems to be pointing.",
       nervous: "She's picking at her glove liner, not quite looking at you.",
@@ -835,12 +858,17 @@ export const CHARACTER_INTRO_OUTRO: IntroSlide = {
 };
 
 export const REVEAL_SLIDES: IntroSlide[] = [
-  { image: "/scenes/ascent/rae.jpg", eyebrow: "Rae Ninsiima", line: "She wanted this summit more than she ever said out loud." },
-  { image: "/scenes/ascent/dev.jpg", eyebrow: "Dev Kapoor", line: "He had the real numbers the whole time. He just didn't lead with them." },
-  { image: "/scenes/ascent/soren.jpg", eyebrow: "Soren Lindqvist", line: "He'd seen this exact shape before. That's exactly why he dug in." },
+  { image: WITNESS_BY_ID.rae.demeanorImages?.shaken ?? WITNESS_BY_ID.rae.portraitImage, eyebrow: "Rae Ninsiima", line: "She wanted this summit more than she ever said out loud." },
+  { image: WITNESS_BY_ID.dev.demeanorImages?.shaken ?? WITNESS_BY_ID.dev.portraitImage, eyebrow: "Dev Kapoor", line: "He had the real numbers the whole time. He just didn't lead with them." },
+  { image: WITNESS_BY_ID.soren.demeanorImages?.composed ?? WITNESS_BY_ID.soren.portraitImage, eyebrow: "Soren Lindqvist", line: "He'd seen this exact shape before. That's exactly why he dug in." },
   { image: "/scenes/ascent/window.jpg", title: "The real window", line: "75 minutes. Not two hours. Not \"any minute now.\"" },
   { image: "/scenes/ascent/decided.jpg", title: "What actually decided it", line: "Not the mountain. What you found out — and what you actually got people to agree to." },
 ];
+
+/** Hero banners — Home/Examine/Verdict screens. Each case provides its own; CaseHome.tsx/EvidenceScreen.tsx/VerdictScreen.tsx read these instead of a hardcoded path. */
+export const HOME_HERO_IMAGE = "/scenes/ascent/home.jpg";
+export const EXAMINE_HERO_IMAGE = "/scenes/ascent/evidence.jpg";
+export const VERDICT_HERO_IMAGE = "/scenes/ascent/verdict.jpg";
 
 /** "Things that could mislead you" — this case's equivalent of Case 002's misleading-signals list. */
 export const MISLEADING_SIGNALS: string[] = [
