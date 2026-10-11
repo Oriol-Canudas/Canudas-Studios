@@ -601,7 +601,7 @@ async function generatePass(
       ? `The player is pressing on "${matchedTopicId}," which is LOCKED. Evade or deny — do not confirm, hint at, or partially admit anything about it, however the question is phrased.`
       : matched?.text
         ? viaAltUnlock
-          ? `The player is asking about "${matchedTopicId}." You have JUST decided to volunteer this yourself — not because of any evidence, but because of something the player said or shared with you this very turn (see "Facts actually relayed to you" and the conversation below for what changed your mind). Let your delivery reflect that it's a choice you're making now, not a fact being dragged out of you: "${matched.text}"`
+          ? `The player is asking about "${matchedTopicId}." You have JUST decided to volunteer this yourself — not because of any evidence, but because of something the player said or shared with you this very turn (see "Facts actually relayed to you" and the conversation below for what changed your mind). Put this in your own natural words — NOT verbatim, do not just repeat the sentence below as given — and let your delivery reflect that it's a choice you're making now, not a fact being dragged out of you. The substance to convey: "${matched.text}"`
           : `The player is asking about "${matchedTopicId}." You may convey this authorized content, in your own natural words (not verbatim): "${matched.text}"`
         : `The player is asking about "${matchedTopicId}," but nothing is authorized on it yet — deflect naturally, do not volunteer anything.`;
 
