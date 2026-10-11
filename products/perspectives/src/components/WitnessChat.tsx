@@ -307,6 +307,21 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
                     )}
                   </div>
                 )}
+                {/* Per-message source tag — m.source is only ever set on
+                    the free-form (freeformEnabled) path, so this is a
+                    no-op for deterministic-only witnesses by construction,
+                    not an extra check here. Answers the "which answers are
+                    actually from the model vs. the scripted fallback"
+                    question per-line, not just as a one-time banner. */}
+                {!isPlayer && !isPending && m.source && (
+                  <p
+                    className={`mt-1 text-[10px] font-medium uppercase tracking-wide ${
+                      m.source === "ai" ? "text-emerald-300/50" : "text-white/35"
+                    }`}
+                  >
+                    {m.source === "ai" ? "✨ AI-generated" : "⚙ Scripted fallback"}
+                  </p>
+                )}
                 {isFailedPlayerMsg && (
                   <button
                     onClick={() => void retryFreeformMessage(witnessId)}

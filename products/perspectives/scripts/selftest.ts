@@ -136,12 +136,15 @@ console.log("\n=== Playthrough 4: evidence board de-dup, acquired vs. inspected 
   const unlockEntry = useGameStore.getState().board.find((b) => b.text.includes("does not establish who used it"));
   assert(!!unlockEntry, "The 23:58 phone-unlock fact uses neutral wording, not an inferred conclusion");
 
-  // The 4 "initial" documents (available for free at game start) must not
-  // leak board facts just by being present in discoveredEvidence from t=0.
+  // All 8 documents now start as "Request" uniformly — nothing is
+  // pre-acquired, so zero board facts exist until the player actually
+  // requests and opens something (see DECISIONS.md on standardizing the
+  // Examine flow — there was never a real gating reason for 4 items to
+  // start pre-opened, only a cosmetic inconsistency).
   useGameStore.getState().reset();
   assert(
-    useGameStore.getState().board.length === 0 && useGameStore.getState().discoveredEvidence.size === 4,
-    "At game start, the 4 free documents are acquired but zero board facts exist until something is actually opened"
+    useGameStore.getState().board.length === 0 && useGameStore.getState().discoveredEvidence.size === 0,
+    "At game start, zero documents are acquired and zero board facts exist until something is actually requested and opened"
   );
 }
 
@@ -177,7 +180,7 @@ console.log("\n=== Playthrough 7: reset clears state, ground truth untouched ===
   const s = useGameStore.getState();
   assert(s.chatHistory.tom.length === 0, "Reset clears conversation history");
   assert(s.board.length === 0, "Reset clears the board");
-  assert(s.discoveredEvidence.size === 4, "Reset restores exactly the 4 initial evidence items");
+  assert(s.discoveredEvidence.size === 0, "Reset restores zero acquired evidence — nothing starts pre-requested");
 }
 
 // ── Playthrough 8: demeanor tracks testimony pressure ────────────────────
@@ -580,12 +583,17 @@ console.log("\n=== Playthrough 24: mood doesn't flicker with every topic switch 
 console.log("\n=== Playthrough 25: a witness does calm down, just not instantly ===");
 {
   useGameStore.getState().reset();
-  const { askWitness } = useGameStore.getState();
+  const { askWitness, discoverEvidence } = useGameStore.getState();
 
   askWitness("elena", "what was your relationship with daniel"); // turn 1, guarded — no change
   askWitness("elena", "what happened during the argument"); // turn 2, defensive — escalation, applies now
   assert(useGameStore.getState().demeanor.elena === "defensive", "Escalates to defensive right away");
 
+  // Elena's "knife" topic requires E01_knife — nothing starts pre-
+  // discovered now (see the Examine-flow standardization), so this must
+  // be requested explicitly or turn 3 below would silently not count as
+  // a turn at all (unreachable topic → deflection only, no demeanor tick).
+  discoverEvidence("E01_knife");
   askWitness("elena", "why are your prints on the knife"); // turn 3, proposes guarded (calmer) — held back
   assert(useGameStore.getState().demeanor.elena === "defensive", "1 turn after the spike: still held");
   askWitness("elena", "what time did you leave"); // turn 4, proposes composed (calmer) — still held

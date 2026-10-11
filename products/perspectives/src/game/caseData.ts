@@ -94,7 +94,6 @@ export const EVIDENCE: EvidenceItem[] = [
       "Fingerprints identified: Elena Rossi, Daniel Costa.",
       "No third identifiable fingerprints on the blade or handle.",
     ],
-    initial: true,
   },
   {
     id: "E02_msg_sofia_2306",
@@ -105,7 +104,6 @@ export const EVIDENCE: EvidenceItem[] = [
       "Daniel Costa → Sofia Mendes — 23:06",
       "“She’s here. It’s getting ugly. I’ll call you when she leaves.”",
     ],
-    initial: true,
   },
   {
     id: "E03_entrance_camera",
@@ -119,7 +117,6 @@ export const EVIDENCE: EvidenceItem[] = [
       "00:17 — Emergency services arrive.",
       "Note: the underground garage entrance is NOT covered by this camera.",
     ],
-    initial: true,
   },
   {
     id: "E04_forensic_prelim",
@@ -132,7 +129,6 @@ export const EVIDENCE: EvidenceItem[] = [
       "Daniel likely survived for several minutes after being wounded, and moved a short distance.",
       "No obvious defensive wounds on the body.",
     ],
-    initial: true,
   },
   {
     id: "E05_daniel_phone_records",
@@ -149,7 +145,6 @@ export const EVIDENCE: EvidenceItem[] = [
       "23:58 — Phone unlocked, active for approximately 20 seconds.",
       "00:03 — Missed call from Tom Becker.",
     ],
-    initial: false,
   },
   {
     id: "E06_elena_phone_records",
@@ -164,7 +159,6 @@ export const EVIDENCE: EvidenceItem[] = [
       "00:01 — Four-minute call with a friend.",
       "00:08 — Text to the same friend: “I can't believe I let him drag me back into this.”",
     ],
-    initial: false,
   },
   {
     id: "E07_tom_phone_records",
@@ -179,7 +173,6 @@ export const EVIDENCE: EvidenceItem[] = [
       "00:07 — Phone location shows movement away from the building.",
       "00:11 — Text to Daniel: “Call me when you calm down.”",
     ],
-    initial: false,
   },
   {
     id: "E08_garage_access_log",
@@ -195,7 +188,6 @@ export const EVIDENCE: EvidenceItem[] = [
       "00:04 — Lift called back down to parking.",
       "00:05 — Tom Becker's vehicle exits the garage.",
     ],
-    initial: false,
   },
 ];
 

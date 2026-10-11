@@ -42,8 +42,6 @@ export interface EvidenceItem {
   summary: string;
   /** Full content shown once opened. Can be multi-line. */
   details: string[];
-  /** true = visible/discoverable from the start of the case. */
-  initial: boolean;
 }
 
 export type BoardEntryType = "fact" | "claim" | "contradiction" | "lead";

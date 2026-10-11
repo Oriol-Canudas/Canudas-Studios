@@ -688,7 +688,11 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
-  discoveredEvidence: new Set(EVIDENCE.filter((e) => e.initial).map((e) => e.id)),
+  // Every document starts as "Request" — standardized so the Examine
+  // screen has one consistent interaction (tap → brief pull animation →
+  // read) instead of some items appearing pre-opened for no reason a
+  // player could tell. See DECISIONS.md.
+  discoveredEvidence: new Set(),
   inspectedEvidence: new Set(),
   presentedEvidence: emptyPresentedEvidence(),
   presentationLog: [],
@@ -710,10 +714,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   boardEntryKeys: new Set(),
 
   discoverEvidence: (id) => {
-    // Acquisition only — requesting a record from the examine screen. The
-    // 4 initial documents start already acquired (they're free), which
-    // must NOT by itself put anything on the board: a zero-investigation
-    // playthrough should show zero board items, not "4 pieces of evidence
+    // Acquisition only — requesting a record from the examine screen.
+    // Must NOT by itself put anything on the board: a zero-investigation
+    // playthrough should show zero board items, not "N pieces of evidence
     // discovered" for documents nobody actually opened. Board facts are
     // added on inspection instead — see inspectEvidence.
     const { discoveredEvidence } = get();
@@ -1052,7 +1055,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   reset: () => {
     track("session_started", {});
     set({
-      discoveredEvidence: new Set(EVIDENCE.filter((e) => e.initial).map((e) => e.id)),
+      discoveredEvidence: new Set(),
       inspectedEvidence: new Set(),
       presentedEvidence: emptyPresentedEvidence(),
       presentationLog: [],
