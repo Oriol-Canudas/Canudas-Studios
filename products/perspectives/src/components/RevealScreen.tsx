@@ -2,7 +2,8 @@ import { useState } from "react";
 import { GROUND_TRUTH, TIMELINE } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { ELENA_REVEAL_NOTES, RESPONSIBLE_REVEAL_NOTES, gradeVerdict, type Judgment } from "../game/verdictGrading";
-import { sessionDurationMs } from "../game/analytics";
+import { sessionDurationMs, track } from "../game/analytics";
+import { buildShareText } from "../game/shareCard";
 
 interface RevealScreenProps {
   onReset: () => void;
@@ -40,12 +41,49 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
   const board = useGameStore((s) => s.board);
   const inspectedEvidence = useGameStore((s) => s.inspectedEvidence);
   const conversationEventLog = useGameStore((s) => s.conversationEventLog);
+  const chatHistory = useGameStore((s) => s.chatHistory);
   const [showFullStory, setShowFullStory] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   if (!verdict) return null;
 
   const graded = gradeVerdict(verdict);
   const duration = formatDuration(sessionDurationMs());
   const meaningfulEvents = conversationEventLog.filter((e) => MEANINGFUL_EVENT_KINDS.has(e.kind));
+  const witnessesQuestioned = Object.values(chatHistory).filter((h) => h.length > 0).length;
+
+  // Spoiler-safe by construction — see shareCard.ts. Tries the native
+  // share sheet first (best on mobile); falls back to clipboard with
+  // visible confirmation when the Share API isn't available (most
+  // desktop browsers) or when it throws for any reason OTHER than the
+  // user simply cancelling the native sheet, which is left alone.
+  async function handleShare() {
+    const text = buildShareText({
+      graded,
+      documentsRead: inspectedEvidence.size,
+      totalDocuments: 8,
+      witnessesQuestioned,
+      totalWitnesses: 5,
+      durationLabel: duration,
+      conversationEventLog,
+    });
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ text });
+        track("result_shared", { method: "share_api" });
+      } catch {
+        // Cancelled or failed silently — respect it, don't fall back.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      track("result_shared", { method: "clipboard" });
+      setShareState("copied");
+      setTimeout(() => setShareState("idle"), 2000);
+    } catch {
+      // Clipboard unavailable too — nothing more to do silently.
+    }
+  }
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 pb-16 pt-10 text-white">
@@ -152,8 +190,16 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
       </div>
 
       <button
+        onClick={() => void handleShare()}
+        className="mt-6 w-full rounded-2xl border border-amber-300/30 bg-amber-300/10 py-3.5 text-base font-semibold text-amber-200 active:scale-[0.98] transition-transform"
+      >
+        {shareState === "copied" ? "Copied — paste it anywhere" : "Share your result"}
+      </button>
+      <p className="mt-1.5 text-center text-xs text-white/30">Shares your own performance only — never spoils who's actually responsible.</p>
+
+      <button
         onClick={onReset}
-        className="mt-8 w-full rounded-2xl bg-white/10 py-4 text-lg font-semibold text-white active:scale-[0.98] transition-transform"
+        className="mt-4 w-full rounded-2xl bg-white/10 py-4 text-lg font-semibold text-white active:scale-[0.98] transition-transform"
       >
         Play again
       </button>

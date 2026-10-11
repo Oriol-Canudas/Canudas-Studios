@@ -7,6 +7,7 @@ import { WITNESS_BY_ID, WITNESSES } from "../src/game/caseData";
 import { gradeVerdict } from "../src/game/verdictGrading";
 import { getAuthorizedDisclosures, isTopicReachable, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
+import { buildShareText } from "../src/game/shareCard";
 import { LEAK_MARKERS, validateDialogue } from "../api/witness-chat";
 
 let failures = 0;
@@ -807,6 +808,34 @@ console.log("\n=== Playthrough 30: Sofia gets the same authorization machinery a
   assert(withoutAltArgs === 0, "Omitting relayedRevelations/currentIntent behaves exactly as before — altUnlock never fires implicitly");
   const metDirectly = stageRequirementsMet(topic, 1, 1, state.discoveredEvidence, state.witnessStages, new Set(["tom_returned"]), "empathetic_appeal");
   assert(metDirectly, "stageRequirementsMet itself recognizes the altUnlock OR-branch when both conditions are actually passed");
+}
+
+// ── Playthrough 31: the shareable result text is spoiler-safe and prioritizes the right highlight ──
+console.log("\n=== Playthrough 31: buildShareText never spoils the case, picks the strongest highlight ===");
+{
+  const correct = gradeVerdict({ theory: "", responsible: "tom", elenaVerdict: "not_guilty" });
+  const base = { graded: correct, documentsRead: 5, totalDocuments: 8, witnessesQuestioned: 3, totalWitnesses: 5, durationLabel: "12m 4s" };
+
+  const withVoluntary = buildShareText({
+    ...base,
+    conversationEventLog: [
+      { witnessId: "sofia", t: 0, kind: "evidence_admission", topicId: "x", citedEvidenceIds: [], summary: "" },
+      { witnessId: "tom", t: 1, kind: "voluntary_disclosure", topicId: "the_knife", citedEvidenceIds: [], summary: "" },
+    ],
+  });
+  assert(
+    withVoluntary.includes("no evidence needed"),
+    "voluntary_disclosure outranks evidence_admission as the headline highlight, even when both occurred"
+  );
+  assert(!withVoluntary.toLowerCase().includes("tom"), "The share text never names who was actually responsible");
+  assert(!withVoluntary.toLowerCase().includes("not guilty") && !withVoluntary.toLowerCase().includes("not_guilty"), "The share text never states the actual Elena verdict either — only the player's own grading");
+  assert(withVoluntary.includes("Correct"), "The player's own grading (correct/wrong/insufficient) IS shown — that's their performance, not case content");
+
+  const noHighlight = buildShareText({ ...base, conversationEventLog: [] });
+  assert(
+    !noHighlight.includes("no evidence needed") && !noHighlight.includes("contradiction"),
+    "With no meaningful events logged, no highlight is fabricated — the text degrades to stats only"
+  );
 }
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
