@@ -276,8 +276,10 @@ console.log("\n=== Playthrough 9: relaying revelations between witnesses ===");
 
   // A revelation with no authored reaction for a given witness still logs
   // as relayed, but moves nothing — never a silent crash or a fabricated line.
-  await relayRevelation("julia", "tom_returned");
-  assert(useGameStore.getState().relayedRevelations.julia.has("tom_returned"), "Relaying to a witness with no authored reaction still records the relay");
+  // (Julia now has her own real tom_returned reaction — see Playthrough 45 —
+  // so this uses Marco, who has no reaction authored for THIS revelation.)
+  await relayRevelation("marco", "tom_returned");
+  assert(useGameStore.getState().relayedRevelations.marco.has("tom_returned"), "Relaying to a witness with no authored reaction still records the relay");
 }
 
 // ── Playthrough 10: arbitrary question-order bug is fixed (item 3) ───────
@@ -1407,6 +1409,98 @@ console.log("\n=== Playthrough 44: verdict sound picks success only when every a
   assert(
     !insufficient.axisGrades.every((g) => g.judgment === "correct"),
     "Declining to name Tom (insufficient, not wrong) also isn't the fully-correct case — same non-punishing neutral tone, not a harsher one for being 'less right'"
+  );
+}
+
+// ── Playthrough 45: Julia's own fuzzy sightings get resolved by relay ──
+console.log("\n=== Playthrough 45: Julia's imprecise sightings connect once the player tells her who it actually was ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness, discoverEvidence, relayRevelation } = useGameStore.getState();
+
+  discoverEvidence("E08_garage_access_log");
+  askWitness("sofia", "did you go to the apartment that night", "went_to_apartment");
+  assert(lastWitnessLine("sofia").includes("garage"), "Sofia's visit is established (via the garage log)");
+
+  await relayRevelation("julia", "sofia_visited");
+  assert(
+    lastWitnessLine("julia").includes("That would fit"),
+    "Julia connects her own “woman in a dark coat” sighting to Sofia once told — resolving the misleading signal through her own reaction"
+  );
+  assert(
+    useGameStore.getState().board.some((b) => b.text.includes("fits Sofia leaving")),
+    "A board entry records the resolved sighting"
+  );
+
+  discoverEvidence("E07_tom_phone_records");
+  askWitness("tom", "where did you really go after you left", "after_that");
+  assert(lastWitnessLine("tom").includes("Alright"), "Tom's return is established");
+
+  await relayRevelation("julia", "tom_returned");
+  assert(
+    lastWitnessLine("julia").includes("lines up"),
+    "Julia connects her OTHER fuzzy sighting (the lift, a possible man's voice) to Tom's return once told"
+  );
+  assert(
+    useGameStore.getState().board.some((b) => b.text.includes("likely match")),
+    "A second, distinct board entry records this resolved sighting too"
+  );
+
+  const boardLenBefore = useGameStore.getState().board.length;
+  await relayRevelation("julia", "sofia_visited");
+  assert(useGameStore.getState().board.length === boardLenBefore, "Re-relaying an already-told revelation to Julia adds nothing new either");
+}
+
+// ── Playthrough 46: three more cross-witness reactions, authored this round ──
+console.log("\n=== Playthrough 46: Elena/Sofia/Marco's newly-authored reactions fire correctly ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness, relayRevelation } = useGameStore.getState();
+
+  // Elena reacts to learning Marco already knew Daniel was lying to both women.
+  askWitness("marco", "did daniel ever talk to you about elena and sofia", "the_lies");
+  assert(lastWitnessLine("marco").includes("lied to both"), "Marco's daniel_lied_to_both is established");
+  await relayRevelation("elena", "daniel_lied_to_both");
+  assert(lastWitnessLine("elena").includes("Even Marco knew"), "Elena reacts, bitter at being the last to know");
+  assert(useGameStore.getState().demeanor.elena === "shaken", "Her demeanor shifts to shaken on that reveal");
+
+  // Sofia reacts to learning Elena also got physical with Daniel.
+  askWitness("elena", "what really happened once that argument turned physical", "argument");
+  askWitness("elena", "what really happened once that argument turned physical", "argument");
+  assert(lastWitnessLine("elena").includes("I shoved him"), "Elena's shove admission (now a contradiction, see Playthrough 47) is established");
+  await relayRevelation("sofia", "elena_shoved");
+  assert(lastWitnessLine("sofia").includes("unravelling"), "Sofia reacts, feeling less alone in having lost her own temper");
+
+  // Marco reacts to learning Sofia also visited that night.
+  askWitness("sofia", "did you go to the apartment that night", "went_to_apartment");
+  useGameStore.getState().discoverEvidence("E08_garage_access_log");
+  askWitness("sofia", "did you go to the apartment that night", "went_to_apartment");
+  assert(lastWitnessLine("sofia").includes("garage"), "Sofia's visit is established");
+  await relayRevelation("marco", "sofia_visited");
+  assert(lastWitnessLine("marco").includes("crossed paths"), "Marco reacts, surprised but doesn't believe Sofia any more capable of this than Elena");
+  assert(useGameStore.getState().demeanor.marco === "shaken", "His demeanor shifts to shaken on that reveal");
+}
+
+// ── Playthrough 47: Elena's argument walk-back now reads as a contradiction ──
+console.log("\n=== Playthrough 47: Elena's minimize-then-concede is now caught as a contradiction, not a plain claim ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness } = useGameStore.getState();
+
+  askWitness("elena", "what really happened once that argument turned physical", "argument");
+  assert(lastWitnessLine("elena").includes("nothing serious"), "First pass: she minimizes it");
+  assert(
+    !useGameStore.getState().board.some((b) => b.type === "contradiction" && b.source === "elena"),
+    "Minimizing alone isn't a contradiction yet — only the walk-back is"
+  );
+
+  askWitness("elena", "what really happened once that argument turned physical", "argument");
+  assert(lastWitnessLine("elena").includes("I shoved him"), "Pressed again, she concedes the shove");
+  const entry = useGameStore.getState().board.find((b) => b.source === "elena" && b.text.includes("shoved Daniel"));
+  assert(entry?.type === "contradiction", "The concession is now typed as a contradiction, same shape as the other two in this case");
+  assert(
+    useGameStore.getState().celebration?.kind === "contradiction",
+    "This also now triggers the existing contradiction celebration toast/sting for free — no new engine code needed"
   );
 }
 

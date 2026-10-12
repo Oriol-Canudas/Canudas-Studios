@@ -399,7 +399,13 @@ export const WITNESSES: WitnessConfig[] = [
             minAskCount: 2,
             demeanor: "defensive",
             addsBoardEntries: [
-              { type: "claim", text: "Elena admits: she shoved Daniel's shoulder when he blocked her path. Denies anything further.", source: "elena" },
+              // Reclassified from "claim": stage 0 minimized this to
+              // "might have been some contact, nothing serious" — this is
+              // the same deny-then-concede-under-pressure shape as the
+              // other two contradictions in this case, just pressure-
+              // triggered rather than evidence-triggered. Plugs into the
+              // existing contradiction celebration/sting for free.
+              { type: "contradiction", text: "Elena initially minimized “some contact” — pressed, she admits she shoved Daniel's shoulder to get past him.", source: "elena" },
             ],
           },
         ],
@@ -468,6 +474,14 @@ export const WITNESSES: WitnessConfig[] = [
         demeanor: "shaken",
         addsBoardEntries: [
           { type: "claim", text: "Elena, told Sofia also visited that night: surprised, starts connecting it to what Daniel admitted to her.", source: "elena" },
+        ],
+      },
+      daniel_lied_to_both: {
+        text: "...Even Marco knew? And nobody thought to tell me? God. I spent six years thinking maybe it was just me, imagining things that weren't there. Turns out everyone already knew how this would end except me.",
+        generative: true,
+        demeanor: "shaken",
+        addsBoardEntries: [
+          { type: "claim", text: "Elena, told Marco already knew Daniel was lying to both women: bitter that she was the only one left in the dark.", source: "elena" },
         ],
       },
     },
@@ -682,6 +696,13 @@ export const WITNESSES: WitnessConfig[] = [
         demeanor: "shaken",
         addsBoardEntries: [
           { type: "claim", text: "Sofia, told Marco already knew Daniel was lying to both women: bitter, feels like she was the only one left in the dark.", source: "sofia" },
+        ],
+      },
+      elena_shoved: {
+        text: "She put her hands on him too? ...God, we really were both unravelling that night, weren't we. At least I'm not the only one who lost it.",
+        demeanor: "nervous",
+        addsBoardEntries: [
+          { type: "claim", text: "Sofia, told Elena also got physical with Daniel: feels less alone in having lost her own temper that night.", source: "sofia" },
         ],
       },
     },
@@ -1051,6 +1072,13 @@ export const WITNESSES: WitnessConfig[] = [
           { type: "claim", text: "Marco, told Elena admitted shoving Daniel: unsurprised given their history, but doesn't read more into it.", source: "marco" },
         ],
       },
+      sofia_visited: {
+        text: "Sofia went back too? ...After Elena. God, they must have crossed paths in everything but person. For what it's worth, I don't think she's any more capable of this than Elena is. Whatever happened up there, I don't think it was either of them.",
+        demeanor: "shaken",
+        addsBoardEntries: [
+          { type: "claim", text: "Marco, told Sofia also visited that night: surprised, but doesn't believe she's any more capable of this than Elena.", source: "marco" },
+        ],
+      },
     },
   },
 
@@ -1152,6 +1180,29 @@ export const WITNESSES: WitnessConfig[] = [
         ],
       },
     ],
+    reactions: {
+      // Her own sighting is deliberately imprecise ("the_woman" — a woman
+      // in a dark coat around midnight, face unseen) and MISLEADING_SIGNALS
+      // already notes it's actually consistent with Sofia, not Elena.
+      // Relaying sofia_visited lets the player resolve that ambiguity
+      // through her own reaction, instead of the game just asserting it.
+      sofia_visited: {
+        text: "Sofia? ...Oh! That would fit, wouldn't it — around midnight, a woman leaving. I never said who I thought it was, I couldn't see her face. That actually makes more sense than whatever I was picturing.",
+        demeanor: "composed",
+        addsBoardEntries: [
+          { type: "claim", text: "Julia, told Sofia visited that night: her “woman in a dark coat” sighting fits Sofia leaving, not necessarily Elena.", source: "julia" },
+        ],
+      },
+      // Same idea for her OTHER fuzzy sighting ("other_sounds" — the lift
+      // again, possibly a man's voice, after she'd already gone to bed).
+      tom_returned: {
+        text: "Someone else came back? ...That lines up with what I thought I heard, actually — the lift again, later on, and that voice. I wasn't sure I trusted my own ears by that point. Good to know I wasn't imagining it.",
+        demeanor: "composed",
+        addsBoardEntries: [
+          { type: "claim", text: "Julia, told Tom also returned that night: her fuzzy “lift again, maybe a man's voice” now has a likely match.", source: "julia" },
+        ],
+      },
+    },
   },
 ];
 
