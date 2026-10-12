@@ -651,14 +651,24 @@ export function buildInterpretTopicList(topics: { id: string; chipLabel: string;
     .join("\n");
 }
 
-async function interpretPass(
+/**
+ * Pure (no network) — exported so scripts/selftest.ts can assert the
+ * "last line was the witness's own" rule directly. Found live: a full
+ * accusatory statement replying to a witness's just-delivered proactive
+ * opening classified intent correctly ("accusation") but topicId came
+ * back null — meaning a topic-gated consequence (e.g. a defensive lock)
+ * never fires on the live AI path, even though the deterministic
+ * fallback handles it correctly, because the message doesn't contain any
+ * of the topic's own keywords and isn't a short pronoun-style follow-up
+ * ("why?") the original rule already covered.
+ */
+export function buildInterpretSystemPrompt(
   witnessId: string,
-  message: string,
   history: { role: string; text: string }[],
   topics: { id: string; chipLabel: string; keywords?: string[] }[],
   knownEvidenceIds: string[],
   evidenceTitles: Record<string, string>
-): Promise<InterpretPass> {
+): string {
   const topicList = buildInterpretTopicList(topics);
   const evidenceList = knownEvidenceIds.map((id) => `- ${id}: ${evidenceTitles[id] ?? id}`).join("\n") || "(none known yet)";
   const historyBlock =
@@ -667,7 +677,7 @@ async function interpretPass(
       .map((m) => `${m.role}: ${m.text}`)
       .join("\n") || "(start of conversation)";
 
-  const systemPrompt = `You classify a player's free-text message to a murder-case witness named ${witnessId}, using the recent conversation for context (e.g. "why?" or "what do you mean?" refers back to it). You do NOT know what actually happened and you must NOT invent facts — you only classify the player's NEW message.
+  return `You classify a player's free-text message to a murder-case witness named ${witnessId}, using the recent conversation for context (e.g. "why?" or "what do you mean?" refers back to it). You do NOT know what actually happened and you must NOT invent facts — you only classify the player's NEW message.
 
 Recent conversation:
 ${historyBlock}
@@ -687,10 +697,22 @@ Rules:
 - "empathetic_appeal": the player acknowledges the witness's fear/position, offers understanding, or shares something relevant to THEIR situation — with or without evidence.
 - "repair": the player is walking back, apologizing for, or softening their OWN earlier accusation or harsh tone (e.g. "I'm sorry, I didn't mean to accuse you of anything," "that wasn't fair of me"). This is NEVER "accusation" just because the message happens to mention an accusation — it is the opposite move.
 - A short follow-up like "why?" or "what do you mean?" should resolve topicId to whatever the LAST exchange was actually about, using the recent conversation above — not null, unless there genuinely was no prior topic.
+- If the MOST RECENT line in "Recent conversation" was spoken by the witness themselves (role: witness) rather than the player — e.g. they just said something unprompted, or the conversation is mid-topic — treat the player's new message as a reaction to THAT, even when it's a full statement rather than a short pronoun-style follow-up (doubting it, agreeing with it, pushing back on it, thanking them for it, demanding more). Resolve topicId to whatever that witness line was about. Only fall back to null if the new message is clearly a hard pivot to something else entirely.
 - Match "topicId" on the underlying SUBJECT the player is actually asking about, not literal wording. The "related words/themes" after each topic are English hints to help you recognize it — they are NOT a checklist of required words. A long, emotionally-framed, indirect, or translated question (in English or Catalan) that is clearly ABOUT one of these subjects should still resolve to that topicId. Prefer a real match over null whenever one topic is genuinely what the question is asking about.
 - "topicId" must be one of the ids listed above, or null only when the message genuinely isn't about any of them.
 - "citedEvidenceIds" must only contain ids from the evidence list above — never invent one.
 - The player may write in English or Catalan.`;
+}
+
+async function interpretPass(
+  witnessId: string,
+  message: string,
+  history: { role: string; text: string }[],
+  topics: { id: string; chipLabel: string; keywords?: string[] }[],
+  knownEvidenceIds: string[],
+  evidenceTitles: Record<string, string>
+): Promise<InterpretPass> {
+  const systemPrompt = buildInterpretSystemPrompt(witnessId, history, topics, knownEvidenceIds, evidenceTitles);
 
   const { content, usage, latencyMs } = await callOpenAIWithRetry(
     [

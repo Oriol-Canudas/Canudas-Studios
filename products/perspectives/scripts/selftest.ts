@@ -15,7 +15,7 @@ import { gradeVerdict } from "../src/game/verdictGrading";
 import { getAuthorizedDisclosures, isProactiveContactEligible, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
 import { buildShareText } from "../src/game/shareCard";
-import { LEAK_MARKERS, validateDialogue, buildInterpretTopicList, buildGenerateSystemPrompt, buildGenerateMessages } from "../api/witness-chat";
+import { LEAK_MARKERS, validateDialogue, buildInterpretTopicList, buildInterpretSystemPrompt, buildGenerateSystemPrompt, buildGenerateMessages } from "../api/witness-chat";
 
 let failures = 0;
 function assert(cond: boolean, msg: string) {
@@ -1151,6 +1151,27 @@ console.log("\n=== Playthrough 36: Beat B — empathy and accusation produce dis
   assert(
     state.conversationEventLog.some((e) => e.witnessId === "sofia" && e.topicId === "sofia_clarify" && e.kind === "defensive_lock"),
     "Recorded as a defensive lock, not a disclosure — the reveal won't misreport what actually happened"
+  );
+}
+
+// ── Playthrough 37: interpret prompt resolves a reply to the witness's OWN last line ──
+console.log("\n=== Playthrough 37: a full accusatory reply to a witness's own just-said line still resolves topicId ===");
+{
+  // Live-found gap: an accusatory REPLY to Sofia's proactive opening
+  // classified intent correctly but came back topicId:null (no
+  // keywords, not a short pronoun-style "why?" the original rule
+  // already covered) — meaning the defensive-lock consequence never
+  // fired on the live AI path. Assert the strengthened rule is present.
+  const prompt = buildInterpretSystemPrompt(
+    "sofia",
+    [{ role: "witness", text: "I ran into Tom, and he mentioned you'd found out I wasn't fully honest with you at first. Can I explain, properly?" }],
+    [{ id: "sofia_clarify", chipLabel: "What is it you want to clarify?", keywords: ["clarify", "explain myself"] }],
+    [],
+    {}
+  );
+  assert(
+    /most recent line.*witness themselves|role: witness/i.test(prompt),
+    "The prompt explicitly tells the model to resolve topicId to the witness's own last line, even for a full statement, not only a short 'why?'-style follow-up"
   );
 }
 
