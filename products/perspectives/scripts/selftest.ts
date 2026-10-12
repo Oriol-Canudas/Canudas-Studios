@@ -12,7 +12,7 @@ import { useGameStore } from "../src/game/store";
 // Ascent's own mechanics are covered by scripts/selftest.ascent.ts.
 import { VERDICT_AXES, VERDICT_CONFIG, WITNESS_BY_ID, WITNESSES } from "../src/game/case002";
 import { gradeVerdict } from "../src/game/verdictGrading";
-import { getAuthorizedDisclosures, isProactiveContactEligible, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
+import { getAuthorizedDisclosures, isProactiveContactEligible, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, suggestedEvidenceFor, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
 import { buildShareText } from "../src/game/shareCard";
 import { LEAK_MARKERS, validateDialogue, buildInterpretTopicList, buildInterpretSystemPrompt, buildGenerateSystemPrompt, buildGenerateMessages } from "../api/witness-chat";
@@ -1215,6 +1215,35 @@ console.log("\n=== Playthrough 38: celebration signal fires for contradictions a
   assert(
     state.celebration?.kind === "voluntary_disclosure",
     `A voluntary disclosure earned through conversation, not evidence, sets its own distinct celebration kind (got ${JSON.stringify(state.celebration)})`
+  );
+}
+
+// ── Playthrough 39: "you might want to examine..." nudges a REAL gating link ──
+console.log("\n=== Playthrough 39: suggestedEvidenceFor surfaces an existing gate as a hint, nothing invented ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness } = useGameStore.getState();
+  let state = useGameStore.getState();
+
+  // A topic never engaged at all suggests nothing — only nudge toward
+  // leads the player has actually started pulling on.
+  assert(
+    suggestedEvidenceFor(WITNESS_BY_ID.tom, state.witnessStages, state.discoveredEvidence) === null,
+    "No engagement yet with Tom at all — nothing to suggest"
+  );
+
+  askWitness("tom", "where did you really go after you left", "after_that");
+  state = useGameStore.getState();
+  assert(
+    suggestedEvidenceFor(WITNESS_BY_ID.tom, state.witnessStages, state.discoveredEvidence) === "E07_tom_phone_records",
+    "Stuck at after_that's stage 0 — the next stage's own requiresEvidence is surfaced, not a new fact"
+  );
+
+  state.discoverEvidence("E07_tom_phone_records");
+  state = useGameStore.getState();
+  assert(
+    suggestedEvidenceFor(WITNESS_BY_ID.tom, state.witnessStages, state.discoveredEvidence) === null,
+    "Once that evidence is actually found, the nudge clears on its own — derived, not a flag left dangling"
   );
 }
 

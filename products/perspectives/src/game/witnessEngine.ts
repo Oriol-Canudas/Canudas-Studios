@@ -252,6 +252,34 @@ export function topicForEvidence(witness: WitnessConfig, evidenceId: EvidenceId)
   return null;
 }
 
+/**
+ * The reverse of the gating relationship every stage's requiresEvidence
+ * already encodes: not "what evidence does this stage need," but "is
+ * there a FURTHER stage on a topic the player has already engaged with,
+ * still out of reach specifically because of evidence they haven't
+ * found yet." Surfaced as a one-line nudge — reuses an authored link
+ * that already existed for gating, never a new authored field. Returns
+ * at most one id (the first found, in topic/stage order) so the nudge
+ * never piles up multiple suggestions at once.
+ */
+export function suggestedEvidenceFor(
+  witness: WitnessConfig,
+  witnessStages: AllWitnessStages,
+  discoveredEvidence: ReadonlySet<EvidenceId>
+): EvidenceId | null {
+  for (const topic of witness.topics) {
+    const reached = witnessStages[witness.id]?.[topic.id] ?? -1;
+    if (reached < 0) continue; // only nudge toward topics the player has actually engaged with
+    for (let i = reached + 1; i < topic.stages.length; i++) {
+      const needed = topic.stages[i].requiresEvidence;
+      if (!needed) continue;
+      const missing = needed.find((e) => !discoveredEvidence.has(e));
+      if (missing) return missing;
+    }
+  }
+  return null;
+}
+
 const deflectionCounters = new Map<WitnessId, number>();
 
 export function getDeflection(witness: WitnessConfig): string {

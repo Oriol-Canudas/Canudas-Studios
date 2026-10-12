@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
+import { EVIDENCE_BY_ID, REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
-import { isRevelationKnown, isTopicReachable } from "../game/witnessEngine";
+import { isRevelationKnown, isTopicReachable, suggestedEvidenceFor } from "../game/witnessEngine";
 import { prefersReducedMotion } from "../game/motion";
 import type { Demeanor, EvidenceId, RevelationId, TestimonyTopic, WitnessId } from "../game/types";
 import Portrait from "./Portrait";
@@ -61,6 +61,11 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   // MAX_VISIBLE_CHIPS at a time, wrapping back to the start past the end.
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
   const [suggestionPage, setSuggestionPage] = useState(0);
+  // Per-mount only (not persisted) — dismissing "you might want to
+  // examine X" just quiets it for this visit; if it's still the most
+  // relevant unexamined lead next time this chat opens, it resurfaces,
+  // which is the point (a reminder, not a one-shot toast).
+  const [dismissedNudges, setDismissedNudges] = useState<Set<EvidenceId>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   // Shows once on open (an "establishing shot" of their current state) and
   // again whenever demeanor actually changes mid-conversation — never on
@@ -217,6 +222,9 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
       // TestimonyTopic.proactive).
       !deliveredProactiveContacts?.has(t.id)
   );
+  const suggestedEvidenceId = suggestedEvidenceFor(witness, witnessStages, discoveredEvidence);
+  const suggestedEvidence = suggestedEvidenceId && !dismissedNudges.has(suggestedEvidenceId) ? EVIDENCE_BY_ID[suggestedEvidenceId] : null;
+
   const totalSuggestionPages = Math.max(1, Math.ceil(unaskedReachableTopics.length / MAX_VISIBLE_CHIPS));
   const currentSuggestionPage = suggestionPage % totalSuggestionPages;
   const visibleTopics = unaskedReachableTopics.slice(
@@ -354,6 +362,26 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
       <div className="border-t border-white/10 bg-[#171319] px-3 pb-3 pt-2">
         {isFreeform && lastWitnessSource === "fallback" && (
           <p className="mb-1.5 text-center text-[11px] text-white/30">Guided matching active — live AI not connected</p>
+        )}
+
+        {/* Surfaces a link that already exists for gating (a later
+            stage's requiresEvidence) as a suggestion too — never a new
+            authored fact, just the same one shown a second way. */}
+        {suggestedEvidence && (
+          <div className="mb-2 flex items-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-3 py-2">
+            <span className="text-base leading-none">{"🔎"}</span>
+            <p className="flex-1 text-sm leading-snug text-sky-100">
+              You might want to examine <span className="font-medium">{suggestedEvidence.title}</span>.
+            </p>
+            <button
+              type="button"
+              onClick={() => setDismissedNudges((prev) => new Set(prev).add(suggestedEvidence.id))}
+              className="shrink-0 text-sky-200/50 active:text-sky-200"
+              aria-label="Dismiss suggestion"
+            >
+              {"✕"}
+            </button>
+          </div>
         )}
 
         {/* Open by default on entering a conversation — the player can
