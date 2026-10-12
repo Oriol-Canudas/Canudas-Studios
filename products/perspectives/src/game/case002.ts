@@ -818,6 +818,29 @@ export const WITNESSES: WitnessConfig[] = [
         ],
       },
       {
+        // Proactive beat — eligible only once the player already holds
+        // both pieces of hard evidence the_knife's own confession stage
+        // needs AND Tom has already admitted returning. Deliberately
+        // doesn't repeat that confession's content (it's a short
+        // preamble, not a duplicate claim) — it just signals he'd rather
+        // be asked straight than cornered, and nudges toward the_knife.
+        id: "before_you_ask",
+        chipLabel: "What is it, Tom?",
+        keywords: ["something to say", "before you ask", "want to tell you", "get ahead of this", "before you decide"],
+        proactive: { badgeLabel: "Wants to speak" },
+        stages: [
+          {
+            text: "Before you corner me with whatever you've found — I already know how it looks. I'm not going to make you drag it out of me piece by piece. Just ask me straight, and I'll give you a straight answer. I'm done hiding behind 'I don't remember.'",
+            requiresEvidence: ["E01_knife", "E04_forensic_prelim"],
+            requiresWitnessStage: { witness: "tom", topic: "after_that", minStage: 1 },
+            demeanor: "nervous",
+            addsBoardEntries: [
+              { type: "claim", text: "Tom, unprompted: signals he's ready to answer directly instead of being confronted with the evidence first.", source: "tom" },
+            ],
+          },
+        ],
+      },
+      {
         id: "the_knife",
         chipLabel: "Did you kill him, Tom?",
         keywords: ["knife", "stab", "kill", "truth", "what really happened", "weapon"],
@@ -943,6 +966,27 @@ export const WITNESSES: WitnessConfig[] = [
           {
             text: "They'd known each other since school. Tom was steady — the one who'd actually tell Daniel the hard truth instead of just nodding along. I always figured Daniel trusted him more than he trusted most people. Family, basically.",
             demeanor: "composed",
+          },
+        ],
+      },
+      {
+        // Proactive beat — Marco isn't explaining himself (he's not a
+        // suspect), he's vouching for Tom once he knows the player's
+        // been asking about him. The channel is stated plainly (Tom
+        // told him directly), same as Sofia's Beat B — never an
+        // unexplained omniscient check-in.
+        id: "about_tom_defense",
+        chipLabel: "You wanted to say something about Tom?",
+        keywords: ["about tom", "defend tom", "wanted to say", "before i ask", "tom's character"],
+        proactive: { badgeLabel: "Wants to add something" },
+        stages: [
+          {
+            text: "Tom called me, actually — said you'd been asking him about that night, about the warning he gave Daniel earlier on. I don't want you reading more into that than there is. Tom spent years trying to get Daniel to stop lying to people. That's not a man with a grudge. That's a friend who was tired of watching it happen.",
+            requiresWitnessStage: { witness: "tom", topic: "earlier_visit", minStage: 0 },
+            demeanor: "composed",
+            addsBoardEntries: [
+              { type: "claim", text: "Marco, unprompted: vouches for Tom's character, framing his earlier warning to Daniel as loyalty, not a grudge.", source: "marco" },
+            ],
           },
         ],
       },

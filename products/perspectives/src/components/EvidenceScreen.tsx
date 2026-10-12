@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EVIDENCE, EXAMINE_HERO_IMAGE, WITNESSES } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { testimonyLinksForEvidence } from "../game/witnessEngine";
@@ -32,6 +32,8 @@ export default function EvidenceScreen() {
   const witnessStages = useGameStore((s) => s.witnessStages);
   const discoverEvidence = useGameStore((s) => s.discoverEvidence);
   const inspectEvidence = useGameStore((s) => s.inspectEvidence);
+  const pendingEvidenceFocus = useGameStore((s) => s.pendingEvidenceFocus);
+  const clearEvidenceFocus = useGameStore((s) => s.clearEvidenceFocus);
   const [open, setOpen] = useState<EvidenceId | null>(null);
   const [discovering, setDiscovering] = useState<EvidenceId | null>(null);
 
@@ -56,6 +58,17 @@ export default function EvidenceScreen() {
     inspectEvidence(id);
     setOpen(id);
   }
+
+  // Arriving here via a cross-reference link (e.g. a witness-chat nudge)
+  // opens that evidence exactly as a direct tap would — same discover
+  // animation if it's new, same detail sheet either way — then clears
+  // the one-shot focus so revisiting this screen later doesn't reopen it.
+  useEffect(() => {
+    if (!pendingEvidenceFocus) return;
+    handleOpen(pendingEvidenceFocus, discovered.has(pendingEvidenceFocus));
+    clearEvidenceFocus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingEvidenceFocus]);
 
   return (
     <div className="pb-28">

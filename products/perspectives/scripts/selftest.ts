@@ -1030,8 +1030,9 @@ console.log("\n=== Playthrough 33: newly authored topics match their own chip te
   // Pool sizes now meet the tiered floor discussed: leads 6-8, Sofia
   // 5-6, supporting witnesses 4-5 (was 3/3 before this round).
   assert(WITNESS_BY_ID.sofia.topics.length === 7, "Sofia's topic pool grew from 4 to 6, then to 7 with sofia_clarify (proactive contact)");
-  assert(WITNESS_BY_ID.marco.topics.length === 5, "Marco's topic pool grew from 3 to 5");
+  assert(WITNESS_BY_ID.marco.topics.length === 6, "Marco's topic pool grew from 3 to 5, then to 6 with about_tom_defense (proactive contact)");
   assert(WITNESS_BY_ID.julia.topics.length === 5, "Julia's topic pool grew from 3 to 5");
+  assert(WITNESS_BY_ID.tom.topics.length === 8, "Tom's topic pool grew from 6 to 7, then to 8 with before_you_ask (proactive contact)");
 }
 
 // ── Playthrough 34: Beat A — Elena's opening proactive contact ───────────
@@ -1275,6 +1276,116 @@ console.log("\n=== Playthrough 40: testimonyLinksForEvidence surfaces only alrea
     testimonyLinksForEvidence("E01_knife", WITNESSES, state.witnessStages).length === 0,
     "An unrelated, never-engaged gate reports no link — no false positives from merely existing in caseData"
   );
+}
+
+// ── Playthrough 41: Tom's "before_you_ask" proactive beat ──
+console.log("\n=== Playthrough 41: Tom proactively comes forward once the net is actually closing ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness, discoverEvidence, openWitness } = useGameStore.getState();
+  const tom = WITNESS_BY_ID.tom;
+  const topic = tom.topics.find((t) => t.id === "before_you_ask")!;
+  let state = useGameStore.getState();
+
+  assert(
+    !isProactiveContactEligible(topic, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "Not eligible at the very start — neither gate is met"
+  );
+
+  askWitness("tom", "where did you really go after you left", "after_that");
+  state = useGameStore.getState();
+  assert(
+    !isProactiveContactEligible(topic, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "Asked, but stuck at after_that's stage 0 (no E07 yet) — still not eligible"
+  );
+
+  discoverEvidence("E07_tom_phone_records");
+  askWitness("tom", "where did you really go after you left", "after_that");
+  state = useGameStore.getState();
+  assert(
+    !isProactiveContactEligible(topic, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "after_that now at stage 1, but E01/E04 still missing — the other half of the gate"
+  );
+
+  discoverEvidence("E01_knife");
+  discoverEvidence("E04_forensic_prelim");
+  state = useGameStore.getState();
+  assert(
+    isProactiveContactEligible(topic, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "Both halves met now — eligible"
+  );
+
+  // Two prior askWitness calls already populated Tom's chat with their
+  // own player/witness turns — compare lengths by DELTA, not an absolute
+  // count, same lesson learned authoring Playthrough 38.
+  const lenBeforeDelivery = state.chatHistory.tom.length;
+  openWitness("tom");
+  state = useGameStore.getState();
+  assert(state.chatHistory.tom.length === lenBeforeDelivery + 1, "Opening Tom's chat delivers exactly one additional, unprompted line");
+  const delivered = state.chatHistory.tom[state.chatHistory.tom.length - 1];
+  assert(delivered.text.includes("straight"), "It's his own 'ask me straight' preamble, not the actual confession");
+  assert(
+    state.board.some((b) => b.text.includes("ready to answer directly")),
+    "A board entry records the proactive signal itself"
+  );
+  assert(state.witnessStages.tom.before_you_ask === 0, "Single-stage proactive delivery marks it engaged immediately");
+
+  const lenAfterDelivery = state.chatHistory.tom.length;
+  openWitness("tom");
+  const after = useGameStore.getState();
+  assert(after.chatHistory.tom.length === lenAfterDelivery, "Re-opening Tom doesn't re-deliver or duplicate the line");
+}
+
+// ── Playthrough 42: Marco's "about_tom_defense" proactive beat ──
+console.log("\n=== Playthrough 42: Marco proactively vouches for Tom once he knows Tom's being asked about ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness, openWitness } = useGameStore.getState();
+  const marco = WITNESS_BY_ID.marco;
+  const topic = marco.topics.find((t) => t.id === "about_tom_defense")!;
+  let state = useGameStore.getState();
+
+  assert(
+    !isProactiveContactEligible(topic, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "Not eligible before the player has ever asked Tom about that earlier visit"
+  );
+
+  askWitness("tom", "what did you talk about earlier that evening", "earlier_visit");
+  state = useGameStore.getState();
+  assert(
+    isProactiveContactEligible(topic, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "Eligible as soon as that topic's been engaged with Tom at all — no evidence needed, this is just Marco hearing about it from Tom"
+  );
+
+  openWitness("marco");
+  state = useGameStore.getState();
+  assert(state.chatHistory.marco.length === 1, "Opening Marco's chat delivers exactly one unprompted line");
+  assert(state.chatHistory.marco[0].text.includes("Tom called me"), "States its own channel plainly — Tom told him, not an unexplained check-in");
+  assert(
+    state.board.some((b) => b.text.includes("vouches for Tom's character")),
+    "A board entry records the proactive vouching"
+  );
+  assert(state.witnessStages.marco.about_tom_defense === 0, "Single-stage proactive delivery marks it engaged immediately");
+
+  openWitness("marco");
+  const after = useGameStore.getState();
+  assert(after.chatHistory.marco.length === 1, "Re-opening Marco doesn't re-deliver or duplicate the line");
+}
+
+// ── Playthrough 43: evidence cross-reference focus/clear plumbing ──
+console.log("\n=== Playthrough 43: tapping a cross-reference link's underlying store action ===");
+{
+  useGameStore.getState().reset();
+  let state = useGameStore.getState();
+  assert(state.pendingEvidenceFocus === null, "No pending focus at the start of a session");
+
+  state.focusEvidence("E07_tom_phone_records");
+  state = useGameStore.getState();
+  assert(state.pendingEvidenceFocus === "E07_tom_phone_records", "focusEvidence sets the one-shot pending id");
+
+  state.clearEvidenceFocus();
+  state = useGameStore.getState();
+  assert(state.pendingEvidenceFocus === null, "clearEvidenceFocus consumes it — EvidenceScreen calls this right after opening the detail sheet");
 }
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);

@@ -100,6 +100,11 @@ export default function App() {
           witnessId={activeWitness}
           onBack={() => setActiveWitness(null)}
           onInspect={() => setDossierWitness(activeWitness)}
+          onViewEvidence={(evidenceId) => {
+            setActiveWitness(null);
+            setTab("examine");
+            useGameStore.getState().focusEvidence(evidenceId);
+          }}
         />
       ) : (
         <div className="min-h-full">

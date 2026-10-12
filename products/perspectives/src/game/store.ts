@@ -66,6 +66,16 @@ interface GameState {
    * actions running in the meantime.
    */
   celebration: { kind: "contradiction" | "voluntary_disclosure"; message: string } | null;
+  /**
+   * Set when the player taps a cross-reference link to a specific piece
+   * of evidence from somewhere other than the Examine screen itself (so
+   * far: the "you might want to examine…" nudge in witness chat).
+   * EvidenceScreen consumes this once (opening that evidence's detail
+   * sheet, running the normal discover animation if it's not yet
+   * discovered) and clears it — never a standing navigation route, just
+   * a one-shot "go look at this."
+   */
+  pendingEvidenceFocus: EvidenceId | null;
   /** Opt-in per-case soft clock (see TimePressureConfig) — null when the active case has none, matching Case 002's "ask as much as you want" today exactly. Never real wall-clock time. */
   minutesRemaining: number | null;
   discoveredEvidence: Set<EvidenceId>;
@@ -118,6 +128,8 @@ interface GameState {
 
   discoverEvidence: (id: EvidenceId) => void;
   inspectEvidence: (id: EvidenceId) => void;
+  focusEvidence: (id: EvidenceId) => void;
+  clearEvidenceFocus: () => void;
   openWitness: (id: WitnessId) => void;
   markProactiveContactAlerted: (witnessId: WitnessId, topicId: string) => void;
   dismissCelebration: () => void;
@@ -821,6 +833,7 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
 
 export const useGameStore = create<GameState>((set, get) => ({
   celebration: null,
+  pendingEvidenceFocus: null,
   minutesRemaining: TIME_PRESSURE?.totalMinutes ?? null,
 
   // Every document starts as "Request" — standardized so the Examine
@@ -881,6 +894,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     track("evidence_inspected_detail", { evidenceId: id });
     set({ inspectedEvidence: new Set(inspectedEvidence).add(id), board: nextBoard, boardEntryKeys: nextKeys });
   },
+
+  focusEvidence: (id) => set({ pendingEvidenceFocus: id }),
+  clearEvidenceFocus: () => set({ pendingEvidenceFocus: null }),
 
   openWitness: (id) => {
     track("witness_opened", { witnessId: id });
@@ -1239,6 +1255,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     track("session_started", {});
     set({
       celebration: null,
+      pendingEvidenceFocus: null,
       minutesRemaining: TIME_PRESSURE?.totalMinutes ?? null,
       discoveredEvidence: new Set(),
       inspectedEvidence: new Set(),

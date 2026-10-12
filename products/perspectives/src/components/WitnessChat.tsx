@@ -18,9 +18,10 @@ interface WitnessChatProps {
   witnessId: WitnessId;
   onBack: () => void;
   onInspect: () => void;
+  onViewEvidence: (evidenceId: EvidenceId) => void;
 }
 
-export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessChatProps) {
+export default function WitnessChat({ witnessId, onBack, onInspect, onViewEvidence }: WitnessChatProps) {
   const witness = WITNESS_BY_ID[witnessId];
   const isFreeform = Boolean(witness.freeformEnabled); // Tom and Sofia, this round — see DECISIONS.md
 
@@ -371,7 +372,15 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
           <div className="mb-2 flex items-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-3 py-2">
             <span className="text-base leading-none">{"🔎"}</span>
             <p className="flex-1 text-sm leading-snug text-sky-100">
-              You might want to examine <span className="font-medium">{suggestedEvidence.title}</span>.
+              You might want to examine{" "}
+              <button
+                type="button"
+                onClick={() => onViewEvidence(suggestedEvidence.id)}
+                className="font-medium underline decoration-sky-300/50 underline-offset-2 active:text-sky-50"
+              >
+                {suggestedEvidence.title}
+              </button>
+              .
             </p>
             <button
               type="button"
