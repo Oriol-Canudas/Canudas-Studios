@@ -4,18 +4,19 @@ import {
   D1_INSTRUMENTS_RESULT,
   D1_OPTIONS,
   D1_VISUAL_CHECK_RESULT,
-  EXCHANGE_COST,
   HALE,
   MAYA,
   PRESSURE_START,
   ROUTE_B_FLOOR,
 } from "./data";
-import type { AgentDef, AgentId, FireStatus, PressureLedgerEntry, Screen } from "./types";
+import type { AgentDef, AgentId, AgentTopic, FireStatus, PressureLedgerEntry, Screen } from "./types";
 
 export interface ChatLine {
   role: "player" | "agent" | "ops";
   text: string;
   cue?: string;
+  /** Marks a response that was re-shown for free, not freshly charged — kept distinct in the transcript rather than silently identical to a first ask. */
+  reread?: boolean;
 }
 
 interface Case3State {
@@ -26,31 +27,41 @@ interface Case3State {
   maya: ChatLine[];
   ops: ChatLine[];
   ledger: PressureLedgerEntry[];
-  act1FreeUsed: boolean;
+  /** Every topic ever asked, per agent — the single source of truth for "ask vs. reread" and for cross-agent requiresAsked gates. Carries over from Act I into Act II untouched (the one free Act I pick is just an asked topic like any other). */
+  askedTopics: Record<AgentId, Set<string>>;
   focusedAgent: AgentId | null;
 
   begin: () => void;
-  sendAct1Free: (text: string) => void;
   advanceAct1ToMaya: () => void;
   advanceAct1ToRory: () => void;
   enterAct2: () => void;
   focusAgent: (id: AgentId) => void;
-  sendCosted: (id: AgentId, text: string) => void;
+  /** The single entry point for every question in the game — Act I's one
+   * free pick and Act II's costed ones alike. Idempotent by construction:
+   * if `topicId` is already in askedTopics, this re-shows the response
+   * for free instead of charging again, so a genuine double-click (two
+   * events landing before a re-render can disable the control) can never
+   * double-charge — the second call just sees the topic already asked. */
+  selectTopic: (agentId: AgentId, topicId: string) => void;
   openD1: () => void;
   commitD1: (option: "visual_check" | "instruments_only") => void;
   reset: () => void;
 }
 
-function matchTopic(agent: AgentDef, text: string): string {
-  const normalized = text.toLowerCase();
-  for (const topic of agent.topics) {
-    if (topic.keywords.some((k) => normalized.includes(k))) return topic.response;
-  }
-  return agent.deflection;
+function agentDef(id: AgentId): AgentDef | null {
+  return id === "hale" ? HALE : id === "maya" ? MAYA : null;
+}
+
+function findTopic(def: AgentDef, topicId: string): AgentTopic | undefined {
+  return def.topics.find((t) => t.id === topicId);
 }
 
 function routeBStatus(pressure: number): "open" | "closed" {
   return pressure >= ROUTE_B_FLOOR ? "open" : "closed";
+}
+
+function emptyAskedTopics(): Record<AgentId, Set<string>> {
+  return { hale: new Set(), maya: new Set(), rory: new Set() };
 }
 
 const initialState = {
@@ -61,7 +72,7 @@ const initialState = {
   maya: [] as ChatLine[],
   ops: [] as ChatLine[],
   ledger: [] as PressureLedgerEntry[],
-  act1FreeUsed: false,
+  askedTopics: emptyAskedTopics(),
   focusedAgent: null as AgentId | null,
 };
 
@@ -69,17 +80,6 @@ export const useCase3Store = create<Case3State>((set, get) => ({
   ...initialState,
 
   begin: () => set({ screen: "act1_hale" }),
-
-  // The ONE free Act I exchange with Hale — zero pressure cost, per
-  // C003-AMD-002 (agreed direction) and the confirmed tutorial sequence.
-  sendAct1Free: (text) => {
-    if (get().act1FreeUsed) return;
-    const response = matchTopic(HALE, text);
-    set((s) => ({
-      hale: [...s.hale, { role: "player", text }, { role: "agent", text: response }],
-      act1FreeUsed: true,
-    }));
-  },
 
   advanceAct1ToMaya: () => set({ screen: "act1_maya_interrupt" }),
   advanceAct1ToRory: () => set({ screen: "act1_rory_interrupt" }),
@@ -93,20 +93,33 @@ export const useCase3Store = create<Case3State>((set, get) => ({
 
   focusAgent: (id) => set({ focusedAgent: id }),
 
-  // Every Act II exchange with Hale or Maya costs EXCHANGE_COST (2),
-  // flat, regardless of agent — baseline conversation rule, LOCKED SOURCE.
-  sendCosted: (id, text) => {
+  selectTopic: (agentId, topicId) => {
     const state = get();
-    if (state.screen !== "act2_room") return;
-    const agent = id === "hale" ? HALE : MAYA;
-    const response = matchTopic(agent, text);
-    const pressureAfter = Math.max(0, state.pressure - EXCHANGE_COST);
-    const entry: PressureLedgerEntry = { label: `Asked ${agent.name}`, delta: -EXCHANGE_COST, pressureAfter };
-    const key = id === "hale" ? "hale" : "maya";
+    const def = agentDef(agentId);
+    const topic = def && findTopic(def, topicId);
+    if (!def || !topic) return;
+
+    const already = state.askedTopics[agentId].has(topicId);
+    const key = agentId as "hale" | "maya";
+
+    if (already) {
+      // Reread: show the same response again, no new charge, no new
+      // pressure/ledger entry — explicitly distinct from a first ask.
+      set({ [key]: [...state[key], { role: "player", text: topic.prompt }, { role: "agent", text: topic.response, reread: true }] } as Partial<Case3State>);
+      return;
+    }
+
+    const inAct1 = state.screen === "act1_hale";
+    const cost = inAct1 ? 0 : topic.cost;
+    const pressureAfter = Math.max(0, state.pressure - cost);
+    const nextAsked = { ...state.askedTopics, [agentId]: new Set(state.askedTopics[agentId]).add(topicId) };
+    const ledgerPatch = cost > 0 ? [{ label: `Asked ${def.name}: "${topic.prompt}"`, delta: -cost, pressureAfter }] : [];
+
     set({
       pressure: pressureAfter,
-      ledger: [...state.ledger, entry],
-      [key]: [...state[key], { role: "player", text }, { role: "agent", text: response }],
+      askedTopics: nextAsked,
+      ledger: [...state.ledger, ...ledgerPatch],
+      [key]: [...state[key], { role: "player", text: topic.prompt }, { role: "agent", text: topic.response }],
     } as Partial<Case3State>);
   },
 
@@ -131,7 +144,7 @@ export const useCase3Store = create<Case3State>((set, get) => ({
     });
   },
 
-  reset: () => set({ ...initialState }),
+  reset: () => set({ ...initialState, askedTopics: emptyAskedTopics() }),
 }));
 
-export { routeBStatus };
+export { routeBStatus, agentDef, findTopic };

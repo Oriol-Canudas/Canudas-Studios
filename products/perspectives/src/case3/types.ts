@@ -9,6 +9,13 @@
 // shape would blur a distinction this whole design exercise exists to
 // test. See PERSPECTIVES_CASE_003_Flight_702.md (external design pack)
 // for the frozen baseline this implements.
+//
+// C003-AMD-004 (amendment, this round): the conversation surface moved
+// from free-text (with an optional pre-fill suggestion) to fully
+// authored, explicit question choices — see data.ts's header comment
+// for the full rationale. AgentTopic is shaped around that: `prompt` is
+// the literal button label, `response` the authored answer, no keyword
+// matching involved anywhere.
 // ─────────────────────────────────────────────────────────────────────────
 
 export type AgentId = "hale" | "maya" | "rory";
@@ -30,11 +37,13 @@ export type Screen =
 
 export interface AgentTopic {
   id: string;
-  /** Keywords used for best-effort free-text matching — same lightweight approach as Case 002's matchTopic, not a claim of real NLU. */
-  keywords: string[];
+  /** The literal question shown on the button. Never phrased to reveal hidden information before it's actually unlocked. */
+  prompt: string;
   response: string;
-  /** Marks this as content authored for the no-aviation-knowledge-required rule — never gates anything, purely a reviewer's note. */
-  plainLanguageCheck?: string;
+  /** Pressure cost when asked for the FIRST time. Rereading is always free — see store.ts's askedTopics. */
+  cost: number;
+  /** Gates this topic behind another one already having been asked — same agent by default, or a different one (the cross-witness "challenge" pattern). Omitted = always available from the start. */
+  requiresAsked?: { agent?: AgentId; topicId: string };
 }
 
 export interface AgentDef {
@@ -43,16 +52,8 @@ export interface AgentDef {
   role: string;
   portrait: string;
   topics: AgentTopic[];
-  deflection: string;
-  /**
-   * One tappable starting question, shown only while that agent's chat
-   * is still empty — never a persistent menu. This is a deliberate,
-   * evidence-based amendment to the frozen "no suggestion chips" cut:
-   * real play surfaced the blank-page problem returning without it.
-   * Pre-fills the input (same as Case 002's suggestion chips); never
-   * auto-sends.
-   */
-  suggestedPrompt: string;
+  /** The 2-3 topic ids offered during Act I's single free pick — a subset of `topics`, reused as-is (same authored content, not a separate copy). */
+  act1Topics?: string[];
 }
 
 export interface PressureLedgerEntry {

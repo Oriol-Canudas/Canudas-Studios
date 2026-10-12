@@ -12,6 +12,7 @@ import {
   PRESSURE_START,
   ROUTE_B_FLOOR,
 } from "./data";
+import type { AgentDef, AgentId } from "./types";
 
 const RORY_PORTRAIT = "/case3/rory.png";
 
@@ -23,7 +24,7 @@ export const PROTOTYPE_BADGE_CLEARANCE = "pb-9";
 function PrototypeBadge() {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex h-7 items-center justify-center border-t border-white/10 bg-black/85 text-[10px] uppercase tracking-wide text-white/50">
-      Prototype — scripted responses, not live AI
+      Prototype — guided, authored responses, not live AI
     </div>
   );
 }
@@ -48,7 +49,7 @@ function SoundToggle() {
 /**
  * Two-tier, large-type header: framing on top, live state below as a
  * visual gauge + badges — not a single dense row of 11px text. The
- * margin bar replaces the earlier "Cost 10" / "−2 margin" number-first
+ * margin bar replaces earlier "Cost 10" / "−2 margin" number-first
  * language; the consequence is shown, not explained.
  */
 function StatusBar({ act, objective }: { act: string; objective: string }) {
@@ -92,14 +93,84 @@ function StatusBar({ act, objective }: { act: string; objective: string }) {
   );
 }
 
-function SuggestedPrompt({ text, onPick }: { text: string; onPick: (t: string) => void }) {
+/**
+ * The core interaction surface, replacing free text. Shows a capped set
+ * of currently-available questions (primary + unlocked follow-ups),
+ * each directly bound to its topic id — never keyword-matched. Asked
+ * topics stay visible as free, explicitly marked rerereads rather than
+ * disappearing, so "ask vs. reread" is always legible at a glance.
+ */
+function QuestionList({ agentId, def, free = false }: { agentId: AgentId; def: AgentDef; free?: boolean }) {
+  const { askedTopics, pressure, selectTopic } = useCase3Store();
+  const [showAll, setShowAll] = useState(false);
+  const forced = !free && pressure <= D1_FORCE_THRESHOLD;
+  const asked = askedTopics[agentId];
+
+  const topics = free ? def.topics.filter((t) => def.act1Topics?.includes(t.id)) : def.topics;
+  const available = topics.filter(
+    (t) => !t.requiresAsked || askedTopics[t.requiresAsked.agent ?? agentId]?.has(t.requiresAsked.topicId)
+  );
+  const visible = showAll ? available : available.slice(0, 3);
+  const hiddenCount = available.length - visible.length;
+
   return (
-    <button
-      onClick={() => onPick(text)}
-      className="w-full max-w-sm rounded-xl border border-dashed border-amber-300/30 bg-amber-300/[0.06] px-3 py-2 text-left text-sm text-amber-200/90 active:scale-[0.98]"
-    >
-      {"\u{1F4AC} "}{text}
-    </button>
+    <div className="flex w-full max-w-sm flex-col gap-2">
+      {visible.map((t) => {
+        const isAsked = asked.has(t.id);
+        const locked = forced && !isAsked;
+        return (
+          <button
+            key={t.id}
+            disabled={locked}
+            onClick={() => selectTopic(agentId, t.id)}
+            className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm active:scale-[0.98] ${
+              locked
+                ? "cursor-not-allowed border-white/5 bg-white/[0.02] text-white/25"
+                : isAsked
+                  ? "border-white/10 bg-white/[0.03] text-white/70"
+                  : "border-amber-300/25 bg-amber-300/[0.06] text-white"
+            }`}
+          >
+            <span>{t.prompt}</span>
+            {isAsked ? (
+              <span className="shrink-0 text-[11px] uppercase text-white/35">{"↺"} reread</span>
+            ) : free ? (
+              <span className="shrink-0 text-[11px] uppercase text-emerald-300/70">free</span>
+            ) : (
+              <span className="shrink-0 font-mono text-[11px] text-amber-300/70">{"−"}{t.cost}</span>
+            )}
+          </button>
+        );
+      })}
+      {hiddenCount > 0 && !showAll && (
+        <button onClick={() => setShowAll(true)} className="py-1 text-center text-xs text-white/40">
+          Show {hiddenCount} more
+        </button>
+      )}
+    </div>
+  );
+}
+
+function MiniRoster({ active }: { active: AgentId }) {
+  const items: { id: AgentId; name: string; portrait: string }[] = [
+    { id: "hale", name: "Hale", portrait: HALE.portrait },
+    { id: "maya", name: "Maya", portrait: MAYA.portrait },
+    { id: "rory", name: "Rory", portrait: RORY_PORTRAIT },
+  ];
+  return (
+    <div className="flex justify-center gap-3">
+      {items.map((a) => (
+        <div key={a.id} className={`flex flex-col items-center gap-1 rounded-xl border p-1.5 ${a.id === active ? "border-amber-300/30 bg-amber-300/[0.06]" : "border-white/5 bg-black/30 opacity-50"}`}>
+          <img
+            src={a.portrait}
+            alt={a.name}
+            className={`h-10 w-10 rounded-full object-cover object-top ${a.id === active ? "" : "grayscale"}`}
+          />
+          <span className={`text-[10px] font-medium ${a.id === active ? "text-white" : "text-white/50"}`}>{a.name}</span>
+          {a.id !== active && <span className="text-[8px] uppercase text-white/35">standing by</span>}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -133,14 +204,8 @@ function ColdOpen() {
 }
 
 function Act1Hale() {
-  const { hale, act1FreeUsed, sendAct1Free, advanceAct1ToMaya } = useCase3Store();
-  const [draft, setDraft] = useState("");
-
-  function send() {
-    if (!draft.trim() || act1FreeUsed) return;
-    sendAct1Free(draft.trim());
-    setDraft("");
-  }
+  const { hale, askedTopics, advanceAct1ToMaya } = useCase3Store();
+  const picked = askedTopics.hale.size > 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -149,7 +214,8 @@ function Act1Hale() {
         <img src="/case3/situation-room.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-50" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
         <div className={`relative flex h-full flex-col items-center justify-end gap-3 px-4 pb-4 ${PROTOTYPE_BADGE_CLEARANCE}`}>
-          <img src={HALE.portrait} alt="Hale" className="max-h-[38vh] w-auto object-contain drop-shadow-2xl" />
+          <MiniRoster active="hale" />
+          <img src={HALE.portrait} alt="Hale" className="max-h-[32vh] w-auto object-contain drop-shadow-2xl" />
           <p className="text-center text-xs uppercase tracking-wide text-white/50">{HALE.name} — {HALE.role}</p>
 
           {hale.length === 0 && (
@@ -169,23 +235,8 @@ function Act1Hale() {
             </div>
           ))}
 
-          {!act1FreeUsed ? (
-            <>
-              {hale.length === 0 && <SuggestedPrompt text={HALE.suggestedPrompt} onPick={setDraft} />}
-              <div className="flex w-full max-w-sm items-center gap-2">
-                <input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && send()}
-                  placeholder="Ask Hale anything…"
-                  className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-[15px] text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-amber-300/50"
-                  aria-label="Message to Hale"
-                />
-                <button onClick={send} className="rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-black">
-                  Send
-                </button>
-              </div>
-            </>
+          {!picked ? (
+            <QuestionList agentId="hale" def={HALE} free />
           ) : (
             <button
               onClick={advanceAct1ToMaya}
@@ -194,7 +245,7 @@ function Act1Hale() {
               Continue
             </button>
           )}
-          <p className="text-[11px] text-white/35">Orientation · free to ask</p>
+          <p className="text-[11px] text-white/35">Orientation · one question, free</p>
         </div>
       </div>
     </div>
@@ -241,8 +292,7 @@ function IncomingEventScreen({
 }
 
 function Act2Room() {
-  const { pressure, hale, maya, ops, focusedAgent, focusAgent, sendCosted, openD1 } = useCase3Store();
-  const [draft, setDraft] = useState("");
+  const { pressure, hale, maya, ops, focusedAgent, focusAgent, openD1 } = useCase3Store();
   const forced = pressure <= D1_FORCE_THRESHOLD;
   const forcedAlertFired = useRef(false);
 
@@ -252,12 +302,6 @@ function Act2Room() {
       playCase3Sfx("ping");
     }
   }, [forced]);
-
-  function send() {
-    if (!draft.trim() || !focusedAgent || forced) return;
-    sendCosted(focusedAgent, draft.trim());
-    setDraft("");
-  }
 
   const activeAgent = focusedAgent === "hale" ? HALE : focusedAgent === "maya" ? MAYA : null;
   const activeHistory = focusedAgent === "hale" ? hale : focusedAgent === "maya" ? maya : [];
@@ -290,11 +334,11 @@ function Act2Room() {
 
           {focusedAgent && (
             <div className="flex flex-1 flex-col items-center justify-end gap-2 overflow-hidden px-4 pt-2">
-              <img src={activeAgent!.portrait} alt={activeAgent!.name} className="max-h-[26vh] w-auto object-contain drop-shadow-2xl" />
+              <img src={activeAgent!.portrait} alt={activeAgent!.name} className="max-h-[24vh] w-auto object-contain drop-shadow-2xl" />
             </div>
           )}
 
-          <div className={`${focusedAgent ? "" : "mt-auto"} flex flex-col gap-3 px-4 pb-4 ${PROTOTYPE_BADGE_CLEARANCE}`}>
+          <div className={`${focusedAgent ? "" : "mt-auto"} flex flex-col items-center gap-3 px-4 pb-4 ${PROTOTYPE_BADGE_CLEARANCE}`}>
             {!focusedAgent ? (
               <>
                 <div className="flex justify-center gap-3">
@@ -321,14 +365,14 @@ function Act2Room() {
                 {forced ? (
                   <button
                     onClick={openD1}
-                    className="w-full rounded-xl bg-red-400/90 py-3 text-base font-semibold text-black active:scale-[0.98]"
+                    className="w-full max-w-sm rounded-xl bg-red-400/90 py-3 text-base font-semibold text-black active:scale-[0.98]"
                   >
                     Time to decide — open D1
                   </button>
                 ) : (
                   <button
                     onClick={openD1}
-                    className="w-full rounded-xl border border-white/15 bg-white/5 py-3 text-sm font-medium text-white/80 active:scale-[0.98]"
+                    className="w-full max-w-sm rounded-xl border border-white/15 bg-white/5 py-3 text-sm font-medium text-white/80 active:scale-[0.98]"
                   >
                     I'm ready to decide (D1)
                   </button>
@@ -336,7 +380,7 @@ function Act2Room() {
               </>
             ) : (
               <>
-                <div className="flex items-center justify-between">
+                <div className="flex w-full max-w-sm items-center justify-between">
                   <button
                     onClick={() => useCase3Store.setState({ focusedAgent: null })}
                     className="text-sm text-white/50"
@@ -350,42 +394,31 @@ function Act2Room() {
                   <span className="w-12" />
                 </div>
 
-                <div className="flex max-h-40 flex-col gap-2 overflow-y-auto">
-                  {activeHistory.map((line, i) => (
-                    <div
-                      key={i}
-                      className={`max-w-[85%] rounded-xl p-2.5 text-[14px] leading-snug ${
-                        line.role === "player" ? "ml-auto border border-amber-300/30 bg-amber-300/10 text-amber-100" : "border border-white/10 bg-black/60 text-white/90"
-                      }`}
-                    >
-                      {line.text}
-                    </div>
-                  ))}
-                </div>
-
-                {activeHistory.length === 0 && !forced && (
-                  <SuggestedPrompt text={activeAgent!.suggestedPrompt} onPick={setDraft} />
-                )}
-
-                {forced ? (
-                  <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-2 text-center text-[13px] text-red-200">
-                    Time's short — no more questions right now.
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && send()}
-                      placeholder={`Ask ${activeAgent!.name}…`}
-                      className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-[15px] text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-amber-300/50"
-                      aria-label={`Message to ${activeAgent!.name}`}
-                    />
-                    <button onClick={send} className="rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-black">
-                      Send
-                    </button>
+                {activeHistory.length > 0 && (
+                  <div className="flex max-h-32 w-full max-w-sm flex-col gap-2 overflow-y-auto">
+                    {activeHistory.map((line, i) => (
+                      <div
+                        key={i}
+                        className={`max-w-[90%] rounded-xl p-2.5 text-[14px] leading-snug ${
+                          line.role === "player"
+                            ? "ml-auto border border-amber-300/30 bg-amber-300/10 text-amber-100"
+                            : `border bg-black/60 text-white/90 ${line.reread ? "border-white/5 opacity-70" : "border-white/10"}`
+                        }`}
+                      >
+                        {line.reread && <span className="mr-1 text-white/40">{"↺"}</span>}
+                        {line.text}
+                      </div>
+                    ))}
                   </div>
                 )}
+
+                {forced && (
+                  <div className="w-full max-w-sm rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-2 text-center text-[13px] text-red-200">
+                    Time's short — only answered questions can be reread now.
+                  </div>
+                )}
+
+                <QuestionList agentId={focusedAgent} def={activeAgent!} />
               </>
             )}
           </div>
