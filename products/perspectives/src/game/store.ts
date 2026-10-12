@@ -57,6 +57,15 @@ export interface RelayRecord {
 }
 
 interface GameState {
+  /**
+   * A transient "something just happened worth noticing" signal for a
+   * brief toast + glow — never persisted, never read by any grading or
+   * reveal logic. Only ever set when a contradiction board entry or a
+   * voluntary disclosure (altUnlock) actually occurs; cleared by the
+   * toast's own display timer via dismissCelebration, not by other game
+   * actions running in the meantime.
+   */
+  celebration: { kind: "contradiction" | "voluntary_disclosure"; message: string } | null;
   /** Opt-in per-case soft clock (see TimePressureConfig) — null when the active case has none, matching Case 002's "ask as much as you want" today exactly. Never real wall-clock time. */
   minutesRemaining: number | null;
   discoveredEvidence: Set<EvidenceId>;
@@ -87,6 +96,8 @@ interface GameState {
    * exactly as it would for any other topic.
    */
   deliveredProactiveContacts: Record<WitnessId, Set<string>>;
+  /** Which proactive contacts have already played their one-time "just became eligible" alert (sound) — see emptyAlertedProactiveContacts. */
+  alertedProactiveContacts: Record<WitnessId, Set<string>>;
   /** Guards duplicate submission while a free-form turn is in flight. */
   pendingWitnesses: Set<WitnessId>;
   /** One entry per validated free-form turn — what the reveal's "what you established" summary is built from. */
@@ -108,6 +119,8 @@ interface GameState {
   discoverEvidence: (id: EvidenceId) => void;
   inspectEvidence: (id: EvidenceId) => void;
   openWitness: (id: WitnessId) => void;
+  markProactiveContactAlerted: (witnessId: WitnessId, topicId: string) => void;
+  dismissCelebration: () => void;
   askWitness: (id: WitnessId, questionText: string, topicIdHint?: string) => void;
   presentEvidence: (witnessId: WitnessId, evidenceId: EvidenceId, excerptIndex: number) => void;
   relayRevelation: (witnessId: WitnessId, revelationId: RevelationId) => Promise<void>;
@@ -160,6 +173,13 @@ function emptyRelayedRevelations(): Record<WitnessId, Set<RevelationId>> {
 }
 
 function emptyDeliveredProactiveContacts(): Record<WitnessId, Set<string>> {
+  const out = {} as Record<WitnessId, Set<string>>;
+  for (const w of WITNESSES) out[w.id] = new Set();
+  return out;
+}
+
+/** Which proactive contacts have already played their one-time "just became eligible" alert — distinct from deliveredProactiveContacts (that's "opened," this is "noticed"). Lives in the store, not component state, specifically so switching tabs and back doesn't re-trigger it. */
+function emptyAlertedProactiveContacts(): Record<WitnessId, Set<string>> {
   const out = {} as Record<WitnessId, Set<string>>;
   for (const w of WITNESSES) out[w.id] = new Set();
   return out;
@@ -308,21 +328,21 @@ function advanceTopic(
   let nextBoard = state.board;
   let nextKeys = state.boardEntryKeys;
   let nextDiscovered = state.discoveredEvidence;
+  let newContradictionText: string | null = null;
 
   if (advanced) {
     if (stageData.addsBoardEntries?.length) {
       nextBoard = [...nextBoard];
       nextKeys = new Set(nextKeys);
-      let addedContradiction = false;
       stageData.addsBoardEntries.forEach((entry, i) => {
         const key = boardKey(entry, `${id}:${topic.id}:${newStage}:${i}`);
         if (!nextKeys.has(key)) {
           nextKeys.add(key);
           nextBoard.push({ ...entry, id: key });
-          if (entry.type === "contradiction") addedContradiction = true;
+          if (entry.type === "contradiction" && !newContradictionText) newContradictionText = entry.text;
         }
       });
-      if (addedContradiction) playSfx("contradiction");
+      if (newContradictionText) playSfx("contradiction");
     }
     if (stageData.unlocksEvidence?.length) {
       nextDiscovered = new Set(nextDiscovered);
@@ -345,6 +365,20 @@ function advanceTopic(
     : state.lastDemeanorChangeTurn;
   if (resolved.changed) playSfx("demeanor");
 
+  // A transient "breakthrough" signal — never explicitly cleared here;
+  // the toast component owns its own display timer and self-dismisses
+  // (see dismissCelebration), independent of whatever other actions
+  // happen to run in the meantime. Only set when something actually
+  // happened worth surfacing — never overwrites a pending celebration
+  // with nothing.
+  let celebrationPatch: Partial<GameState> = {};
+  if (newContradictionText) {
+    celebrationPatch = { celebration: { kind: "contradiction", message: newContradictionText } };
+  } else if (reachedViaAltUnlock) {
+    playSfx("breakthrough");
+    celebrationPatch = { celebration: { kind: "voluntary_disclosure", message: `${WITNESS_BY_ID[id]?.name ?? "They"} told you something they didn't have to.` } };
+  }
+
   return {
     text,
     newStage,
@@ -359,6 +393,7 @@ function advanceTopic(
       demeanor: nextDemeanor,
       demeanorTurnCount: { ...state.demeanorTurnCount, [id]: newTurnCount },
       lastDemeanorChangeTurn: nextLastChangeTurn,
+      ...celebrationPatch,
     },
   };
 }
@@ -785,6 +820,7 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
+  celebration: null,
   minutesRemaining: TIME_PRESSURE?.totalMinutes ?? null,
 
   // Every document starts as "Request" — standardized so the Examine
@@ -799,6 +835,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   relayLog: [],
   defensiveTopics: emptyDefensiveTopics(),
   deliveredProactiveContacts: emptyDeliveredProactiveContacts(),
+  alertedProactiveContacts: emptyAlertedProactiveContacts(),
   pendingWitnesses: new Set(),
   conversationEventLog: [],
   witnessStages: emptyWitnessStages(),
@@ -869,6 +906,20 @@ export const useGameStore = create<GameState>((set, get) => ({
       deliveredProactiveContacts: { ...state.deliveredProactiveContacts, [id]: new Set(delivered).add(topic.id) },
     });
   },
+
+  // Called from HearScreen's effect the first time it notices a contact
+  // is newly eligible — plays the one-time alert sound and records it so
+  // switching tabs away and back never re-triggers it. Purely a "noticed
+  // it" signal; delivery (the actual opening line) is unaffected either way.
+  markProactiveContactAlerted: (witnessId, topicId) => {
+    const state = get();
+    const alerted = state.alertedProactiveContacts[witnessId] ?? new Set<string>();
+    if (alerted.has(topicId)) return;
+    playSfx("proactiveAlert");
+    set({ alertedProactiveContacts: { ...state.alertedProactiveContacts, [witnessId]: new Set(alerted).add(topicId) } });
+  },
+
+  dismissCelebration: () => set({ celebration: null }),
 
   askWitness: (id, questionText, topicIdHint) => {
     const witness = WITNESS_BY_ID[id];
@@ -1041,19 +1092,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     // never decides any of this, only how the SAME reaction is phrased.
     let nextBoard = state.board;
     let nextKeys = state.boardEntryKeys;
+    let relayContradictionText: string | null = null;
     if (reaction.addsBoardEntries?.length) {
       nextBoard = [...nextBoard];
       nextKeys = new Set(nextKeys);
-      let addedContradiction = false;
       reaction.addsBoardEntries.forEach((entry, i) => {
         const key = `relay:${witnessId}:${revelationId}:${i}`;
         if (!nextKeys.has(key)) {
           nextKeys.add(key);
           nextBoard.push({ ...entry, id: key });
-          if (entry.type === "contradiction") addedContradiction = true;
+          if (entry.type === "contradiction" && !relayContradictionText) relayContradictionText = entry.text;
         }
       });
-      if (addedContradiction) playSfx("contradiction");
+      if (relayContradictionText) playSfx("contradiction");
     }
 
     const newTurnCount = (state.demeanorTurnCount[witnessId] ?? 0) + 1;
@@ -1074,6 +1125,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       demeanor: nextDemeanor,
       demeanorTurnCount: { ...state.demeanorTurnCount, [witnessId]: newTurnCount },
       lastDemeanorChangeTurn: nextLastChangeTurn,
+      ...(relayContradictionText ? { celebration: { kind: "contradiction" as const, message: relayContradictionText } } : {}),
     };
 
     if (!reaction.generative || !witness.freeformEnabled) {
@@ -1186,6 +1238,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   reset: () => {
     track("session_started", {});
     set({
+      celebration: null,
       minutesRemaining: TIME_PRESSURE?.totalMinutes ?? null,
       discoveredEvidence: new Set(),
       inspectedEvidence: new Set(),
@@ -1195,6 +1248,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       relayLog: [],
       defensiveTopics: emptyDefensiveTopics(),
       deliveredProactiveContacts: emptyDeliveredProactiveContacts(),
+      alertedProactiveContacts: emptyAlertedProactiveContacts(),
       pendingWitnesses: new Set(),
       conversationEventLog: [],
       witnessStages: emptyWitnessStages(),

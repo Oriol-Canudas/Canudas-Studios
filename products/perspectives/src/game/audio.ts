@@ -10,6 +10,12 @@ const SFX_FILES = {
   contradiction: "/audio/contradiction_sting.mp3",
   demeanor: "/audio/demeanor_tick.mp3",
   verdict: "/audio/verdict_gavel.mp3",
+  /** Requesting/opening a document on the Examine screen. */
+  documentUnseal: "/audio/document_unseal.mp3",
+  /** A proactive contact becomes eligible (see TestimonyTopic.proactive) — plays once on the transition, not on every render. */
+  proactiveAlert: "/audio/proactive_alert.mp3",
+  /** A voluntary disclosure (altUnlock) or a newly-found contradiction — a moment earned through the player's own conversation/reasoning, deliberately distinct from the plainer "contradiction" sting. */
+  breakthrough: "/audio/breakthrough_chime.mp3",
 } as const;
 
 export type SfxName = keyof typeof SFX_FILES;

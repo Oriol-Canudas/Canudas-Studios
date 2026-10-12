@@ -26,6 +26,18 @@ body {
   height: 0px;
 }
 
+/* BreakthroughToast's entrance — a small drop-and-settle, not a bounce. */
+@keyframes breakthrough-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* Blanket safety net for anything NOT already JS-gated on this check (e.g.
    TypewriterText, IntroSequence, EmotionReveal each check
    prefersReducedMotion() themselves, for non-CSS timing too) — this just

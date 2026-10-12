@@ -11,6 +11,7 @@ import VerdictScreen from "./components/VerdictScreen";
 import RevealScreen from "./components/RevealScreen";
 import SoundToggle from "./components/SoundToggle";
 import TimeClock from "./components/TimeClock";
+import BreakthroughToast from "./components/BreakthroughToast";
 import { useGameStore } from "./game/store";
 import { track } from "./game/analytics";
 import { playAmbient, stopAmbient } from "./game/audio";
@@ -93,6 +94,7 @@ export default function App() {
     <>
       <SoundToggle />
       <TimeClock />
+      <BreakthroughToast />
       {activeWitness ? (
         <WitnessChat
           witnessId={activeWitness}

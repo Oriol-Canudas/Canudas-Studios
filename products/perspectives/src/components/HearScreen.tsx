@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { WITNESSES } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isProactiveContactEligible } from "../game/witnessEngine";
@@ -17,6 +18,23 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
   const discoveredEvidence = useGameStore((s) => s.discoveredEvidence);
   const relayedRevelations = useGameStore((s) => s.relayedRevelations);
   const deliveredProactiveContacts = useGameStore((s) => s.deliveredProactiveContacts);
+  const alertedProactiveContacts = useGameStore((s) => s.alertedProactiveContacts);
+  const markProactiveContactAlerted = useGameStore((s) => s.markProactiveContactAlerted);
+
+  // Plays the one-time alert sound exactly when a contact newly becomes
+  // eligible — the store-backed "alerted" set (not component state) means
+  // switching to Examine/Reason and back never re-triggers it.
+  useEffect(() => {
+    for (const w of WITNESSES) {
+      const delivered = deliveredProactiveContacts[w.id];
+      const alerted = alertedProactiveContacts[w.id];
+      const eligible = w.topics.find(
+        (t) => t.proactive && !delivered?.has(t.id) && isProactiveContactEligible(t, witnessStages, discoveredEvidence, relayedRevelations)
+      );
+      if (eligible && !alerted?.has(eligible.id)) markProactiveContactAlerted(w.id, eligible.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [witnessStages, discoveredEvidence, relayedRevelations, deliveredProactiveContacts, alertedProactiveContacts]);
 
   return (
     <div className="px-5 pb-28 pt-6">
@@ -45,7 +63,7 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
                   onInspect(w.id);
                 }}
               >
-                <Portrait name={w.name} accentColor={w.accentColor} image={w.portraitImage} size="md" />
+                <Portrait name={w.name} accentColor={w.accentColor} image={w.portraitImage} size="md" glow={Boolean(wantsToTalk)} />
               </button>
               <div className="min-w-0 flex-1">
                 <p className="text-lg font-medium text-white">{w.name}</p>

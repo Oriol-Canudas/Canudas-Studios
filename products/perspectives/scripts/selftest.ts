@@ -1175,5 +1175,48 @@ console.log("\n=== Playthrough 37: a full accusatory reply to a witness's own ju
   );
 }
 
+// ── Playthrough 38: the transient "breakthrough" celebration signal ──────
+console.log("\n=== Playthrough 38: celebration signal fires for contradictions and voluntary disclosures, not routine answers ===");
+{
+  useGameStore.getState().reset();
+  const { discoverEvidence, askWitness } = useGameStore.getState();
+  let state = useGameStore.getState();
+  assert(state.celebration === null, "No celebration at session start");
+
+  // A routine, ungated answer must NOT trigger it.
+  askWitness("tom", "what did you talk about earlier that evening", "earlier_visit");
+  state = useGameStore.getState();
+  assert(state.celebration === null, "A routine answer with no contradiction or voluntary disclosure sets no celebration");
+
+  // A real contradiction (Tom's "I went straight home" reversal) must.
+  discoverEvidence("E07_tom_phone_records");
+  askWitness("tom", "where did you really go after you left", "after_that");
+  state = useGameStore.getState();
+  assert(state.celebration?.kind === "contradiction", `Catching a real contradiction sets the celebration signal (got ${JSON.stringify(state.celebration)})`);
+
+  state.dismissCelebration();
+  state = useGameStore.getState();
+  assert(state.celebration === null, "dismissCelebration clears it, independent of any further game action");
+
+  // A voluntary disclosure (altUnlock, no evidence at all) must also
+  // trigger it — Sofia's went_to_apartment admission, unlocked purely by
+  // relaying tom_returned + an empathetic reply, never touching
+  // E08_garage_access_log (the normal evidence route for this exact
+  // topic — deliberately never discovered here, so a pass can only mean
+  // the altUnlock route actually fired).
+  useGameStore.getState().reset();
+  discoverEvidence("E07_tom_phone_records");
+  askWitness("tom", "where did you really go after you left", "after_that");
+  askWitness("tom", "where did you really go after you left", "after_that");
+  const { relayRevelation, sendFreeformMessage } = useGameStore.getState();
+  await relayRevelation("sofia", "tom_returned");
+  await sendFreeformMessage("sofia", "I understand how scary that must have been — were you there yourself?");
+  state = useGameStore.getState();
+  assert(
+    state.celebration?.kind === "voluntary_disclosure",
+    `A voluntary disclosure earned through conversation, not evidence, sets its own distinct celebration kind (got ${JSON.stringify(state.celebration)})`
+  );
+}
+
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);
