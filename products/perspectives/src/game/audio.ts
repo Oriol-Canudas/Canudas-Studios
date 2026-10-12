@@ -16,6 +16,10 @@ const SFX_FILES = {
   proactiveAlert: "/audio/proactive_alert.mp3",
   /** A voluntary disclosure (altUnlock) or a newly-found contradiction — a moment earned through the player's own conversation/reasoning, deliberately distinct from the plainer "contradiction" sting. */
   breakthrough: "/audio/breakthrough_chime.mp3",
+  /** Reveal screen, once the cinematic finishes and the grade is actually shown — every axis graded "correct". */
+  verdictSuccess: "/audio/verdict_success.mp3",
+  /** Reveal screen, same moment, for any outcome short of a full-correct verdict — deliberately not punishing, just a quiet close. */
+  verdictNeutral: "/audio/verdict_neutral.mp3",
 } as const;
 
 export type SfxName = keyof typeof SFX_FILES;

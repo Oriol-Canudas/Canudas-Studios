@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { playSfx } from "../game/audio";
 import {
   CASE_META,
   EVIDENCE,
@@ -59,6 +60,22 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
   const [showFullStory, setShowFullStory] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
   const [cinematicDone, setCinematicDone] = useState(false);
+
+  // Fires exactly once per reveal — right as the cinematic ends and the
+  // actual grade is shown (ambient music is already stopped by then, see
+  // App.tsx's screen==="reveal" effect). Success only if every axis was
+  // graded "correct"; anything short of that gets the deliberately
+  // non-punishing neutral tone, never a harsher one for "wrong" vs
+  // "insufficient" — this is a close, not a scolding.
+  useEffect(() => {
+    if (!verdict || !cinematicDone) return;
+    const context = buildVerdictContext(useGameStore.getState());
+    const result = gradeVerdict(VERDICT_CONFIG, verdict, context);
+    const allCorrect = result.axisGrades.every((g) => g.judgment === "correct");
+    playSfx(allCorrect ? "verdictSuccess" : "verdictNeutral");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cinematicDone]);
+
   if (!verdict) return null;
 
   if (!cinematicDone) {

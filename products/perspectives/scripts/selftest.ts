@@ -1388,5 +1388,27 @@ console.log("\n=== Playthrough 43: tapping a cross-reference link's underlying s
   assert(state.pendingEvidenceFocus === null, "clearEvidenceFocus consumes it — EvidenceScreen calls this right after opening the detail sheet");
 }
 
+// ── Playthrough 44: the reveal screen's success/neutral sound predicate ──
+console.log("\n=== Playthrough 44: verdict sound picks success only when every axis is actually correct ===");
+{
+  const fullyCorrect = gradeVerdict(VERDICT_CONFIG, { theory: "", choices: { responsible: "tom", elenaVerdict: "not_guilty" } });
+  assert(
+    fullyCorrect.axisGrades.every((g) => g.judgment === "correct"),
+    "Both axes correct — RevealScreen's effect would play the celebratory sound here"
+  );
+
+  const wrong = gradeVerdict(VERDICT_CONFIG, { theory: "", choices: { responsible: "elena", elenaVerdict: "guilty" } });
+  assert(
+    !wrong.axisGrades.every((g) => g.judgment === "correct"),
+    "Convicting Elena is wrong on both axes — not the fully-correct case, so the neutral tone plays, never a harsher one"
+  );
+
+  const insufficient = gradeVerdict(VERDICT_CONFIG, { theory: "", choices: { responsible: "insufficient_evidence", elenaVerdict: "not_guilty" } });
+  assert(
+    !insufficient.axisGrades.every((g) => g.judgment === "correct"),
+    "Declining to name Tom (insufficient, not wrong) also isn't the fully-correct case — same non-punishing neutral tone, not a harsher one for being 'less right'"
+  );
+}
+
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);
 process.exit(failures === 0 ? 0 : 1);
