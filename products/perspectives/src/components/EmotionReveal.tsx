@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { prefersReducedMotion } from "../game/motion";
 import type { Demeanor, WitnessConfig } from "../game/types";
 
 interface EmotionRevealProps {
@@ -22,6 +23,7 @@ export default function EmotionReveal({ witness, demeanor, onDone }: EmotionReve
   const image = witness.demeanorImages?.[demeanor] ?? witness.portraitImage;
   const line = witness.demeanorLines?.[demeanor];
   const [imageErrored, setImageErrored] = useState(false);
+  const fadeMs = useState(() => (prefersReducedMotion() ? 0 : FADE_MS))[0];
 
   useEffect(() => {
     const t = setTimeout(onDone, AUTO_ADVANCE_MS);
@@ -44,7 +46,7 @@ export default function EmotionReveal({ witness, demeanor, onDone }: EmotionReve
           alt=""
           onError={() => setImageErrored(true)}
           className="h-full w-full object-cover object-top opacity-80 transition-opacity"
-          style={{ transitionDuration: `${FADE_MS}ms` }}
+          style={{ transitionDuration: `${fadeMs}ms` }}
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/90" />

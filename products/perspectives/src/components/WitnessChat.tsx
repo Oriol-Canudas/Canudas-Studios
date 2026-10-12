@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isRevelationKnown, isTopicReachable } from "../game/witnessEngine";
+import { prefersReducedMotion } from "../game/motion";
 import type { Demeanor, EvidenceId, RevelationId, TestimonyTopic, WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
@@ -11,15 +12,7 @@ import EvidencePicker from "./EvidencePicker";
 import RelayPicker from "./RelayPicker";
 import EmotionReveal from "./EmotionReveal";
 
-const MAX_VISIBLE_CHIPS = 2;
-
-function prefersReducedMotion(): boolean {
-  try {
-    return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
-}
+const MAX_VISIBLE_CHIPS = 3;
 
 interface WitnessChatProps {
   witnessId: WitnessId;
@@ -59,12 +52,13 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   // use this hint at all — see `send` below — every message to them
   // goes through real generation, suggested or not.
   const [lastSuggestion, setLastSuggestion] = useState<{ text: string; topicId: string } | null>(null);
-  // Suggestions are hidden by default — tucked behind a "Suggestions"
-  // toggle instead of always sitting on screen — and once asked about, a
-  // topic drops out of the suggestion list ENTIRELY rather than lingering
-  // greyed out. suggestionPage cycles through the remaining unasked
-  // topics 2 at a time, wrapping back to the start past the end.
-  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  // Suggestions start OPEN on entering a conversation (per the "don't drop
+  // the player into a blank box with no context" fix) — the player can
+  // still collapse them via the toggle. Once asked about, a topic drops
+  // out of the suggestion list ENTIRELY rather than lingering greyed out.
+  // suggestionPage cycles through the remaining unasked topics
+  // MAX_VISIBLE_CHIPS at a time, wrapping back to the start past the end.
+  const [suggestionsOpen, setSuggestionsOpen] = useState(true);
   const [suggestionPage, setSuggestionPage] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   // Shows once on open (an "establishing shot" of their current state) and
@@ -354,11 +348,11 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
           <p className="mb-1.5 text-center text-[11px] text-white/30">Guided matching active — live AI not connected</p>
         )}
 
-        {/* Hidden by default — an occasional nudge the player asks for,
-            not a menu that's always on screen. Once a topic's actually
-            been asked about it drops out entirely (see
-            unaskedReachableTopics above), so this never shows something
-            already covered. */}
+        {/* Open by default on entering a conversation — the player can
+            collapse it, but never starts staring at a blank box with no
+            context. Once a topic's actually been asked about it drops out
+            entirely (see unaskedReachableTopics above), so this never
+            shows something already covered. */}
         {unaskedReachableTopics.length > 0 && (
           <div className="mb-2">
             {!suggestionsOpen ? (

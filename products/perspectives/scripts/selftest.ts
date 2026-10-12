@@ -773,6 +773,34 @@ console.log("\n=== Playthrough 27b: free-form AI prompts forward keywords and ne
   // And it must still be allowed to use plain PUBLIC facts even when no
   // specific gated topic matched — "guarded" isn't "mute."
   assert(/PUBLIC FACTS/i.test(freshPrompt), "The model may still draw on public facts when no specific topic matched");
+
+  // A second real bug found live-testing the fix above: with Catalan
+  // history in context, a follow-up written in English still got answered
+  // in Catalan — language carrying over from the PRIOR turn instead of
+  // matching the NEW message. Assert the prompt explicitly rules out
+  // history-language carry-over, not just "match the new message" in
+  // isolation (which was already true and insufficient).
+  const mixedLanguagePrompt = buildGenerateSystemPrompt(
+    "tom",
+    "earlier_visit",
+    authorized,
+    tom.topics,
+    [
+      { role: "player", text: "Tom, nou anys d'amistat son molts. Que et preocupava de Daniel?" },
+      { role: "witness", text: "Vaig estar preocupat perque Daniel jugava amb foc." },
+    ],
+    "Why did you say he needed to fix it that night specifically?",
+    "general_question",
+    [],
+    [],
+    false,
+    tom.defensiveLines ?? [],
+    tom.deflections
+  );
+  assert(
+    /never\s+(the\s+)?conversation history|no carry-over|momentum/i.test(mixedLanguagePrompt),
+    "The prompt explicitly rules out carrying the PREVIOUS turn's language forward when the new message switches languages"
+  );
 }
 
 // ── Playthrough 28: altUnlock — a conversational route that isn't evidence ──

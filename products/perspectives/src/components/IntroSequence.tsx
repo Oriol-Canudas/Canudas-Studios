@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { playAmbient } from "../game/audio";
+import { prefersReducedMotion } from "../game/motion";
 
 export interface IntroSlide {
   image: string;
@@ -23,6 +24,8 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const [imageErrored, setImageErrored] = useState(false);
+  // A snapshot, not live-reactive — the OS setting doesn't change mid-session.
+  const fadeMs = useState(() => (prefersReducedMotion() ? 0 : FADE_MS))[0];
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -31,7 +34,7 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
         setTimeout(() => {
           setIndex((i) => i + 1);
           setVisible(true);
-        }, FADE_MS);
+        }, fadeMs);
       } else {
         onDone();
       }
@@ -69,7 +72,7 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
           alt=""
           onError={() => setImageErrored(true)}
           className={`h-full w-full object-cover object-top transition-opacity ease-in-out ${visible ? "opacity-70" : "opacity-0"}`}
-          style={{ transitionDuration: `${FADE_MS}ms` }}
+          style={{ transitionDuration: `${fadeMs}ms` }}
         />
       )}
       {/* Darken only the lower band the caption sits in, plus a light top
@@ -79,7 +82,7 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
       <div className="absolute inset-x-0 bottom-16 flex justify-center px-8">
         <div
           className={`text-center transition-opacity ease-in-out ${visible ? "opacity-100" : "opacity-0"}`}
-          style={{ transitionDuration: `${FADE_MS}ms` }}
+          style={{ transitionDuration: `${fadeMs}ms` }}
         >
           {slide.eyebrow && (
             <p className="mb-1.5 text-xs uppercase tracking-[0.3em] text-amber-300/90">{slide.eyebrow}</p>

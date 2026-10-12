@@ -25,3 +25,16 @@ body {
   width: 0px;
   height: 0px;
 }
+
+/* Blanket safety net for anything NOT already JS-gated on this check (e.g.
+   TypewriterText, IntroSequence, EmotionReveal each check
+   prefersReducedMotion() themselves, for non-CSS timing too) — this just
+   catches whatever CSS-only animation/transition utility (e.g. Tailwind's
+   animate-bounce on the typing indicator) slips through. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
