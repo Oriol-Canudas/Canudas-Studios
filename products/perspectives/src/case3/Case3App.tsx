@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useCase3Store, routeBStatus } from "./store";
+import { useCase3Store, routeBStatus, type ChatLine } from "./store";
 import { isCase3Muted, playCase3Ambient, playCase3Sfx, setCase3Muted, stopCase3Ambient } from "./audio";
 import { computeGrading } from "./reveal";
 import {
@@ -112,11 +112,12 @@ function StatusBar({
 }
 
 /**
- * The core interaction surface, replacing free text. Shows a capped set
- * of currently-available questions (primary + unlocked follow-ups),
- * each directly bound to its topic id — never keyword-matched. Asked
- * topics stay visible as free, explicitly marked rerereads rather than
- * disappearing, so "ask vs. reread" is always legible at a glance.
+ * The core interaction surface, replacing free text. Shows up to 3
+ * currently-available, NOT-YET-ASKED questions (primary + unlocked
+ * follow-ups), each directly bound to its topic id — never keyword-
+ * matched. A question disappears from this list the moment it's asked;
+ * rereading the answer means scrolling the transcript above, which is
+ * already free and requires no separate action.
  */
 function QuestionList({
   agentId,
@@ -127,55 +128,79 @@ function QuestionList({
   agentId: AgentId;
   def: AgentDef;
   free?: boolean;
-  /** Which act's forced-decision threshold currently gates NEW asks — D1's in Act II, D2's in Act III. Rereads are never gated by this. */
+  /** Which act's forced-decision threshold currently gates new asks — D1's in Act II, D2's in Act III. */
   forceThreshold?: number;
 }) {
   const { askedTopics, pressure, selectTopic } = useCase3Store();
-  const [showAll, setShowAll] = useState(false);
   const forced = !free && pressure <= forceThreshold;
   const asked = askedTopics[agentId];
 
+  // Already-asked topics are removed from this list entirely, not kept
+  // around as a "reread" entry — the transcript above already shows the
+  // answer, scrolling up to it is the free reread. This also keeps the
+  // 3-slot cap meaningful: it's always the next 3 genuinely new choices,
+  // never crowded out by topics there's no real reason to show again.
   const topics = free ? def.topics.filter((t) => def.act1Topics?.includes(t.id)) : def.topics;
   const available = topics.filter(
-    (t) => !t.requiresAsked || askedTopics[t.requiresAsked.agent ?? agentId]?.has(t.requiresAsked.topicId)
+    (t) =>
+      !asked.has(t.id) &&
+      (!t.requiresAsked || askedTopics[t.requiresAsked.agent ?? agentId]?.has(t.requiresAsked.topicId))
   );
-  const visible = showAll ? available : available.slice(0, 3);
-  const hiddenCount = available.length - visible.length;
+  const visible = available.slice(0, 3);
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-2">
-      {visible.map((t) => {
-        const isAsked = asked.has(t.id);
-        const locked = forced && !isAsked;
-        return (
-          <button
-            key={t.id}
-            disabled={locked}
-            onClick={() => selectTopic(agentId, t.id)}
-            className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm active:scale-[0.98] ${
-              locked
-                ? "cursor-not-allowed border-white/5 bg-white/[0.02] text-white/25"
-                : isAsked
-                  ? "border-white/10 bg-white/[0.03] text-white/70"
-                  : "border-amber-300/25 bg-amber-300/[0.06] text-white"
-            }`}
-          >
-            <span>{t.prompt}</span>
-            {isAsked ? (
-              <span className="shrink-0 text-[11px] uppercase text-white/35">{"↺"} reread</span>
-            ) : free ? (
-              <span className="shrink-0 text-[11px] uppercase text-emerald-300/70">free</span>
-            ) : (
-              <span className="shrink-0 font-mono text-[11px] text-amber-300/70">{"−"}{t.cost}</span>
-            )}
-          </button>
-        );
-      })}
-      {hiddenCount > 0 && !showAll && (
-        <button onClick={() => setShowAll(true)} className="py-1 text-center text-xs text-white/40">
-          Show {hiddenCount} more
+      {visible.map((t) => (
+        <button
+          key={t.id}
+          disabled={forced}
+          onClick={() => selectTopic(agentId, t.id)}
+          className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm active:scale-[0.98] ${
+            forced ? "cursor-not-allowed border-white/5 bg-white/[0.02] text-white/25" : "border-amber-300/25 bg-amber-300/[0.06] text-white"
+          }`}
+        >
+          <span>{t.prompt}</span>
+          {free ? (
+            <span className="shrink-0 text-[11px] uppercase text-emerald-300/70">free</span>
+          ) : (
+            <span className="shrink-0 font-mono text-[11px] text-amber-300/70">{"−"}{t.cost}</span>
+          )}
         </button>
-      )}
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Scrolls itself to the newest line whenever one is added — fixes a real
+ * bug: asking a second question previously left the view stuck showing
+ * the first answer, with the new one added below the fold unseen.
+ */
+function Transcript({ history }: { history: ChatLine[] }) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [history.length]);
+
+  if (history.length === 0) return null;
+
+  return (
+    <div className="flex max-h-32 w-full max-w-sm flex-col gap-2 overflow-y-auto">
+      {history.map((line, i) => (
+        <div
+          key={i}
+          className={`max-w-[90%] rounded-xl p-2.5 text-[14px] leading-snug ${
+            line.role === "player"
+              ? "ml-auto border border-amber-300/30 bg-amber-300/10 text-amber-100"
+              : `border bg-black/60 text-white/90 ${line.reread ? "border-white/5 opacity-70" : "border-white/10"}`
+          }`}
+        >
+          {line.reread && <span className="mr-1 text-white/40">{"↺"}</span>}
+          {line.text}
+        </div>
+      ))}
+      <div ref={bottomRef} />
     </div>
   );
 }
@@ -427,27 +452,11 @@ function Act2Room() {
                   <span className="w-12" />
                 </div>
 
-                {activeHistory.length > 0 && (
-                  <div className="flex max-h-32 w-full max-w-sm flex-col gap-2 overflow-y-auto">
-                    {activeHistory.map((line, i) => (
-                      <div
-                        key={i}
-                        className={`max-w-[90%] rounded-xl p-2.5 text-[14px] leading-snug ${
-                          line.role === "player"
-                            ? "ml-auto border border-amber-300/30 bg-amber-300/10 text-amber-100"
-                            : `border bg-black/60 text-white/90 ${line.reread ? "border-white/5 opacity-70" : "border-white/10"}`
-                        }`}
-                      >
-                        {line.reread && <span className="mr-1 text-white/40">{"↺"}</span>}
-                        {line.text}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <Transcript history={activeHistory} />
 
                 {forced && (
                   <div className="w-full max-w-sm rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-2 text-center text-[13px] text-red-200">
-                    Time's short — only answered questions can be reread now.
+                    Time's short — no new questions right now.
                   </div>
                 )}
 
@@ -710,27 +719,11 @@ function Act3Room() {
                   <span className="w-12" />
                 </div>
 
-                {activeHistory.length > 0 && (
-                  <div className="flex max-h-32 w-full max-w-sm flex-col gap-2 overflow-y-auto">
-                    {activeHistory.map((line, i) => (
-                      <div
-                        key={i}
-                        className={`max-w-[90%] rounded-xl p-2.5 text-[14px] leading-snug ${
-                          line.role === "player"
-                            ? "ml-auto border border-amber-300/30 bg-amber-300/10 text-amber-100"
-                            : `border bg-black/60 text-white/90 ${line.reread ? "border-white/5 opacity-70" : "border-white/10"}`
-                        }`}
-                      >
-                        {line.reread && <span className="mr-1 text-white/40">{"↺"}</span>}
-                        {line.text}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <Transcript history={activeHistory} />
 
                 {forced && (
                   <div className="w-full max-w-sm rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-2 text-center text-[13px] text-red-200">
-                    Time's short — only answered questions can be reread now.
+                    Time's short — no new questions right now.
                   </div>
                 )}
 
