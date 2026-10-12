@@ -336,6 +336,28 @@ export const WITNESSES: WitnessConfig[] = [
     },
     topics: [
       {
+        // Beat A — the opening proactive contact. Eligible from the very
+        // start (no gates on stage 0, no requiresRelayedTo): Elena, as the
+        // defendant, has the most legitimate in-courtroom reason of anyone
+        // to request to speak before the Judge has heard from anyone
+        // else — a defendant's own statement, not an unexplained private
+        // channel. Gives a concrete next step (ask Marco) without
+        // revealing anything about Tom or the real solution.
+        id: "opening_statement",
+        chipLabel: "What did you want to say?",
+        keywords: ["before we begin", "say something", "opening", "want to say", "wanted to tell me", "before you decide"],
+        proactive: { badgeLabel: "Wants to speak" },
+        stages: [
+          {
+            text: "Before you hear from anyone else — I know what it's going to look like. We argued, I was there, my prints are on that knife. I did not kill him. If you actually want to understand what happened, don't just take the easy version. Ask Marco what Daniel was really like. He knew him better than any of us.",
+            demeanor: "nervous",
+            addsBoardEntries: [
+              { type: "claim", text: "Elena, speaking first and unprompted: denies killing Daniel, points the Judge toward Marco.", source: "elena" },
+            ],
+          },
+        ],
+      },
+      {
         id: "relationship",
         chipLabel: "What was your relationship with Daniel?",
         keywords: ["relationship", "together", "breakup", "broke up", "dating", "together six years", "exes", "ex", "past"],
@@ -545,6 +567,53 @@ export const WITNESSES: WitnessConfig[] = [
             demeanor: "defensive",
             addsBoardEntries: [
               { type: "contradiction", text: "Sofia initially denied any contact after 23:06 — phone records show a 36-second call at 23:50.", source: "sofia", timestamp: "23:50" },
+            ],
+          },
+        ],
+      },
+      {
+        // Beat B — a consequence of the player's own conduct, not a
+        // timer or a second canonical secret. Trigger: the player
+        // actually relayed sofia_contact_hidden TO TOM specifically (see
+        // REVELATIONS below and Tom's own reactions.sofia_contact_hidden
+        // — that same relay already had a payoff on Tom's side; this
+        // adds one on Sofia's). The "legitimate channel" is stated
+        // plainly in her own opening line rather than left to the
+        // player's imagination: she and Tom are both connected to
+        // Daniel's death and plausibly in occasional contact, not an
+        // unexplained private channel to the Judge.
+        id: "sofia_clarify",
+        chipLabel: "What is it you want to clarify?",
+        keywords: ["clarify", "explain myself", "what tom said", "the 23:50 call", "heard about me", "told you about me"],
+        proactive: {
+          badgeLabel: "Wants to speak",
+          requiresRelayedTo: { witness: "tom", revelationId: "sofia_contact_hidden" },
+        },
+        stages: [
+          {
+            text: "I ran into Tom — small world, given everything — and he mentioned you'd found out I wasn't fully honest with you at first, about that 23:50 call. I didn't want to seem like I had something to hide. Can I actually explain, properly?",
+            demeanor: "nervous",
+            addsBoardEntries: [
+              { type: "claim", text: "Sofia, learning Tom now knows about her hidden 23:50 call, proactively asks to clarify.", source: "sofia" },
+            ],
+          },
+          {
+            // altUnlock-ONLY: minAskCount is set absurdly high specifically
+            // so the normal gate is never satisfiable by pressure alone —
+            // the only real route here is responding fairly (empathy, or
+            // even a plain non-accusatory follow-up), which is exactly
+            // the distinct, divergent branch from an accusatory reply.
+            // An accusatory reply instead hits the engine's EXISTING
+            // defensive-lock mechanic (see resolveFreeformTurn) — this
+            // topic was deliberately NOT marked "engaged" at delivery
+            // (see TestimonyTopic.proactive), so that mechanic fires
+            // exactly as it would for any other topic, no special-casing.
+            text: "Thank you for actually asking instead of assuming the worst. For what it's worth — when I said Daniel 'told me the truth' that night, I mean he admitted he'd been seeing Elena the whole time he told me it was over between them. I know how that sounds, for both of us. I'm telling you anyway, because you asked fairly.",
+            minAskCount: 50,
+            altUnlock: { requiresRelayed: [], requiresIntent: ["empathetic_appeal", "general_question"] },
+            demeanor: "composed",
+            addsBoardEntries: [
+              { type: "claim", text: "Sofia, treated fairly, voluntarily elaborates: Daniel admitted he'd been seeing Elena the whole time he claimed it was over.", source: "sofia" },
             ],
           },
         ],

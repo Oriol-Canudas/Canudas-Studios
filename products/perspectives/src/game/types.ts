@@ -120,6 +120,33 @@ export interface TestimonyTopic {
   /** Keywords/synonyms used to match free-form player questions to this topic. */
   keywords: string[];
   stages: TestimonyStage[];
+  /**
+   * Marks this topic as a proactive contact: a witness-INITIATED opening,
+   * not an answer to a question. Once eligible (its own stage-0 gates —
+   * ordinary requiresEvidence/requiresWitnessStage/minAskCount, reused
+   * as-is — plus requiresRelayedTo below, if set) it's delivered as the
+   * witness's own line the next time their chat opens, never waiting for
+   * the player to ask, and badged on HearScreen while eligible but not
+   * yet delivered. Delivery deliberately does NOT mark the topic
+   * "engaged" (witnessStages stays at -1) until the player actually
+   * replies — an unprompted opening isn't the same as the player having
+   * engaged with it, and this is what lets an unsupported-accusation
+   * REPLY still trigger the existing defensive-lock mechanic exactly as
+   * it would for any other topic, rather than being silently exempted
+   * because "something already happened here."
+   */
+  proactive?: {
+    /** Shown on HearScreen while this is eligible and undelivered. */
+    badgeLabel: string;
+    /**
+     * The one thing the existing altUnlock shape can't express: a fact
+     * relayed to a DIFFERENT witness than this topic's own (altUnlock's
+     * requiresRelayed only ever checks THIS witness's own
+     * relayedRevelations). Omit for a contact with no relay prerequisite
+     * (e.g. an opening beat available from the very start).
+     */
+    requiresRelayedTo?: { witness: WitnessId; revelationId: RevelationId };
+  };
 }
 
 /**

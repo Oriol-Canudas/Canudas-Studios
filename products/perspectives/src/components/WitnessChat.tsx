@@ -36,6 +36,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   const currentDemeanor = useGameStore((s) => s.demeanor[witnessId]);
   const discoveredEvidence = useGameStore((s) => s.discoveredEvidence);
   const relayedRevelations = useGameStore((s) => s.relayedRevelations[witnessId]);
+  const deliveredProactiveContacts = useGameStore((s) => s.deliveredProactiveContacts[witnessId]);
   const pending = useGameStore((s) => s.pendingWitnesses.has(witnessId));
   const draft = useGameStore((s) => s.drafts[witnessId]);
 
@@ -207,7 +208,14 @@ export default function WitnessChat({ witnessId, onBack, onInspect }: WitnessCha
   // greyed out. 2 at a time; "Show more" cycles through the rest,
   // wrapping back to the start past the end.
   const unaskedReachableTopics = witness.topics.filter(
-    (t) => isTopicReachable(t, witnessStages) && (witnessStages[witnessId][t.id] ?? -1) < 0
+    (t) =>
+      isTopicReachable(t, witnessStages) &&
+      (witnessStages[witnessId][t.id] ?? -1) < 0 &&
+      // A proactive contact already delivered as the witness's own opening
+      // line has nothing left to "suggest" — it stays off the chip list
+      // even though witnessStages never actually marked it engaged (see
+      // TestimonyTopic.proactive).
+      !deliveredProactiveContacts?.has(t.id)
   );
   const totalSuggestionPages = Math.max(1, Math.ceil(unaskedReachableTopics.length / MAX_VISIBLE_CHIPS));
   const currentSuggestionPage = suggestionPage % totalSuggestionPages;

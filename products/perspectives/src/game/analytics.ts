@@ -17,7 +17,8 @@ export type AnalyticsEvent =
   | "freeform_message_sent"
   | "freeform_turn_resolved"
   | "freeform_turn_failed"
-  | "result_shared";
+  | "result_shared"
+  | "proactive_contact_delivered";
 
 export interface AnalyticsRecord {
   event: AnalyticsEvent;

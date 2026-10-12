@@ -12,7 +12,7 @@ import { useGameStore } from "../src/game/store";
 // Ascent's own mechanics are covered by scripts/selftest.ascent.ts.
 import { VERDICT_AXES, VERDICT_CONFIG, WITNESS_BY_ID, WITNESSES } from "../src/game/case002";
 import { gradeVerdict } from "../src/game/verdictGrading";
-import { getAuthorizedDisclosures, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
+import { getAuthorizedDisclosures, isProactiveContactEligible, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
 import { buildShareText } from "../src/game/shareCard";
 import { LEAK_MARKERS, validateDialogue, buildInterpretTopicList, buildGenerateSystemPrompt, buildGenerateMessages } from "../api/witness-chat";
@@ -1029,9 +1029,129 @@ console.log("\n=== Playthrough 33: newly authored topics match their own chip te
   }
   // Pool sizes now meet the tiered floor discussed: leads 6-8, Sofia
   // 5-6, supporting witnesses 4-5 (was 3/3 before this round).
-  assert(WITNESS_BY_ID.sofia.topics.length === 6, "Sofia's topic pool grew from 4 to 6");
+  assert(WITNESS_BY_ID.sofia.topics.length === 7, "Sofia's topic pool grew from 4 to 6, then to 7 with sofia_clarify (proactive contact)");
   assert(WITNESS_BY_ID.marco.topics.length === 5, "Marco's topic pool grew from 3 to 5");
   assert(WITNESS_BY_ID.julia.topics.length === 5, "Julia's topic pool grew from 3 to 5");
+}
+
+// ── Playthrough 34: Beat A — Elena's opening proactive contact ───────────
+console.log("\n=== Playthrough 34: Beat A — Elena's opening gives direction without a mandatory tutorial ===");
+{
+  useGameStore.getState().reset();
+  const elena = WITNESS_BY_ID.elena;
+  let state = useGameStore.getState();
+  assert(
+    isProactiveContactEligible(elena.topics.find((t) => t.id === "opening_statement")!, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "Elena's opening is eligible from the very start — no gates, no relay prerequisite"
+  );
+
+  state.openWitness("elena");
+  state = useGameStore.getState();
+  assert(state.chatHistory.elena.length === 1, "Opening her chat delivers exactly one unprompted witness message");
+  assert(state.chatHistory.elena[0].role === "witness", "It's HER line, not a response to a question the player never asked");
+  assert(state.chatHistory.elena[0].text.includes("Marco"), "The opening gives a concrete next step (ask Marco) without the player having to invent a topic");
+  assert(state.board.some((b) => b.text.includes("points the Judge toward Marco")), "A board entry records the actual opening, not a generic placeholder");
+
+  // Defer it — go investigate someone else entirely. Nothing about this
+  // should be forced or block other navigation.
+  state.askWitness("julia", "what did you hear that night", "what_heard");
+  state = useGameStore.getState();
+  assert(state.chatHistory.julia.length > 0, "Deferring Elena's opening doesn't block investigating elsewhere");
+
+  // Re-opening Elena (simulating navigating back to the Hear tab and back
+  // in) must not re-deliver or duplicate anything.
+  state.openWitness("elena");
+  const after = useGameStore.getState();
+  assert(after.chatHistory.elena.length === 1, "Navigating back to an already-delivered contact does not duplicate the message");
+  assert(
+    after.board.filter((b) => b.text.includes("points the Judge toward Marco")).length === 1,
+    "...or duplicate its board entry"
+  );
+}
+
+// ── Playthrough 35: Beat B — Sofia's contact only fires on its real trigger ──
+console.log("\n=== Playthrough 35: Beat B — Sofia's contact requires its actual trigger, not evidence alone ===");
+{
+  useGameStore.getState().reset();
+  const { discoverEvidence, presentEvidence, openWitness } = useGameStore.getState();
+
+  // Reach Sofia's own hidden-call admission (makes sofia_contact_hidden
+  // "known"), but do NOT relay it to Tom.
+  discoverEvidence("E05_daniel_phone_records");
+  presentEvidence("sofia", "E05_daniel_phone_records", 0);
+  let state = useGameStore.getState();
+  assert((state.witnessStages.sofia?.contact_after_text ?? -1) >= 1, "Setup: Sofia's hidden 23:50 call is now known");
+
+  const sofiaClarify = WITNESS_BY_ID.sofia.topics.find((t) => t.id === "sofia_clarify")!;
+  assert(
+    !isProactiveContactEligible(sofiaClarify, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "Knowing the fact is NOT enough — Sofia's contact stays ineligible until it's actually relayed to Tom specifically"
+  );
+
+  // presentEvidence itself already appended Sofia's own stage-1 response
+  // above — chatHistory.sofia isn't empty going into this; the real
+  // question is whether opening her chat adds anything EXTRA.
+  const lengthBeforeOpen = state.chatHistory.sofia.length;
+  openWitness("sofia");
+  state = useGameStore.getState();
+  assert(state.chatHistory.sofia.length === lengthBeforeOpen, "Reading/presenting evidence privately never informs Sofia — opening her chat adds nothing extra");
+
+  // Now the actual, valid trigger: relay it to Tom.
+  await state.relayRevelation("tom", "sofia_contact_hidden");
+  state = useGameStore.getState();
+  assert(
+    isProactiveContactEligible(sofiaClarify, state.witnessStages, state.discoveredEvidence, state.relayedRevelations),
+    "Once actually relayed to Tom, Sofia's contact becomes eligible"
+  );
+
+  openWitness("sofia");
+  state = useGameStore.getState();
+  assert(state.chatHistory.sofia.length === lengthBeforeOpen + 1, "Now it delivers exactly one new message — the valid, authored channel (relayed to Tom) actually fired it");
+  assert(
+    (state.witnessStages.sofia?.sofia_clarify ?? -1) < 0,
+    "Delivery does NOT mark the topic engaged — preserves the branch the player's own reply still has to determine"
+  );
+}
+
+// ── Playthrough 36: Beat B's two response branches diverge for real ──────
+console.log("\n=== Playthrough 36: Beat B — empathy and accusation produce distinct, observable consequences ===");
+{
+  async function setupSofiaContact() {
+    useGameStore.getState().reset();
+    const { discoverEvidence, presentEvidence, relayRevelation, openWitness } = useGameStore.getState();
+    discoverEvidence("E05_daniel_phone_records");
+    presentEvidence("sofia", "E05_daniel_phone_records", 0);
+    await relayRevelation("tom", "sofia_contact_hidden");
+    openWitness("sofia");
+  }
+
+  // Branch 1: a fair, engaged reply (a natural paraphrase, not the exact
+  // suggested chip text) — earns a genuine bonus disclosure.
+  await setupSofiaContact();
+  await useGameStore.getState().sendFreeformMessage("sofia", "I understand — thank you for wanting to clarify that with me.");
+  let state = useGameStore.getState();
+  assert((state.witnessStages.sofia?.sofia_clarify ?? -1) === 1, "A fair reply reaches Sofia's bonus elaboration stage");
+  assert(
+    state.board.some((b) => b.text.includes("voluntarily elaborates")),
+    "The bonus is a real, observable board entry — not just a portrait or tone change"
+  );
+  assert(
+    state.conversationEventLog.some((e) => e.witnessId === "sofia" && e.topicId === "sofia_clarify" && e.kind === "voluntary_disclosure"),
+    "Recorded as a voluntary disclosure, feeding the reveal's honest 'what you established' summary"
+  );
+
+  // Branch 2: an accusatory reply — the SAME existing defensive-lock
+  // mechanic that applies to any other topic, since delivery deliberately
+  // never marked sofia_clarify "engaged".
+  await setupSofiaContact();
+  await useGameStore.getState().sendFreeformMessage("sofia", "You're lying to me, and I don't believe a word of this clarify attempt. Admit it.");
+  state = useGameStore.getState();
+  assert(state.defensiveTopics.sofia.has("sofia_clarify"), "An accusatory reply locks the topic defensive, same as any other");
+  assert((state.witnessStages.sofia?.sofia_clarify ?? -1) < 0, "...and never reaches the bonus — the two approaches do NOT converge on the same result");
+  assert(
+    state.conversationEventLog.some((e) => e.witnessId === "sofia" && e.topicId === "sofia_clarify" && e.kind === "defensive_lock"),
+    "Recorded as a defensive lock, not a disclosure — the reveal won't misreport what actually happened"
+  );
 }
 
 console.log(`\n${failures === 0 ? "ALL PASS" : `${failures} FAILURE(S)`}`);

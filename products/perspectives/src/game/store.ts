@@ -6,6 +6,7 @@ import { converseWithWitness, defaultCueFor, generateRelayReaction } from "./int
 import {
   getDefensiveLine,
   getDeflection,
+  isProactiveContactEligible,
   isRevelationKnown,
   matchTopic,
   resolveStage,
@@ -76,6 +77,16 @@ interface GameState {
    * never a permanent lock.
    */
   defensiveTopics: Record<WitnessId, Set<string>>;
+  /**
+   * Which proactive-contact topics (TestimonyTopic.proactive) have
+   * already been delivered to which witness — the only thing standing
+   * between "eligible" (derived, re-checked every render) and "actually
+   * shown." Deliberately separate from witnessStages: delivering an
+   * opening does NOT mark the topic engaged, so a player's accusatory
+   * REPLY to it still triggers the ordinary defensive-lock mechanic
+   * exactly as it would for any other topic.
+   */
+  deliveredProactiveContacts: Record<WitnessId, Set<string>>;
   /** Guards duplicate submission while a free-form turn is in flight. */
   pendingWitnesses: Set<WitnessId>;
   /** One entry per validated free-form turn — what the reveal's "what you established" summary is built from. */
@@ -144,6 +155,12 @@ function emptyPresentedEvidence(): Record<WitnessId, Set<EvidenceId>> {
 
 function emptyRelayedRevelations(): Record<WitnessId, Set<RevelationId>> {
   const out = {} as Record<WitnessId, Set<RevelationId>>;
+  for (const w of WITNESSES) out[w.id] = new Set();
+  return out;
+}
+
+function emptyDeliveredProactiveContacts(): Record<WitnessId, Set<string>> {
+  const out = {} as Record<WitnessId, Set<string>>;
   for (const w of WITNESSES) out[w.id] = new Set();
   return out;
 }
@@ -368,6 +385,58 @@ function countTurnAndResolveDemeanor(state: GameState, witnessId: WitnessId, pro
     lastDemeanorChangeTurn: resolved.changed
       ? { ...state.lastDemeanorChangeTurn, [witnessId]: newTurnCount }
       : state.lastDemeanorChangeTurn,
+  };
+}
+
+/**
+ * Builds the state patch + chat message for delivering one proactive
+ * contact's opening line.
+ *
+ * Whether witnessStages gets touched depends on whether there's anything
+ * left to protect: a topic with MORE than one stage stays unmarked (stays
+ * at -1) specifically so the player's actual reply can still determine
+ * which branch fires — see TestimonyTopic.proactive's doc comment. A
+ * single-stage topic has no such branch to preserve, so it's marked
+ * engaged immediately, exactly like a normal ask would — otherwise, if
+ * the player's first reply happens to match back to it, resolveStage
+ * would resolve to stage 0 again (prevStage still -1), re-adding the
+ * same board entry under a new dedup key and re-showing the identical
+ * opening line as if it were a fresh answer.
+ */
+function deliverProactiveContact(state: GameState, witnessId: WitnessId, topic: TestimonyTopic) {
+  const stage = topic.stages[0];
+  let nextBoard = state.board;
+  let nextKeys = state.boardEntryKeys;
+  if (stage.addsBoardEntries?.length) {
+    nextBoard = [...nextBoard];
+    nextKeys = new Set(nextKeys);
+    stage.addsBoardEntries.forEach((entry, i) => {
+      const key = boardKey(entry, `${witnessId}:${topic.id}:proactive:${i}`);
+      if (!nextKeys.has(key)) {
+        nextKeys.add(key);
+        nextBoard.push({ ...entry, id: key });
+      }
+    });
+  }
+
+  const demeanorPatch = countTurnAndResolveDemeanor(state, witnessId, stage.demeanor);
+
+  const engagementPatch =
+    topic.stages.length === 1
+      ? {
+          witnessStages: { ...state.witnessStages, [witnessId]: { ...state.witnessStages[witnessId], [topic.id]: 0 } },
+          askCounts: { ...state.askCounts, [witnessId]: { ...state.askCounts[witnessId], [topic.id]: 0 } },
+        }
+      : {};
+
+  return {
+    message: { role: "witness" as const, text: stage.text, topicId: topic.id },
+    patch: {
+      ...demeanorPatch,
+      ...engagementPatch,
+      board: nextBoard,
+      boardEntryKeys: nextKeys,
+    },
   };
 }
 
@@ -729,6 +798,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   relayedRevelations: emptyRelayedRevelations(),
   relayLog: [],
   defensiveTopics: emptyDefensiveTopics(),
+  deliveredProactiveContacts: emptyDeliveredProactiveContacts(),
   pendingWitnesses: new Set(),
   conversationEventLog: [],
   witnessStages: emptyWitnessStages(),
@@ -777,6 +847,27 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   openWitness: (id) => {
     track("witness_opened", { witnessId: id });
+
+    const state = get();
+    const witness = WITNESS_BY_ID[id];
+    if (!witness) return;
+
+    const delivered = state.deliveredProactiveContacts[id] ?? new Set<string>();
+    const topic = witness.topics.find(
+      (t) =>
+        t.proactive &&
+        !delivered.has(t.id) &&
+        isProactiveContactEligible(t, state.witnessStages, state.discoveredEvidence, state.relayedRevelations)
+    );
+    if (!topic) return;
+
+    const { message, patch } = deliverProactiveContact(state, id, topic);
+    track("proactive_contact_delivered", { witnessId: id, topicId: topic.id });
+    set({
+      ...patch,
+      chatHistory: { ...state.chatHistory, [id]: [...state.chatHistory[id], message] },
+      deliveredProactiveContacts: { ...state.deliveredProactiveContacts, [id]: new Set(delivered).add(topic.id) },
+    });
   },
 
   askWitness: (id, questionText, topicIdHint) => {
@@ -1103,6 +1194,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       relayedRevelations: emptyRelayedRevelations(),
       relayLog: [],
       defensiveTopics: emptyDefensiveTopics(),
+      deliveredProactiveContacts: emptyDeliveredProactiveContacts(),
       pendingWitnesses: new Set(),
       conversationEventLog: [],
       witnessStages: emptyWitnessStages(),

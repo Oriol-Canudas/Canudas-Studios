@@ -172,6 +172,31 @@ export function isRevelationKnown(revelation: RevelationDef, allStages: AllWitne
   return (allStages[witness]?.[topic] ?? -1) >= minStage;
 }
 
+/**
+ * Whether a proactive-contact topic is currently eligible to be delivered
+ * — independent of whether it already has been (callers check
+ * `deliveredProactiveContacts` separately). Reuses the topic's own
+ * stage-0 gates exactly like any other topic, via the same
+ * `stageRequirementsMet` every other check already goes through — a
+ * proactive topic authored with real requiresEvidence/requiresWitnessStage
+ * on stage 0 is gated by them precisely as written. `requiresRelayedTo`
+ * is the one additional check only a proactive contact needs: a fact
+ * relayed to a DIFFERENT witness (never this witness's own
+ * relayedRevelations, which altUnlock already covers).
+ */
+export function isProactiveContactEligible(
+  topic: TestimonyTopic,
+  allStages: AllWitnessStages,
+  discoveredEvidence: Set<EvidenceId>,
+  relayedRevelationsByWitness: Readonly<Record<WitnessId, ReadonlySet<RevelationId>>>
+): boolean {
+  if (!topic.proactive) return false;
+  if (!stageRequirementsMet(topic, 0, 0, discoveredEvidence, allStages)) return false;
+  const cross = topic.proactive.requiresRelayedTo;
+  if (cross && !relayedRevelationsByWitness[cross.witness]?.has(cross.revelationId)) return false;
+  return true;
+}
+
 export interface AuthorizedDisclosure {
   topicId: string;
   chipLabel: string;
