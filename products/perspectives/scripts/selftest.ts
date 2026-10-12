@@ -15,7 +15,7 @@ import { gradeVerdict } from "../src/game/verdictGrading";
 import { getAuthorizedDisclosures, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
 import { buildShareText } from "../src/game/shareCard";
-import { LEAK_MARKERS, validateDialogue, buildInterpretTopicList, buildGenerateSystemPrompt } from "../api/witness-chat";
+import { LEAK_MARKERS, validateDialogue, buildInterpretTopicList, buildGenerateSystemPrompt, buildGenerateMessages } from "../api/witness-chat";
 
 let failures = 0;
 function assert(cond: boolean, msg: string) {
@@ -746,8 +746,6 @@ console.log("\n=== Playthrough 27b: free-form AI prompts forward keywords and ne
     null,
     authorized,
     tom.topics,
-    [],
-    "What worried you about Daniel that afternoon?",
     "general_question",
     [],
     [],
@@ -755,7 +753,6 @@ console.log("\n=== Playthrough 27b: free-form AI prompts forward keywords and ne
     tom.defensiveLines ?? [],
     tom.deflections
   );
-  assert(freshPrompt.includes("(start of conversation)"), "A first-turn prompt shows the model an explicit empty-history marker");
   assert(
     /already told|already said/i.test(freshPrompt) && /have said nothing/i.test(freshPrompt),
     "The prompt explicitly forbids claiming prior dialogue that didn't happen, tied to the empty-history case"
@@ -777,29 +774,30 @@ console.log("\n=== Playthrough 27b: free-form AI prompts forward keywords and ne
   // A second real bug found live-testing the fix above: with Catalan
   // history in context, a follow-up written in English still got answered
   // in Catalan — language carrying over from the PRIOR turn instead of
-  // matching the NEW message. Assert the prompt explicitly rules out
-  // history-language carry-over, not just "match the new message" in
-  // isolation (which was already true and insufficient).
-  const mixedLanguagePrompt = buildGenerateSystemPrompt(
-    "tom",
-    "earlier_visit",
-    authorized,
-    tom.topics,
+  // matching the NEW message. Two prompt-text-only attempts (an explicit
+  // "never carry over" rule, then a worked example) both FAILED live,
+  // 3/3 reproductions each. The actual fix was structural, not textual:
+  // the old code flattened history + the new message into the system
+  // prompt as plain text, with no real `user`-role turn for what the
+  // player just said — assert the ACTUAL message array now puts history
+  // as real turns and the new message as the trailing user turn, which is
+  // what a model reliably anchors "match the last turn's language" on.
+  const messages = buildGenerateMessages(
+    "irrelevant system prompt for this assertion",
     [
       { role: "player", text: "Tom, nou anys d'amistat son molts. Que et preocupava de Daniel?" },
       { role: "witness", text: "Vaig estar preocupat perque Daniel jugava amb foc." },
     ],
-    "Why did you say he needed to fix it that night specifically?",
-    "general_question",
-    [],
-    [],
-    false,
-    tom.defensiveLines ?? [],
-    tom.deflections
+    "Why did you say he needed to fix it that night specifically?"
   );
+  assert(messages[0].role === "system", "The system prompt is still the first message");
+  assert(messages.length === 4, "System + 2 history turns + the new trailing message = 4 messages");
+  assert(messages[1].role === "user" && messages[1].content.includes("Que et preocupava"), "The player's earlier Catalan turn is a real user message, not text inside the system prompt");
+  assert(messages[2].role === "assistant" && messages[2].content.includes("jugava amb foc"), "Tom's earlier Catalan reply is a real assistant message");
+  const last = messages[messages.length - 1];
   assert(
-    /never\s+(the\s+)?conversation history|no carry-over|momentum/i.test(mixedLanguagePrompt),
-    "The prompt explicitly rules out carrying the PREVIOUS turn's language forward when the new message switches languages"
+    last.role === "user" && last.content === "Why did you say he needed to fix it that night specifically?",
+    "The player's NEWEST message — in English — is the actual trailing user turn, exactly as sent, not paraphrased into system-prompt text"
   );
 }
 
