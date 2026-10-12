@@ -33,6 +33,7 @@ export const HALE: AgentDef = {
   role: "Captain, radio only — signal cuts in and out",
   portrait: "/case3/hale.png",
   deflection: "I don't know what else to tell you from up here. Ask Maya — she might have more from the ground.",
+  suggestedPrompt: "What exactly happened?",
   topics: [
     {
       id: "injuries_accusatory",
@@ -64,6 +65,7 @@ export const MAYA: AgentDef = {
   role: "Ground engineer — secondary telemetry only",
   portrait: "/case3/maya.png",
   deflection: "I don't have more than that from here. Hale's the one who can actually see what's happening on board.",
+  suggestedPrompt: "Could that sensor reading be wrong?",
   topics: [
     {
       id: "engine_bang",

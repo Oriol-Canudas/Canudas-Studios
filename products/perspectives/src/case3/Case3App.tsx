@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCase3Store, routeBStatus } from "./store";
+import { isCase3Muted, playCase3Ambient, playCase3Sfx, setCase3Muted, stopCase3Ambient } from "./audio";
 import {
   ACT1_HALE_OPENING,
   ACT1_MAYA_INTERRUPT,
@@ -8,6 +9,7 @@ import {
   D1_OPTIONS,
   HALE,
   MAYA,
+  PRESSURE_START,
   ROUTE_B_FLOOR,
 } from "./data";
 
@@ -26,27 +28,87 @@ function PrototypeBadge() {
   );
 }
 
+function SoundToggle() {
+  const [muted, setMuted] = useState(isCase3Muted());
+  return (
+    <button
+      onClick={() => {
+        const next = !muted;
+        setCase3Muted(next);
+        setMuted(next);
+      }}
+      className="fixed right-3 top-3 z-50 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/60 text-base text-white/70 backdrop-blur active:scale-95"
+      aria-label={muted ? "Unmute" : "Mute"}
+    >
+      {muted ? "\u{1F507}" : "\u{1F50A}"}
+    </button>
+  );
+}
+
+/**
+ * Two-tier, large-type header: framing on top, live state below as a
+ * visual gauge + badges — not a single dense row of 11px text. The
+ * margin bar replaces the earlier "Cost 10" / "−2 margin" number-first
+ * language; the consequence is shown, not explained.
+ */
 function StatusBar({ act, objective }: { act: string; objective: string }) {
   const { pressure, fireStatus } = useCase3Store();
   const routeB = routeBStatus(pressure);
+  const pct = Math.max(0, Math.min(100, (pressure / PRESSURE_START) * 100));
+  const low = pressure <= D1_FORCE_THRESHOLD;
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-white/10 bg-black/60 px-3 py-2 text-[11px] uppercase tracking-wide text-white/70 backdrop-blur">
-      <span className="font-semibold text-amber-300">{act}</span>
-      <span className="text-white/50">{objective}</span>
-      <span className="font-mono">MARGIN: {pressure}</span>
-      <span className={fireStatus === "unknown" ? "text-sky-300" : "text-red-400"}>
-        FIRE: {fireStatus === "unknown" ? "UNKNOWN" : "SMOLDERING"}
-      </span>
-      <span className="text-emerald-300">ROUTE A: AVAILABLE</span>
-      <span className={routeB === "open" ? "text-emerald-300" : "text-red-400"}>
-        ROUTE B: {routeB === "open" ? "AVAILABLE" : "CLOSED"}
-      </span>
+    <div className="border-b border-white/10 bg-black/70 backdrop-blur">
+      <div className="px-4 pb-1.5 pt-3">
+        <p className="text-sm font-semibold uppercase tracking-wide text-amber-300">{act}</p>
+        <p className="mt-0.5 text-sm text-white/60">{objective}</p>
+      </div>
+      <div className="flex items-center gap-3 px-4 pb-3">
+        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/10">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${low ? "bg-red-400" : "bg-amber-400"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <span
+          className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium uppercase ${
+            fireStatus === "unknown" ? "border-sky-400/30 bg-sky-400/10 text-sky-300" : "border-red-400/30 bg-red-400/10 text-red-300"
+          }`}
+        >
+          Fire {fireStatus === "unknown" ? "unknown" : "smoldering"}
+        </span>
+        <span className="shrink-0 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-medium uppercase text-emerald-300">
+          A open
+        </span>
+        <span
+          className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium uppercase ${
+            routeB === "open" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-red-400/30 bg-red-400/10 text-red-300"
+          }`}
+        >
+          B {routeB === "open" ? "open" : "closed"}
+        </span>
+      </div>
     </div>
+  );
+}
+
+function SuggestedPrompt({ text, onPick }: { text: string; onPick: (t: string) => void }) {
+  return (
+    <button
+      onClick={() => onPick(text)}
+      className="w-full max-w-sm rounded-xl border border-dashed border-amber-300/30 bg-amber-300/[0.06] px-3 py-2 text-left text-sm text-amber-200/90 active:scale-[0.98]"
+    >
+      {"\u{1F4AC} "}{text}
+    </button>
   );
 }
 
 function ColdOpen() {
   const begin = useCase3Store((s) => s.begin);
+  useEffect(() => {
+    const t = setTimeout(() => playCase3Sfx("bang"), 600);
+    return () => clearTimeout(t);
+  }, []);
   return (
     <div className="relative flex h-full w-full items-end justify-center overflow-hidden">
       <img src="/case3/night-flight.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -56,7 +118,10 @@ function ColdOpen() {
         <h1 className="text-3xl font-semibold tracking-wide text-white">FLIGHT 702</h1>
         <p className="text-sm text-white/70">A bang, sharp enough to rattle the overhead bins. Then — quiet. Too quiet.</p>
         <button
-          onClick={begin}
+          onClick={() => {
+            playCase3Ambient();
+            begin();
+          }}
           className="mt-2 w-full rounded-xl bg-amber-400 py-3 text-base font-semibold text-black active:scale-[0.98]"
         >
           Continue
@@ -84,7 +149,7 @@ function Act1Hale() {
         <img src="/case3/situation-room.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-50" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
         <div className={`relative flex h-full flex-col items-center justify-end gap-3 px-4 pb-4 ${PROTOTYPE_BADGE_CLEARANCE}`}>
-          <img src={HALE.portrait} alt="Hale" className="h-40 w-auto object-contain drop-shadow-2xl" />
+          <img src={HALE.portrait} alt="Hale" className="max-h-[38vh] w-auto object-contain drop-shadow-2xl" />
           <p className="text-center text-xs uppercase tracking-wide text-white/50">{HALE.name} — {HALE.role}</p>
 
           {hale.length === 0 && (
@@ -105,19 +170,22 @@ function Act1Hale() {
           ))}
 
           {!act1FreeUsed ? (
-            <div className="flex w-full max-w-sm items-center gap-2">
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="Ask Hale anything…"
-                className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-[15px] text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-amber-300/50"
-                aria-label="Message to Hale"
-              />
-              <button onClick={send} className="rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-black">
-                Send
-              </button>
-            </div>
+            <>
+              {hale.length === 0 && <SuggestedPrompt text={HALE.suggestedPrompt} onPick={setDraft} />}
+              <div className="flex w-full max-w-sm items-center gap-2">
+                <input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && send()}
+                  placeholder="Ask Hale anything…"
+                  className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-[15px] text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-amber-300/50"
+                  aria-label="Message to Hale"
+                />
+                <button onClick={send} className="rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-semibold text-black">
+                  Send
+                </button>
+              </div>
+            </>
           ) : (
             <button
               onClick={advanceAct1ToMaya}
@@ -126,7 +194,7 @@ function Act1Hale() {
               Continue
             </button>
           )}
-          <p className="text-[11px] text-white/35">Orientation · no margin cost</p>
+          <p className="text-[11px] text-white/35">Orientation · free to ask</p>
         </div>
       </div>
     </div>
@@ -148,6 +216,9 @@ function IncomingEventScreen({
   onContinue: () => void;
   continueLabel: string;
 }) {
+  useEffect(() => {
+    playCase3Sfx("ping");
+  }, []);
   return (
     <div className="flex h-full flex-col">
       <StatusBar act="ACT I — THE BANG" objective="The world has its own initiative." />
@@ -155,7 +226,7 @@ function IncomingEventScreen({
         <span className="rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
           {cue}
         </span>
-        <img src={portrait} alt={name} className="h-36 w-auto object-contain drop-shadow-2xl" />
+        <img src={portrait} alt={name} className="max-h-[36vh] w-auto object-contain drop-shadow-2xl" />
         <p className="max-w-sm text-[15px] leading-snug text-white/90">"{line}"</p>
         <button
           onClick={onContinue}
@@ -163,7 +234,7 @@ function IncomingEventScreen({
         >
           {continueLabel}
         </button>
-        <p className="text-[11px] text-white/35">Orientation · no margin cost</p>
+        <p className="text-[11px] text-white/35">Orientation · no cost</p>
       </div>
     </div>
   );
@@ -173,6 +244,14 @@ function Act2Room() {
   const { pressure, hale, maya, ops, focusedAgent, focusAgent, sendCosted, openD1 } = useCase3Store();
   const [draft, setDraft] = useState("");
   const forced = pressure <= D1_FORCE_THRESHOLD;
+  const forcedAlertFired = useRef(false);
+
+  useEffect(() => {
+    if (forced && !forcedAlertFired.current) {
+      forcedAlertFired.current = true;
+      playCase3Sfx("ping");
+    }
+  }, [forced]);
 
   function send() {
     if (!draft.trim() || !focusedAgent || forced) return;
@@ -187,12 +266,19 @@ function Act2Room() {
     <div className="flex h-full flex-col">
       <StatusBar act="ACT II — SEPARATING THE PROBLEM" objective="Bang, fire, comms loss — one problem or three?" />
       <div className="relative flex-1 overflow-hidden">
-        <img src="/case3/situation-room.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
-        <img
-          src="/case3/aircraft.png"
-          alt=""
-          className="pointer-events-none absolute left-1/2 top-[18%] w-[70%] -translate-x-1/2 opacity-90 drop-shadow-2xl"
-        />
+        {!focusedAgent && (
+          <>
+            <img src="/case3/situation-room.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+            <img
+              src="/case3/aircraft.png"
+              alt=""
+              className="pointer-events-none absolute left-1/2 top-[14%] w-[72%] -translate-x-1/2 opacity-90 drop-shadow-2xl"
+            />
+          </>
+        )}
+        {focusedAgent && (
+          <img src={activeAgent!.portrait} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25 blur-sm" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/85" />
 
         <div className="relative flex h-full flex-col">
@@ -202,7 +288,13 @@ function Act2Room() {
             </div>
           )}
 
-          <div className={`mt-auto flex flex-col gap-3 px-4 pb-4 ${PROTOTYPE_BADGE_CLEARANCE}`}>
+          {focusedAgent && (
+            <div className="flex flex-1 flex-col items-center justify-end gap-2 overflow-hidden px-4 pt-2">
+              <img src={activeAgent!.portrait} alt={activeAgent!.name} className="max-h-[26vh] w-auto object-contain drop-shadow-2xl" />
+            </div>
+          )}
+
+          <div className={`${focusedAgent ? "" : "mt-auto"} flex flex-col gap-3 px-4 pb-4 ${PROTOTYPE_BADGE_CLEARANCE}`}>
             {!focusedAgent ? (
               <>
                 <div className="flex justify-center gap-3">
@@ -231,7 +323,7 @@ function Act2Room() {
                     onClick={openD1}
                     className="w-full rounded-xl bg-red-400/90 py-3 text-base font-semibold text-black active:scale-[0.98]"
                   >
-                    Margin is low — decide now (D1)
+                    Time to decide — open D1
                   </button>
                 ) : (
                   <button
@@ -244,21 +336,21 @@ function Act2Room() {
               </>
             ) : (
               <>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between">
                   <button
                     onClick={() => useCase3Store.setState({ focusedAgent: null })}
                     className="text-sm text-white/50"
                   >
                     ← Room
                   </button>
-                  <img src={activeAgent!.portrait} alt={activeAgent!.name} className="h-10 w-10 rounded-full object-cover object-top" />
-                  <div>
+                  <div className="text-center">
                     <p className="text-sm font-semibold text-white">{activeAgent!.name}</p>
                     <p className="text-[11px] text-white/50">{activeAgent!.role}</p>
                   </div>
+                  <span className="w-12" />
                 </div>
 
-                <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
+                <div className="flex max-h-40 flex-col gap-2 overflow-y-auto">
                   {activeHistory.map((line, i) => (
                     <div
                       key={i}
@@ -269,14 +361,15 @@ function Act2Room() {
                       {line.text}
                     </div>
                   ))}
-                  {activeHistory.length === 0 && (
-                    <p className="text-center text-[13px] text-white/40">Ask {activeAgent!.name} something — costs 2 margin.</p>
-                  )}
                 </div>
+
+                {activeHistory.length === 0 && !forced && (
+                  <SuggestedPrompt text={activeAgent!.suggestedPrompt} onPick={setDraft} />
+                )}
 
                 {forced ? (
                   <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-3 py-2 text-center text-[13px] text-red-200">
-                    Margin's at {pressure} — time to decide. No more questions right now.
+                    Time's short — no more questions right now.
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -284,7 +377,7 @@ function Act2Room() {
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && send()}
-                      placeholder={`Ask ${activeAgent!.name}… (−2 margin)`}
+                      placeholder={`Ask ${activeAgent!.name}…`}
                       className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-[15px] text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-amber-300/50"
                       aria-label={`Message to ${activeAgent!.name}`}
                     />
@@ -307,7 +400,7 @@ function D1Decision() {
 
   function preview(cost: number) {
     const after = Math.max(0, pressure - cost);
-    const routeB = after >= ROUTE_B_FLOOR ? "remains open" : "closes";
+    const routeB = after >= ROUTE_B_FLOOR ? "open" : "closed";
     return { after, routeB };
   }
 
@@ -325,7 +418,13 @@ function D1Decision() {
           className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-left active:scale-[0.98]"
         >
           <p className="text-base font-semibold text-amber-200">{D1_OPTIONS.visual_check.label}</p>
-          <p className="mt-1 text-sm text-white/70">Cost {D1_OPTIONS.visual_check.cost}. After this: margin {visual.after}. Route B {visual.routeB}{visual.routeB === "closes" ? ` — needs ${ROUTE_B_FLOOR}+` : ""}.</p>
+          <p className="mt-1 text-sm text-white/70">Takes real time. Route B stays {visual.routeB}{visual.routeB === "closed" ? ` — needed ${ROUTE_B_FLOOR}+ remaining` : ", barely"}.</p>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-amber-300/70" style={{ width: `${(visual.after / PRESSURE_START) * 100}%` }} />
+            </div>
+            <span className="text-[11px] text-white/40">after: {visual.after}</span>
+          </div>
         </button>
 
         <button
@@ -333,7 +432,13 @@ function D1Decision() {
           className="rounded-2xl border border-white/15 bg-white/5 p-4 text-left active:scale-[0.98]"
         >
           <p className="text-base font-semibold text-white">{D1_OPTIONS.instruments_only.label}</p>
-          <p className="mt-1 text-sm text-white/70">Cost {D1_OPTIONS.instruments_only.cost}. After this: margin {instruments.after}. Route B {instruments.routeB}. Fire status stays unknown — permanently.</p>
+          <p className="mt-1 text-sm text-white/70">Immediate — no time lost. Fire stays unconfirmed, permanently.</p>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-white/50" style={{ width: `${(instruments.after / PRESSURE_START) * 100}%` }} />
+            </div>
+            <span className="text-[11px] text-white/40">after: {instruments.after}</span>
+          </div>
         </button>
 
         <p className="text-center text-[11px] text-white/35">This decision is irreversible.</p>
@@ -347,6 +452,10 @@ function D1Consequence() {
   const last = ops[ops.length - 1];
   const routeB = routeBStatus(pressure);
 
+  useEffect(() => {
+    stopCase3Ambient();
+  }, []);
+
   return (
     <div className="flex h-full flex-col">
       <StatusBar act="D1 RESOLVED" objective="Act III — The Path — is next, outside this build's scope." />
@@ -359,7 +468,7 @@ function D1Consequence() {
         )}
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-sm font-medium text-white/70">Pressure ledger</p>
+          <p className="text-sm font-medium text-white/70">What that cost</p>
           <div className="mt-2 space-y-1 text-[13px] text-white/60">
             {ledger.map((e, i) => (
               <div key={i} className="flex justify-between">
@@ -434,6 +543,7 @@ export default function Case3App() {
       {screen === "act2_room" && <Act2Room />}
       {screen === "d1_decision" && <D1Decision />}
       {screen === "d1_consequence" && <D1Consequence />}
+      <SoundToggle />
       <PrototypeBadge />
     </div>
   );

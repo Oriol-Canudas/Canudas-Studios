@@ -44,6 +44,15 @@ export interface AgentDef {
   portrait: string;
   topics: AgentTopic[];
   deflection: string;
+  /**
+   * One tappable starting question, shown only while that agent's chat
+   * is still empty — never a persistent menu. This is a deliberate,
+   * evidence-based amendment to the frozen "no suggestion chips" cut:
+   * real play surfaced the blank-page problem returning without it.
+   * Pre-fills the input (same as Case 002's suggestion chips); never
+   * auto-sends.
+   */
+  suggestedPrompt: string;
 }
 
 export interface PressureLedgerEntry {
