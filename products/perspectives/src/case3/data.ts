@@ -19,12 +19,14 @@
 // explicitly and defaults OFF — see D1_VISUAL_CHECK_COST below.
 // ─────────────────────────────────────────────────────────────────────────
 
-import type { AgentDef } from "./types";
+import type { AgentDef, D4Option, Route } from "./types";
 
 export const PRESSURE_START = 40;
 export const EXCHANGE_COST = 2;
 export const D1_FORCE_THRESHOLD = 28;
+export const D2_FORCE_THRESHOLD = 15;
 export const ROUTE_B_FLOOR = 20;
+export const RORY_WARNING_THRESHOLD = 25;
 
 /**
  * Baseline (LOCKED SOURCE, per the external canon): 10.
@@ -143,6 +145,33 @@ export const MAYA: AgentDef = {
   ],
 };
 
+export const RORY: AgentDef = {
+  id: "rory",
+  name: "Rory",
+  role: "Air traffic control — routes and weather only",
+  portrait: "/case3/rory.png",
+  topics: [
+    {
+      id: "margin_routes",
+      prompt: "How does margin affect the routes?",
+      response: "Route B — the long field — needs real margin to stay reachable; it's further out and burns more of your window just getting there. Route A's always there as a fallback, margin or not.",
+      cost: EXCHANGE_COST,
+    },
+    {
+      id: "route_a_risk",
+      prompt: "What's the real risk on Route A?",
+      response: "Shorter runway, less margin if anything's off, and nobody's pre-positioned there. It's not reckless. It's just thinner.",
+      cost: EXCHANGE_COST,
+    },
+    {
+      id: "rory_recommend",
+      prompt: "What would you do?",
+      response: "If I had full margin, I'd take the long field every time. Right now? That's your call, not mine — I just fly the numbers.",
+      cost: EXCHANGE_COST,
+    },
+  ],
+};
+
 export const ACT1_HALE_OPENING =
   "Operations, this is 702. We've had a bang. I need you with me.";
 
@@ -182,3 +211,98 @@ export const D1_INSTRUMENTS_RESULT = {
   cue: "PROCEEDING ON INSTRUMENTS",
   line: "Cargo indication remains unconfirmed.",
 };
+
+export const ACT3_TRANSITION_LINE = "Choose where this plane goes before the weather chooses for you.";
+
+// Separate from ACT1_RORY_INTERRUPT (scripted, free, Act I orientation).
+// This is the REAL pressure-threshold escalation — fires exactly once,
+// only if margin has actually crossed below RORY_WARNING_THRESHOLD by
+// the time Act III opens (whether that happened during D1 or during
+// Act II conversation). Never fires twice — see store.ts's
+// rorysWarningFired flag.
+export const RORY_THRESHOLD_WARNING = {
+  cue: "ROUTE WINDOW CLOSING",
+  line: "The short field's weather is fine, but the long one's crosswind is creeping up. If you want it, decide soon — it won't stay available.",
+};
+
+export const D2_OPTIONS = {
+  route_A: {
+    label: "Commit to the short field.",
+    sublabel: "Closer, tighter, no crew pre-positioned.",
+    cost: 5,
+  },
+  route_B: {
+    label: "Commit to the long field.",
+    sublabel: "Further out, full equipment standing by.",
+    cost: 14,
+  },
+} as const;
+
+export const D4_OPTIONS: Record<D4Option, { label: string }> = {
+  full_prep: { label: "Order full emergency response and a precautionary evacuation." },
+  standard: { label: "Treat this as a routine landing." },
+};
+
+// Route-aware preview, shown BEFORE the player commits to D4 — the
+// review's own explicit catch on the earlier draft: "the player doesn't
+// receive the injury risk before choosing." This is the fix: full_prep's
+// guaranteed-but-small cost and standard's route-dependent risk are both
+// stated plainly up front, not revealed only at the consequence screen.
+export const D4_PREVIEW: Record<Route, Record<D4Option, string>> = {
+  A: {
+    full_prep: "Guarantees no fire-related harm if anything's wrong. The evacuation itself will cause some minor injuries — that part is certain either way.",
+    standard: "No forced evacuation. This route has little margin if the smoke warning turns out to be real.",
+  },
+  B: {
+    full_prep: "This route already has full equipment standing by. Ordering an evacuation on top adds a small, guaranteed injury risk for no real extra protection.",
+    standard: "This route's own equipment and margin are built to catch a problem like this without anyone needing to evacuate.",
+  },
+};
+
+export const ACT4_HALE_LINE: Record<Route, string> = {
+  A: "Short final, won't be long now. How do you want the ground set up?",
+  B: "We're on the long final now. Last thing from me — how do you want the ground set up?",
+};
+
+export interface OutcomeResult {
+  label: string;
+  narrative: string;
+}
+
+// The physical result depends only on Route x D4 — never on whether the
+// player actually confirmed the fire. The ground truth (smoldering,
+// reignites mildly under landing stress on every branch) doesn't change
+// because of what the player happened to learn; only their preparedness
+// for it does. fireStatus affects grading, never this.
+export const OUTCOME_MATRIX: Record<Route, Record<D4Option, OutcomeResult>> = {
+  A: {
+    standard: {
+      label: "Worst",
+      narrative: "The short runway left little margin. The fire reignited during the landing roll, and with no crews pre-positioned, it caused real injuries and significant damage before it was brought under control.",
+    },
+    full_prep: {
+      label: "Managed",
+      narrative: "The short runway was tight, but the fire crews were already in position when the fire reignited. No one was hurt by the fire itself — though a handful of passengers picked up minor injuries coming down the evacuation slides.",
+    },
+  },
+  B: {
+    standard: {
+      label: "Clean",
+      narrative: "The long runway's full equipment and margin caught the reignition through routine response alone. No drama, no injuries, no evacuation.",
+    },
+    full_prep: {
+      label: "Overcautious",
+      narrative: "The long runway's margin would have been enough on its own. The precautionary evacuation you ordered was unnecessary in hindsight — it caused a handful of avoidable minor injuries, for no added safety benefit.",
+    },
+  },
+};
+
+// Never shown directly during play — only at the reveal. Fixed, same
+// every playthrough; the player's choices determine how prepared they
+// were for it, never what it was.
+export const GROUND_TRUTH_REVEAL: string[] = [
+  "The bang was the backup power unit rupturing — triggered by a rushed, not malicious, emergency electrical isolation. It's mechanically unrelated to the fire risk.",
+  "The cargo-hold fire was smoldering the entire time. The suppression system reduced it but never fully extinguished it — it reignites mildly under the stress of landing, on every branch of this story.",
+  "A write-up on that unit existed from months earlier, closed out in a gap between maintenance shifts. No one person is at fault for it.",
+  "The first officer's skipped checklist step never actually mattered to anything that happened.",
+];

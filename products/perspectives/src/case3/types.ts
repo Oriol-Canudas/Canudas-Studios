@@ -22,8 +22,12 @@ export type AgentId = "hale" | "maya" | "rory";
 
 export type FireStatus = "unknown" | "confirmed_smoldering";
 
-/** This build's scope ends at D1's consequence — see README_FOR_CLAUDE.md (asset pack) and BUILD_BRIEF_Claude_Case_003.md. Acts III/IV exist as types for forward-compat only, never reachable yet. */
 export type ActId = "cold_open" | "I" | "II" | "III" | "IV";
+
+export type Route = "A" | "B";
+export type RouteStatus = "open" | "closed";
+
+export type D4Option = "full_prep" | "standard";
 
 export type Screen =
   | "cold_open"
@@ -33,7 +37,13 @@ export type Screen =
   | "act2_room"
   | "d1_decision"
   | "d1_consequence"
-  | "scope_end"; // explicit "this build stops here" screen, never a silent dead end
+  | "act3_rory_warning" // the one-shot <25 threshold event, shown once on entering Act III if crossed
+  | "act3_room"
+  | "d2_decision"
+  | "d2_consequence"
+  | "act4_hale"
+  | "d4_decision"
+  | "reveal";
 
 export interface AgentTopic {
   id: string;
@@ -60,4 +70,13 @@ export interface PressureLedgerEntry {
   label: string;
   delta: number;
   pressureAfter: number;
+}
+
+export type JudgmentLevel = "strong" | "mixed" | "weak";
+
+export interface JudgmentAxis {
+  label: string;
+  level: JudgmentLevel;
+  /** Explicitly cites what was actually known/done — the review's own stated requirement against crediting judgment the player didn't earn. */
+  reasoning: string;
 }
