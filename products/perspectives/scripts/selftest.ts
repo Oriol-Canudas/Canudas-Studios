@@ -12,7 +12,7 @@ import { useGameStore } from "../src/game/store";
 // Ascent's own mechanics are covered by scripts/selftest.ascent.ts.
 import { VERDICT_AXES, VERDICT_CONFIG, WITNESS_BY_ID, WITNESSES } from "../src/game/case002";
 import { gradeVerdict } from "../src/game/verdictGrading";
-import { getAuthorizedDisclosures, isProactiveContactEligible, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, suggestedEvidenceFor, validateInterpretation } from "../src/game/witnessEngine";
+import { getAuthorizedDisclosures, isProactiveContactEligible, isTopicReachable, matchTopic, resolveStage, stageRequirementsMet, suggestedEvidenceFor, testimonyLinksForEvidence, validateInterpretation } from "../src/game/witnessEngine";
 import { interpretDeterministic } from "../src/game/interpreter";
 import { buildShareText } from "../src/game/shareCard";
 import { LEAK_MARKERS, validateDialogue, buildInterpretTopicList, buildInterpretSystemPrompt, buildGenerateSystemPrompt, buildGenerateMessages } from "../api/witness-chat";
@@ -1244,6 +1244,36 @@ console.log("\n=== Playthrough 39: suggestedEvidenceFor surfaces an existing gat
   assert(
     suggestedEvidenceFor(WITNESS_BY_ID.tom, state.witnessStages, state.discoveredEvidence) === null,
     "Once that evidence is actually found, the nudge clears on its own — derived, not a flag left dangling"
+  );
+}
+
+// ── Playthrough 40: Examine-screen "connects to what X said" callout ──
+console.log("\n=== Playthrough 40: testimonyLinksForEvidence surfaces only already-heard testimony ===");
+{
+  useGameStore.getState().reset();
+  const { askWitness } = useGameStore.getState();
+  let state = useGameStore.getState();
+
+  assert(
+    testimonyLinksForEvidence("E07_tom_phone_records", WITNESSES, state.witnessStages).length === 0,
+    "Nothing heard yet at all — no link to show"
+  );
+
+  askWitness("tom", "where did you really go after you left", "after_that");
+  state.discoverEvidence("E07_tom_phone_records");
+  askWitness("tom", "where did you really go after you left", "after_that");
+  state = useGameStore.getState();
+
+  const links = testimonyLinksForEvidence("E07_tom_phone_records", WITNESSES, state.witnessStages);
+  assert(links.length === 1, "Exactly one testimony turned on this evidence once it's actually been used to advance");
+  assert(
+    links[0]?.witnessId === "tom" && links[0]?.text.includes("Around midnight"),
+    "The surfaced line is Tom's own stage-1 text, not a paraphrase or a different witness"
+  );
+
+  assert(
+    testimonyLinksForEvidence("E01_knife", WITNESSES, state.witnessStages).length === 0,
+    "An unrelated, never-engaged gate reports no link — no false positives from merely existing in caseData"
   );
 }
 

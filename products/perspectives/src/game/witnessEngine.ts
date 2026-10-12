@@ -280,6 +280,41 @@ export function suggestedEvidenceFor(
   return null;
 }
 
+/** One place a witness's testimony actually turned on a piece of evidence the player has examined. */
+export interface TestimonyLink {
+  witnessId: WitnessId;
+  witnessName: string;
+  chipLabel: string;
+  text: string;
+}
+
+/**
+ * Which already-heard testimony a given piece of evidence unlocked —
+ * the reverse of requiresEvidence again, but checking REACHED stages
+ * across every witness rather than one. Only ever reports a stage the
+ * player has actually reached, so this can't spoil a future reveal by
+ * naming a line they haven't heard yet.
+ */
+export function testimonyLinksForEvidence(
+  evidenceId: EvidenceId,
+  witnesses: readonly WitnessConfig[],
+  allStages: AllWitnessStages
+): TestimonyLink[] {
+  const links: TestimonyLink[] = [];
+  for (const witness of witnesses) {
+    for (const topic of witness.topics) {
+      const reached = allStages[witness.id]?.[topic.id] ?? -1;
+      if (reached < 0) continue;
+      for (let i = 0; i <= reached; i++) {
+        if (topic.stages[i].requiresEvidence?.includes(evidenceId)) {
+          links.push({ witnessId: witness.id, witnessName: witness.name, chipLabel: topic.chipLabel, text: topic.stages[i].text });
+        }
+      }
+    }
+  }
+  return links;
+}
+
 const deflectionCounters = new Map<WitnessId, number>();
 
 export function getDeflection(witness: WitnessConfig): string {

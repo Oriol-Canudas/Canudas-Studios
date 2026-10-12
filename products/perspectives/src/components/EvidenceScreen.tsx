@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { EVIDENCE, EXAMINE_HERO_IMAGE } from "../game/caseData";
+import { EVIDENCE, EXAMINE_HERO_IMAGE, WITNESSES } from "../game/caseData";
 import { useGameStore } from "../game/store";
+import { testimonyLinksForEvidence } from "../game/witnessEngine";
+import { playSfx } from "../game/audio";
 import type { EvidenceId } from "../game/types";
 
 const CATEGORY_ICON: Record<string, string> = {
@@ -27,18 +29,21 @@ const DISCOVER_ANIMATION_MS = 480;
 export default function EvidenceScreen() {
   const discovered = useGameStore((s) => s.discoveredEvidence);
   const inspected = useGameStore((s) => s.inspectedEvidence);
+  const witnessStages = useGameStore((s) => s.witnessStages);
   const discoverEvidence = useGameStore((s) => s.discoverEvidence);
   const inspectEvidence = useGameStore((s) => s.inspectEvidence);
   const [open, setOpen] = useState<EvidenceId | null>(null);
   const [discovering, setDiscovering] = useState<EvidenceId | null>(null);
 
   const openItem = EVIDENCE.find((e) => e.id === open) ?? null;
+  const testimonyLinks = openItem ? testimonyLinksForEvidence(openItem.id, WITNESSES, witnessStages) : [];
 
   function handleOpen(id: EvidenceId, alreadyDiscovered: boolean) {
     if (!alreadyDiscovered) {
       // Brief "pulling it from the record" beat — the card flashes and
       // settles into its New look before the detail sheet opens, instead
       // of the request and the read happening in the same instant.
+      playSfx("documentUnseal");
       discoverEvidence(id);
       setDiscovering(id);
       window.setTimeout(() => {
@@ -123,6 +128,21 @@ export default function EvidenceScreen() {
                 </p>
               ))}
             </div>
+            {testimonyLinks.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {testimonyLinks.map((link, i) => (
+                  <div
+                    key={`${link.witnessId}-${i}`}
+                    className="rounded-xl border border-amber-300/20 bg-amber-300/[0.06] px-3 py-2.5"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-300/80">
+                      {"⚡"} Connects to what {link.witnessName} said
+                    </p>
+                    <p className="mt-1 text-sm leading-snug text-white/75">"{link.text}"</p>
+                  </div>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => setOpen(null)}
               className="mt-5 w-full rounded-xl bg-white/10 py-3.5 text-base font-medium text-white"
