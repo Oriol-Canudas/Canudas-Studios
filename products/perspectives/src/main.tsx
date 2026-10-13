@@ -19,6 +19,10 @@ const pathname = window.location.pathname
 const isCase3V2 = pathname.startsWith('/case3v2')
 const isCase3 = !isCase3V2 && pathname.startsWith('/case3')
 
+if (isCase3V2 || isCase3) {
+  document.title = 'Flight702'
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {isCase3V2 ? <Case3V2App /> : isCase3 ? <Case3App /> : <App />}

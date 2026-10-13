@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { RELAY_COPY, TURN_LIMIT } from "./data";
+import { HALE_TOPICS, RELAY_COPY, TURN_LIMIT } from "./data";
 import { AUTHORED_START, AUTHORED_TREE, resumeAuthoredStep } from "./authoredTree";
 import { applyEscalation, applyExplicitRevision } from "./negotiation";
 import type { Commitment, ConversationTurn, HaleKnows, Mode, NegotiateResponse, Screen, SessionLogEntry } from "./types";
@@ -8,6 +8,7 @@ interface Case3V2State {
   mode: Mode | null;
   screen: Screen;
   mayaAsked: Record<string, boolean>;
+  haleAsked: Record<string, boolean>;
   haleKnows: HaleKnows;
   conversation: ConversationTurn[];
   proposal: Commitment | null;
@@ -22,6 +23,7 @@ interface Case3V2State {
   setMode: (mode: Mode) => void;
   goTo: (screen: Screen) => void;
   askMaya: (topicId: string) => void;
+  askHale: (topicId: string) => void;
   relay: (fact: keyof HaleKnows) => void;
   enterClimax: () => void;
   sendPlayerMessage: (text: string) => Promise<void>;
@@ -40,6 +42,7 @@ const initialState = {
   mode: null as Mode | null,
   screen: "landing" as Screen,
   mayaAsked: {},
+  haleAsked: {},
   haleKnows: { sensorDoubt: false, sealUncertainty: false },
   conversation: [] as ConversationTurn[],
   proposal: null as Commitment | null,
@@ -68,6 +71,18 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
     if (get().mayaAsked[topicId]) return;
     set((s) => ({ mayaAsked: { ...s.mayaAsked, [topicId]: true } }));
     log(set, "authored_action", { kind: "ask_maya", topicId });
+  },
+
+  askHale(topicId) {
+    const s = get();
+    if (s.haleAsked[topicId]) return;
+    const topic = HALE_TOPICS.find((t) => t.id === topicId);
+    if (!topic || !s.haleKnows[topic.requiresRelay]) return;
+    set((st) => ({
+      haleAsked: { ...st.haleAsked, [topicId]: true },
+      conversation: [...st.conversation, { role: "hale", text: topic.response }],
+    }));
+    log(set, "authored_action", { kind: "ask_hale", topicId });
   },
 
   relay(fact) {
@@ -179,7 +194,7 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
   },
 
   endClimaxEarly() {
-    set({ screen: "reveal" });
+    set({ screen: "execution" });
     log(set, "outcome", { finalCommitment: get().finalCommitment(), endedEarly: true });
   },
 

@@ -27,8 +27,20 @@
 
 import type { Commitment } from "./types";
 
-export const OPENING_LINE =
-  "Smoke indication in the cargo hold — confirmed smoldering, contained for now. The short field is the only option in this window: Route A, no crew pre-positioned there by default. Hale needs an answer in a few minutes.";
+/** Short, atmospheric, and — unlike v1's single opening line — paced
+ * across a few beats, matching the density of v1's own Cold Open rather
+ * than a single paragraph of exposition. Establishes, in order: what
+ * happened, who the player is, who Maya/Hale are, why Route A (narrated,
+ * never offered as a choice), and what's uncertain — without disclosing
+ * GROUND_TRUTH_V2. */
+export const OPENING_LINES: string[] = [
+  "A bang, aft — then a cargo smoke light that won't clear itself. Nothing confirmed fatal in that. Not yet.",
+  "You're ops for Flight 702 tonight. Maya's your engineer on the ground. Hale's flying. Between the two of you, you keep this landing safe.",
+  "The weather already closed the better field. Route A — short, no crew standing by by default — is what's actually available tonight.",
+  "Nobody's confirmed how real that smoke is, or whether the hold's still sealed. That's what the next few minutes are for.",
+];
+
+export const OPENING_GOAL = "Learn what you can, then help Hale decide how to meet the ground.";
 
 export interface MayaTopic {
   id: "sensor_doubt" | "seal_request" | "history";
@@ -70,6 +82,25 @@ export const RELAY_COPY: Record<keyof import("./types").HaleKnows, { label: stri
   },
 };
 
+export interface HaleTopic {
+  id: "challenge_sensor";
+  prompt: string;
+  response: string;
+  /** Only reachable once this fact has actually been relayed — a real
+   * challenge, not a cold question, since it's confronting Hale with
+   * something he's just been told. */
+  requiresRelay: keyof import("./types").HaleKnows;
+}
+
+export const HALE_TOPICS: HaleTopic[] = [
+  {
+    id: "challenge_sensor",
+    prompt: "If Maya's not sure, are you?",
+    response: "Honestly? Not completely. But it's what I'm reading, and I don't have a better option from up here.",
+    requiresRelay: "sensorDoubt",
+  },
+];
+
 export const TURN_LIMIT = 4;
 
 export const ESCALATION_ORDER: Commitment[] = ["standard", "crew_only", "full_prep"];
@@ -77,6 +108,23 @@ export const ESCALATION_ORDER: Commitment[] = ["standard", "crew_only", "full_pr
 export function commitmentRank(c: Commitment): number {
   return ESCALATION_ORDER.indexOf(c);
 }
+
+/** Player-facing labels — never show "crew_only" etc. directly in the UI.
+ * Internal ids stay in state/session-log for fidelity; this map is the
+ * ONLY place that translates them for display. */
+export const COMMITMENT_LABEL: Record<Commitment, string> = {
+  standard: "Routine landing",
+  crew_only: "Crews ready, no evacuation",
+  full_prep: "Full response + evacuation",
+};
+
+/** What's actually being carried out — shown briefly BEFORE the reveal,
+ * distinct from OUTCOME_TEXT below (which narrates the RESULT). */
+export const EXECUTION_TEXT: Record<Commitment, string> = {
+  standard: "No further request goes out. The approach continues exactly as planned.",
+  crew_only: "Hale radios ahead. Ground crews move into position along the field before you're down.",
+  full_prep: "Hale radios ahead for both. Ground crews move into position, and cabin crew begin briefing passengers to evacuate on landing.",
+};
 
 export interface OutcomeText {
   label: string;

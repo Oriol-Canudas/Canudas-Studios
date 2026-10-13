@@ -50,7 +50,7 @@ export type Signal =
    * to exactly that in the same turn. Never used for anything else. */
   | "revise_down";
 
-export type Screen = "landing" | "opening" | "exploration" | "climax" | "reveal";
+export type Screen = "landing" | "opening" | "exploration" | "climax_intro" | "climax" | "execution" | "reveal";
 
 export interface SessionLogEntry {
   ts: number;
