@@ -381,14 +381,16 @@ function ClimaxHeader({ proposal, accepted, right }: { proposal: string | null; 
   return (
     <>
       <div className="flex flex-col items-center gap-1 px-4 pt-3">
-        <img src={HALE_PORTRAIT} alt="Hale" className="max-h-[15vh] w-auto object-contain drop-shadow-2xl" />
+        <img src={HALE_PORTRAIT} alt="Hale" className="max-h-[18vh] w-auto object-contain drop-shadow-2xl" />
         <p className="text-xs uppercase tracking-wide text-white/50">Hale — Captain, radio only</p>
       </div>
-      <div className="flex items-center justify-between gap-2 border-y border-white/10 bg-black/55 px-4 py-2 text-[11px] uppercase tracking-wide text-white/60">
-        <span>
-          On the table: {proposal ?? "—"} · Agreed: {accepted ?? "none yet"}
-        </span>
-        {right}
+      <div className="border-y border-white/10 bg-black/55 px-4 py-2">
+        <div className="mx-auto flex w-full max-w-sm items-center justify-between gap-2 text-[11px] uppercase tracking-wide text-white/60">
+          <span>
+            On the table: {proposal ?? "—"} · Agreed: {accepted ?? "none yet"}
+          </span>
+          {right}
+        </div>
       </div>
     </>
   );
@@ -417,7 +419,7 @@ function Transcript({ children }: { children: React.ReactNode }) {
 
   return (
     <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-3">
-      <div ref={contentRef} className="flex flex-col gap-3">
+      <div ref={contentRef} className="mx-auto flex w-full max-w-sm flex-col gap-3">
         {children}
       </div>
     </div>
@@ -445,8 +447,8 @@ function ChatClimax() {
   const turnsUsed = useCase3V2Store((s) => s.turnsUsed);
   const accepted = useCase3V2Store((s) => s.accepted);
   const proposal = useCase3V2Store((s) => s.proposal);
+  const closeRequested = useCase3V2Store((s) => s.closeRequested);
   const endClimaxEarly = useCase3V2Store((s) => s.endClimaxEarly);
-  const goTo = useCase3V2Store((s) => s.goTo);
   const [text, setText] = useState("");
   const [seenCount] = useState(() => conversation.length);
 
@@ -455,10 +457,10 @@ function ChatClimax() {
 
   useEffect(() => {
     if (turnsUsed >= TURN_LIMIT && !pending) {
-      const t = setTimeout(() => goTo("execution"), 900);
+      const t = setTimeout(() => endClimaxEarly(), 900);
       return () => clearTimeout(t);
     }
-  }, [turnsUsed, pending, goTo]);
+  }, [turnsUsed, pending, endClimaxEarly]);
 
   function handleSend() {
     if (!text.trim() || !canSend) return;
@@ -484,29 +486,43 @@ function ChatClimax() {
         {pending && <p className="self-start text-xs text-white/40">Hale is responding…</p>}
       </Transcript>
       <div className={`border-t border-white/10 bg-black/70 p-3 ${BADGE_CLEARANCE}`}>
-        <div className="flex gap-2">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSend();
-            }}
-            placeholder="Say what you want, in your own words…"
-            aria-label="Message to Hale"
-            disabled={!canSend}
-            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 disabled:opacity-40"
-          />
+        <div className="mx-auto w-full max-w-sm">
+          {closeRequested && (
+            <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
+              <span>Ready to finish with {accepted ? COMMITMENT_LABEL[accepted] : "no agreement"}?</span>
+              <button onClick={endClimaxEarly} className="shrink-0 rounded-md bg-amber-400 px-3 py-1.5 text-xs font-semibold text-black active:scale-[0.97]">
+                Confirm and continue
+              </button>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSend();
+              }}
+              placeholder="Say what you want, in your own words…"
+              aria-label="Message to Hale"
+              disabled={!canSend}
+              className="flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 disabled:opacity-40"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!canSend || !text.trim()}
+              className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-200 disabled:opacity-40"
+            >
+              Send
+            </button>
+          </div>
           <button
-            onClick={handleSend}
-            disabled={!canSend || !text.trim()}
-            className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-2 text-sm font-medium text-amber-200 disabled:opacity-40"
+            onClick={endClimaxEarly}
+            disabled={pending}
+            className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60 disabled:opacity-40"
           >
-            Send
+            That's my final ask — end it here
           </button>
         </div>
-        <button onClick={endClimaxEarly} className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/60">
-          That's my final ask — end it here
-        </button>
       </div>
     </ClimaxShell>
   );
@@ -535,26 +551,28 @@ function AuthoredClimax({ fallback = false }: { fallback?: boolean }) {
         ))}
       </Transcript>
       <div className={`border-t border-white/10 bg-black/70 p-3 ${BADGE_CLEARANCE}`}>
-        {step ? (
-          <div className="flex flex-col gap-2">
-            {step.options.map((o) => (
-              <button
-                key={o.id}
-                onClick={() => authoredChoose(o.id)}
-                className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-left text-sm text-white/85"
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <button
-            onClick={endClimaxEarly}
-            className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-5 py-3 text-sm font-medium text-amber-200"
-          >
-            Continue
-          </button>
-        )}
+        <div className="mx-auto w-full max-w-sm">
+          {step ? (
+            <div className="flex flex-col gap-2">
+              {step.options.map((o) => (
+                <button
+                  key={o.id}
+                  onClick={() => authoredChoose(o.id)}
+                  className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-left text-sm text-white/85"
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button
+              onClick={endClimaxEarly}
+              className="w-full rounded-lg border border-amber-400/40 bg-amber-400/10 px-5 py-3 text-sm font-medium text-amber-200"
+            >
+              Continue
+            </button>
+          )}
+        </div>
       </div>
     </ClimaxShell>
   );
@@ -620,7 +638,7 @@ function Reveal() {
     <div className="relative min-h-screen overflow-hidden bg-black text-white">
       <img src="/case3v2/situation-room.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
       <div className="absolute inset-0 bg-black/75" />
-      <div className={`relative z-10 flex flex-col gap-6 px-5 py-8 ${BADGE_CLEARANCE}`}>
+      <div className={`relative z-10 mx-auto flex w-full max-w-md flex-col gap-6 px-5 py-8 ${BADGE_CLEARANCE}`}>
         <section>
           <p className="mb-1 text-xs uppercase tracking-wide text-white/40">1. What you discovered</p>
           <p className="text-sm text-white/80">

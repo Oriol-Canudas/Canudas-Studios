@@ -28,6 +28,16 @@ interface Case3V2State {
   authoredStepId: string | null;
   authoredResolved: boolean;
   sessionLog: SessionLogEntry[];
+  /** Bumped on endClimaxEarly/reset — an in-flight sendPlayerMessage
+   * captures the generation it started under and discards its result if
+   * this has since changed, so a response that resolves after the player
+   * has already left the negotiation can't silently rewrite state on a
+   * screen they're no longer on. */
+  turnGeneration: number;
+  /** True when the model's last turn reported signal "wants_to_close" —
+   * shows a free (no model call) confirm-and-continue prompt instead of
+   * requiring the separate end button or silently closing on its own. */
+  closeRequested: boolean;
 
   setMode: (mode: Mode) => void;
   goTo: (screen: Screen) => void;
@@ -63,6 +73,8 @@ const initialState = {
   authoredStepId: null as string | null,
   authoredResolved: false,
   sessionLog: [] as SessionLogEntry[],
+  turnGeneration: 0,
+  closeRequested: false,
 };
 
 export const useCase3V2Store = create<Case3V2State>((set, get) => ({
@@ -116,7 +128,15 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
       }));
       return;
     }
-    set({ screen: "climax" });
+    // AI mode needs the same opening beat, for parity with authored mode
+    // (confirmed gap: without this, the transcript opened empty with no
+    // greeting at all). Deterministic and free — no model call — the
+    // model only ever sees it as already-said history once the player
+    // actually sends their first message.
+    set((s) => ({
+      screen: "climax",
+      conversation: [...s.conversation, { role: "hale", text: AUTHORED_TREE[AUTHORED_START].prompt }],
+    }));
   },
 
   async sendPlayerMessage(text) {
@@ -125,8 +145,9 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
     const trimmed = text.trim();
     if (!trimmed) return;
 
+    const myGeneration = s.turnGeneration;
     const nextHistory = [...s.conversation, { role: "player" as const, text: trimmed }];
-    set({ conversation: nextHistory, pending: true });
+    set({ conversation: nextHistory, pending: true, closeRequested: false });
     log(set, "turn_sent", { turnsUsed: s.turnsUsed, message: trimmed });
 
     try {
@@ -147,6 +168,15 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
       const data = (await res.json()) as NegotiateResponse;
       if (typeof data.dialogue !== "string") throw new Error("malformed_response");
 
+      // The player may have already left the negotiation (end button,
+      // turn-limit auto-resolve) while this request was in flight — a
+      // late response must not silently rewrite state on a screen
+      // they're no longer looking at.
+      if (get().turnGeneration !== myGeneration) {
+        log(set, "turn_received", { signal: data.signal, stale: true, discarded: true });
+        return;
+      }
+
       const prevAccepted = get().accepted;
       set((st) => ({
         conversation: [...st.conversation, { role: "hale" as const, text: data.dialogue, cue: data.cue }],
@@ -154,12 +184,17 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
         accepted: data.acceptedCommitment ?? st.accepted,
         turnsUsed: st.turnsUsed + 1,
         pending: false,
+        closeRequested: data.signal === "wants_to_close",
       }));
       log(set, "turn_received", { signal: data.signal, proposal: data.proposal, acceptedCommitment: data.acceptedCommitment, latencyMs: data.latencyMs });
       if (data.acceptedCommitment && data.acceptedCommitment !== prevAccepted) {
         log(set, "commitment_change", { from: prevAccepted, to: data.acceptedCommitment });
       }
     } catch (err) {
+      if (get().turnGeneration !== myGeneration) {
+        log(set, "fallback_used", { reason: String(err), stale: true, discarded: true });
+        return;
+      }
       const resumeStep = resumeAuthoredStep(get().accepted);
       set((st) => ({
         pending: false,
@@ -204,7 +239,12 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
   },
 
   endClimaxEarly() {
-    set({ screen: "execution" });
+    set((s) => ({
+      screen: "execution",
+      pending: false,
+      closeRequested: false,
+      turnGeneration: s.turnGeneration + 1, // any in-flight response for the old generation is now discarded on arrival
+    }));
     log(set, "outcome", { finalCommitment: get().finalCommitment(), endedEarly: true });
   },
 

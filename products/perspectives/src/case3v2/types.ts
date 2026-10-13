@@ -48,7 +48,12 @@ export type Signal =
    * when the player has explicitly proposed scaling the plan back (e.g.
    * "withdraw the evacuation, keep the crews") and Hale explicitly agrees
    * to exactly that in the same turn. Never used for anything else. */
-  | "revise_down";
+  | "revise_down"
+  /** The player's message is clearly "I'm done / that's everything /
+   * let's go with that" — not a new request. The client shows a free,
+   * no-model-call confirm step rather than requiring the separate end
+   * button OR silently closing on the model's say-so. */
+  | "wants_to_close";
 
 export type Screen = "landing" | "opening" | "exploration" | "climax_intro" | "climax" | "execution" | "reveal";
 
