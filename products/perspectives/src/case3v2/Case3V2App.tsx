@@ -24,11 +24,15 @@ import type { ConversationTurn, HaleKnows, Mode } from "./types";
 // recreated here rather than imported — v1's screen components read
 // v1's own store directly (useCase3Store), so importing them would
 // couple the two versions' game state. Only genuinely stateless pieces
-// (Typewriter, audio.ts) and static assets (/case3/*.png) are shared.
+// (Typewriter, audio.ts) are shared code; the background/portrait assets
+// are separate, compressed copies in public/case3v2/ (JPEG, resized) —
+// the original /case3/*.png files are 1-2.6MB each, which rendered as
+// blank circles for several seconds on a real connection. Same source
+// art, re-exported smaller; /case3's own originals are untouched.
 // ─────────────────────────────────────────────────────────────────────────
 
-const MAYA_PORTRAIT = "/case3/maya.png";
-const HALE_PORTRAIT = "/case3/hale.png";
+const MAYA_PORTRAIT = "/case3v2/maya.jpg";
+const HALE_PORTRAIT = "/case3v2/hale.jpg";
 
 function modeFromPath(): Mode | null {
   const p = window.location.pathname;
@@ -76,9 +80,9 @@ function SoundToggle() {
 function OverviewBackdrop() {
   return (
     <>
-      <img src="/case3/situation-room.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+      <img src="/case3v2/situation-room.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
       <img
-        src="/case3/aircraft.png"
+        src="/case3v2/aircraft.png"
         alt=""
         className="pointer-events-none absolute left-1/2 top-[10%] w-[70%] -translate-x-1/2 opacity-90 drop-shadow-2xl"
       />
@@ -133,7 +137,7 @@ function Opening() {
   }, []);
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-end overflow-hidden text-white">
-      <img src="/case3/night-flight.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <img src="/case3v2/night-flight.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/50" />
       <div className={`relative z-10 flex w-full max-w-md flex-col items-center gap-3 px-6 pb-10 text-center ${BADGE_CLEARANCE}`}>
         <p className="text-xs uppercase tracking-[0.25em] text-white/50">Perspectives — Flight 702, experimental</p>
@@ -246,7 +250,7 @@ function Exploration() {
   const mayaAsked = useCase3V2Store((s) => s.mayaAsked);
   const haleAsked = useCase3V2Store((s) => s.haleAsked);
   const haleKnows = useCase3V2Store((s) => s.haleKnows);
-  const conversation = useCase3V2Store((s) => s.conversation);
+  const haleLines = useCase3V2Store((s) => s.haleExplorationLines);
   const askMaya = useCase3V2Store((s) => s.askMaya);
   const askHale = useCase3V2Store((s) => s.askHale);
   const relay = useCase3V2Store((s) => s.relay);
@@ -257,7 +261,6 @@ function Exploration() {
   const availableRelays = relayKeys.filter((k) => mayaAsked[RELAY_COPY[k].requiresTopic] && !haleKnows[k]);
   const availableHaleTopics = HALE_TOPICS.filter((t) => haleKnows[t.requiresRelay] && !haleAsked[t.id]);
   const haleKnowsAnything = relayKeys.some((k) => haleKnows[k]);
-  const haleLines = conversation.filter((c) => c.role === "hale");
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden text-white">
@@ -572,7 +575,7 @@ function Execution() {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center gap-6 overflow-hidden px-6 text-center text-white">
-      <img src="/case3/situation-room.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+      <img src="/case3v2/situation-room.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
       <div className="absolute inset-0 bg-black/70" />
       <div className={`relative z-10 flex max-w-sm flex-col items-center gap-4 ${BADGE_CLEARANCE}`}>
         <p className="text-xs uppercase tracking-wide text-amber-300">{COMMITMENT_LABEL[commitment]}</p>
@@ -615,7 +618,7 @@ function Reveal() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black text-white">
-      <img src="/case3/situation-room.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
+      <img src="/case3v2/situation-room.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
       <div className="absolute inset-0 bg-black/75" />
       <div className={`relative z-10 flex flex-col gap-6 px-5 py-8 ${BADGE_CLEARANCE}`}>
         <section>

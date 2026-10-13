@@ -10,6 +10,15 @@ interface Case3V2State {
   mayaAsked: Record<string, boolean>;
   haleAsked: Record<string, boolean>;
   haleKnows: HaleKnows;
+  /** Hale's relay acknowledgements + challenge responses, shown ONLY in
+   * Exploration's HalePanel — kept separate from `conversation` on
+   * purpose. They used to share one array, which meant exploration-phase
+   * lines like "Good to know..." leaked into the climax transcript as if
+   * Hale had said them as part of the actual negotiation — a real,
+   * user-visible bug, not a hypothetical one. */
+  haleExplorationLines: ConversationTurn[];
+  /** The climax negotiation transcript ONLY — seeded at enterClimax,
+   * never exploration content. */
   conversation: ConversationTurn[];
   proposal: Commitment | null;
   accepted: Commitment | null;
@@ -44,6 +53,7 @@ const initialState = {
   mayaAsked: {},
   haleAsked: {},
   haleKnows: { sensorDoubt: false, sealUncertainty: false },
+  haleExplorationLines: [] as ConversationTurn[],
   conversation: [] as ConversationTurn[],
   proposal: null as Commitment | null,
   accepted: null as Commitment | null,
@@ -80,7 +90,7 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
     if (!topic || !s.haleKnows[topic.requiresRelay]) return;
     set((st) => ({
       haleAsked: { ...st.haleAsked, [topicId]: true },
-      conversation: [...st.conversation, { role: "hale", text: topic.response }],
+      haleExplorationLines: [...st.haleExplorationLines, { role: "hale", text: topic.response }],
     }));
     log(set, "authored_action", { kind: "ask_hale", topicId });
   },
@@ -91,7 +101,7 @@ export const useCase3V2Store = create<Case3V2State>((set, get) => ({
     if (!get().mayaAsked[copy.requiresTopic]) return;
     set((s) => ({
       haleKnows: { ...s.haleKnows, [fact]: true },
-      conversation: [...s.conversation, { role: "hale", text: copy.haleAck }],
+      haleExplorationLines: [...s.haleExplorationLines, { role: "hale", text: copy.haleAck }],
     }));
     log(set, "relay", { fact });
   },
