@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCase3Store, routeBStatus, type ChatLine } from "./store";
 import { isCase3Muted, playCase3Ambient, playCase3Sfx, setCase3Muted, stopCase3Ambient } from "./audio";
 import { computeGrading } from "./reveal";
+import Typewriter from "./Typewriter";
 import {
   ACT1_HALE_OPENING,
   ACT1_MAYA_INTERRUPT,
@@ -177,30 +178,58 @@ function QuestionList({
  * the first answer, with the new one added below the fold unseen.
  */
 function Transcript({ history }: { history: ChatLine[] }) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  // Seeded once, at mount, with however many lines already existed —
+  // re-focusing an agent with past history shows it instantly (same
+  // "reopening doesn't replay old animations" rule as the main engine);
+  // only lines added AFTER this mount get the typewriter treatment.
+  const [alreadySeenCount] = useState(() => history.length);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [history.length]);
-
-  if (history.length === 0) return null;
+    // Both refs must be attached BEFORE this runs — which is why the two
+    // divs below are always rendered, never behind an early `return null`
+    // for empty history. An early return would leave containerRef/
+    // contentRef null on the one render this effect ever sees (deps: []),
+    // silently skipping the ResizeObserver forever. Real bug, found here:
+    // an empty `history.map()` already renders nothing extra on its own,
+    // so the early-return branch was never actually necessary.
+    const container = containerRef.current;
+    const content = contentRef.current;
+    if (!container || !content) return;
+    const scrollToBottom = () => {
+      container.scrollTop = container.scrollHeight;
+    };
+    scrollToBottom();
+    // Continuous scroll: fires on every new line AND on every size change
+    // from a bubble still being typed out, so the latest text never ends
+    // up below the fold mid-reveal — a single mechanism covers both.
+    const observer = new ResizeObserver(scrollToBottom);
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div className="flex max-h-32 w-full max-w-sm flex-col gap-2 overflow-y-auto">
-      {history.map((line, i) => (
-        <div
-          key={i}
-          className={`max-w-[90%] rounded-xl p-2.5 text-[14px] leading-snug ${
-            line.role === "player"
-              ? "ml-auto border border-amber-300/30 bg-amber-300/10 text-amber-100"
-              : `border bg-black/60 text-white/90 ${line.reread ? "border-white/5 opacity-70" : "border-white/10"}`
-          }`}
-        >
-          {line.reread && <span className="mr-1 text-white/40">{"↺"}</span>}
-          {line.text}
-        </div>
-      ))}
-      <div ref={bottomRef} />
+    <div ref={containerRef} className="max-h-32 w-full max-w-sm overflow-y-auto">
+      <div ref={contentRef} className="flex flex-col gap-2">
+        {history.map((line, i) => (
+          <div
+            key={i}
+            className={`max-w-[90%] rounded-xl p-2.5 text-[14px] leading-snug ${
+              line.role === "player"
+                ? "ml-auto border border-amber-300/30 bg-amber-300/10 text-amber-100"
+                : `border bg-black/60 text-white/90 ${line.reread ? "border-white/5 opacity-70" : "border-white/10"}`
+            }`}
+          >
+            {line.reread && <span className="mr-1 text-white/40">{"↺"}</span>}
+            {line.role === "agent" ? (
+              <Typewriter text={line.text} instant={i < alreadySeenCount} />
+            ) : (
+              line.text
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -274,7 +303,7 @@ function Act1Hale() {
 
           {hale.length === 0 && (
             <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-black/60 p-3 text-[15px] leading-snug text-white/90">
-              "{ACT1_HALE_OPENING}"
+              "<Typewriter text={ACT1_HALE_OPENING} />"
             </div>
           )}
 
@@ -285,7 +314,7 @@ function Act1Hale() {
                 line.role === "player" ? "ml-auto border border-amber-300/30 bg-amber-300/10 text-amber-100" : "border border-white/10 bg-black/60 text-white/90"
               }`}
             >
-              {line.text}
+              {line.role === "agent" ? <Typewriter text={line.text} /> : line.text}
             </div>
           ))}
 
@@ -336,7 +365,7 @@ function IncomingEventScreen({
           {cue}
         </span>
         <img src={portrait} alt={name} className="max-h-[36vh] w-auto object-contain drop-shadow-2xl" />
-        <p className="max-w-sm text-[15px] leading-snug text-white/90">"{line}"</p>
+        <p className="max-w-sm text-[15px] leading-snug text-white/90">"<Typewriter text={line} />"</p>
         <button
           onClick={onContinue}
           className="mt-2 w-full max-w-sm rounded-xl bg-amber-400 py-3 text-base font-semibold text-black active:scale-[0.98]"
@@ -794,7 +823,7 @@ function Act4Hale() {
           <p className="text-center text-xs uppercase tracking-wide text-white/50">{HALE.name} — Route {committedRoute} committed</p>
           {last && (
             <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-black/60 p-3 text-[15px] leading-snug text-white/90">
-              "{last.text}"
+              "<Typewriter text={last.text} />"
             </div>
           )}
           <button
