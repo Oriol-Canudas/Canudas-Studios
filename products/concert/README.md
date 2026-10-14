@@ -56,7 +56,7 @@ There are three agreement packages: solo, televised duet with public separation,
 
 The complete case is in English: opening, authored choices and replies, notes, agreements, endings, interface and live Lia dialogue. A new local save key preserves the older Catalan session separately. The opening allows at least 12 seconds per beat, including reading time for action cues; pause, previous, next and skip controls are available. Notes, restart confirmation and hidden tabs pause the opening.
 
-Sound starts on the Enter backstage gesture unless explicitly muted, and the control reflects a successfully resumed audio context. Portraits occupy a separate region above the dialogue. Lia has guarded, receptive, hurt and firm expressions, driven by the actual interpreted exchange; threat and private-disclosure events enforce firm and hurt respectively. Expressions do not grant consent. Nora is blonde in her portraits, cover and duet ending.
+Sound is off by default pending listening review; explicitly enabling it stores the preference for a future Enter backstage gesture, and the control reflects a successfully resumed audio context. Portraits occupy a separate region above the dialogue. Lia has guarded, receptive, hurt and firm expressions, driven by the actual interpreted exchange; threat and private-disclosure events enforce firm and hurt respectively. Expressions do not grant consent. Nora is blonde in her portraits, cover and duet ending.
 
 ## Browser evaluation
 

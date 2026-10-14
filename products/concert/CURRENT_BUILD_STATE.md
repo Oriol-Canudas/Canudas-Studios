@@ -5,7 +5,7 @@ Date: 2026-10-14. Builder: Codex, explicitly authorized by Oriol to build and pu
 Live: https://gamex-concert.vercel.app
 
 Vercel project: `gamex-concert`, isolated from the other Perspectives deployments.
-Deployment: `dpl_7BZduEKuU9CEGgF42dy2w2GBTjkW`.
+Deployment: `dpl_2QpexaPJUGwF2rEpotxCU7M5j2Ve`.
 Versioned branch: `codex/concert-immersion-english`.
 Application directory: `products/concert`.
 
@@ -20,3 +20,5 @@ Next acceptance step: Oriol plays without reading the implementation or solution
 English immersion revision: `concert-v0.2-en`. Full case and UI translated; slower controllable opening; real audio-state checking and audible ambience; uncropped authored portraits; large Lia presence and four reactive emotional images; blonde Nora across portraits and shared scenes. User requested these changes after playing v0.1. Baseline preserved at commit `bb3cd01` and local `qa/baseline-v01/`.
 
 Follow-up: user rejected the synthesized sound quality and requested readable context copy, larger speaker portraits and role clarity. Deployed generated crowd ambience, scene ducking, volume control, larger context type and opening portraits, and explicit stage-manager role for Bruno. Audio technical checks are recorded in `qa/audio-repair-results.json`; perceived quality and physical iPhone playback remain human checks.
+
+Audio review pending: Oriol also rejected the generated crowd-only sound. New agreed direction is soft cinematic music with occasional distant cheering encouraging the artists back onstage. Audio is now OFF by default with a fresh sound preference key. A separate 30-second music-and-cheer preview has been prepared for listening review before installation; it is not the active soundtrack.
