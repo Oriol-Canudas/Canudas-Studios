@@ -49,7 +49,7 @@ There are three agreement packages: solo, televised duet with public separation,
 - Every model request uses `store:false`. Provider usage, request IDs and latency are recorded; raw dialogue is not written to server logs. Dialogue stays in the local browser and signed request context. Clearing the local save removes browser history for this game.
 - Six turns is a gameplay limit, not a global spending cap. The 90-request/hour/IP guard and deduplication are best-effort per warm server instance. They do not guarantee global quota enforcement or protect a broadly advertised production launch.
 - Grounding review is itself probabilistic. Passing the recorded examples is evidence of these examples, not proof of universal factual consistency or good persuasion quality.
-- Eleven static images, restrained transitions and original synthesized ambient sound with explicit controls. No recorded character voices or full concert song.
+- Eleven static images, restrained transitions and generated distant audience ambience with explicit mute and volume controls. No recorded character voices or full concert song.
 - Responsive browser checks include 360–430 px widths and a 390×480 keyboard-sized viewport. Actual iPhone Safari/keyboard behavior and enjoyment with fresh human players remain acceptance work.
 
 ## English and immersion update
@@ -72,3 +72,5 @@ node qa/api-cases.mjs      # live model probes; spends API tokens
 ```
 
 The hypothesis under test is whether preparation makes the player want to intervene, and whether their own words change an agreement in a way they understand and value. A deployed app and passing technical tests do not answer that human question.
+
+Audio repair: the original noise-and-sine synthesis was removed after user feedback. A 24-second generated backstage crowd recording now loops with overlapping fades, runs at lower gain during dialogue, and mutes in hidden tabs. No electronic startup tones or ending motifs remain. Provenance and 120-credit generation cost are in `AUDIO_ASSETS.json`. Bruno is explicitly the stage manager who coordinates crew and executes the producer’s cue. Context copy is larger, and opening speaker portraits are 70–76 pixels wide.

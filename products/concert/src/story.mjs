@@ -1,7 +1,7 @@
 export const CAST = {
  nora:{name:'Nora',role:'Co-writer · the other half of the song',image:'nora-guarded',listening:'nora-listening'},
  lia:{name:'Lia',role:'Singer · one step away from going solo',image:'lia-guarded',listening:'lia-receptive'},
- bruno:{name:'Bruno',role:'Production · the broadcast cannot wait',image:'bruno',listening:'bruno'}
+ bruno:{name:'Bruno',role:'Stage manager · cues the show on your call',image:'bruno',listening:'bruno'}
 };
 export const MOODS = {
  guarded:{image:'lia-guarded',label:'Holding back'},
@@ -15,7 +15,7 @@ export const OPENING = [
  {who:'nora',text:'Then the single. I’m not going on.'},
  {who:'lia',text:'Don’t do this now. We were going to talk afterwards.'},
  {who:'nora',text:'After what? The song, or the solo tour you’ve already planned?',cue:'Lia looks at the folded running sheet in Nora’s hand.'},
- {who:'bruno',text:'You’re producing this. I need to know who’s going on. I can’t make them say yes.'}
+ {who:'bruno',text:'You’re the producer. Settle who’s going on; I’ll cue the stage crew. I can’t make them say yes.'}
 ];
 // Reading time includes action cues; automatic scenes never require rapid reading.
 export function openingDuration(beat){const words=[beat.text,beat.cue||''].join(' ').trim().split(/\s+/).length;return Math.max(12000,words*400+4000);}

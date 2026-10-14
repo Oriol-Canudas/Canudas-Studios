@@ -5,7 +5,7 @@ Date: 2026-10-14. Builder: Codex, explicitly authorized by Oriol to build and pu
 Live: https://gamex-concert.vercel.app
 
 Vercel project: `gamex-concert`, isolated from the other Perspectives deployments.
-Deployment: `dpl_p5dYFMyvjuaVqSEypVZ1G8QDnDzK`.
+Deployment: `dpl_7BZduEKuU9CEGgF42dy2w2GBTjkW`.
 Versioned branch: `codex/concert-immersion-english`.
 Application directory: `products/concert`.
 
@@ -18,3 +18,5 @@ Verification records are local in `qa/`: deterministic rules, authored browser j
 Next acceptance step: Oriol plays without reading the implementation or solution routes. Evaluate whether preparation creates a clear personal objective, whether an intervention feels causally acknowledged, and whether the final cost is understandable. Improve resistance, context or pacing from that observation before extending the engine or adding another case.
 
 English immersion revision: `concert-v0.2-en`. Full case and UI translated; slower controllable opening; real audio-state checking and audible ambience; uncropped authored portraits; large Lia presence and four reactive emotional images; blonde Nora across portraits and shared scenes. User requested these changes after playing v0.1. Baseline preserved at commit `bb3cd01` and local `qa/baseline-v01/`.
+
+Follow-up: user rejected the synthesized sound quality and requested readable context copy, larger speaker portraits and role clarity. Deployed generated crowd ambience, scene ducking, volume control, larger context type and opening portraits, and explicit stage-manager role for Bruno. Audio technical checks are recorded in `qa/audio-repair-results.json`; perceived quality and physical iPhone playback remain human checks.

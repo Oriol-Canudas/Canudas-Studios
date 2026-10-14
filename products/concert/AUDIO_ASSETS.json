@@ -1,0 +1,12 @@
+{
+ "revision":"recorded-crowd-v1",
+ "asset":"public/audio/backstage-crowd-v1.mp3",
+ "tool":"Magnific / ElevenLabs sound effects",
+ "creation":"bxZ3Nak5Y2",
+ "creation_url":"https://www.magnific.com/app/creation/bxZ3Nak5Y2",
+ "credits_used":120,
+ "duration_seconds":24,
+ "prompt":"Backstage at an indoor concert, heard from behind a thick stage curtain. Natural distant audience murmur, occasional soft scattered applause and indistinct human cheers, spacious real hall acoustics. Calm subdued room tone, seamless continuous loop. No music, no instruments, no speech intelligible, no electrical hum, no white noise hiss, no sirens, no sudden loud sounds.",
+ "processing":"100 Hz highpass, 4.5 kHz lowpass, loudness normalization -23 LUFS, true peak ceiling -6 dBTP; stereo MP3 128 kbps",
+ "mix":"Default user volume 60%; scene gain 0.65 in opening/hub/ending and 0.28 during dialogue/negotiation/review. 1.2 second overlapping fades at loop boundary. Hidden tab mutes output. No synthetic noise, drones or beep motifs."
+}
