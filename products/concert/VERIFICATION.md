@@ -33,3 +33,11 @@ The user subsequently rejected the crowd-only recording too. It remains technica
 ## Integrated music and larger audience call
 
 User explicitly requested that the preview music be incorporated and the restrained applause replaced by a larger clamour calling the artists back. Both files now load in actual Chromium gameplay: 60.024-second score plus separate eight-second audience cue. `qa/music-crowd-results.json` confirms music playback, a single first-backstage call, no duplicate replay, music ducking beneath the call, restoration at dialogue level, mute, and two successful asset requests. All 22 rule tests and build pass. The soundtrack is integrated, not merely linked as a preview; perceived quality still needs the user’s listening assessment.
+
+## Conversation exit and immediate send feedback
+
+Accepted negotiations now expose a full-width primary continuation to Nora confirmation or the final solo decision. Before acceptance, a visible secondary exit lets the player end and review. A fixture-based actual browser journey verified the accepted exit at 655×1050, 390×844 and 390×480, then continued through Nora consent to performance. This test uses a stored accepted-state fixture, not a real inference call.
+
+Enter now clears the composer immediately and places a pending player bubble in the conversation. On failure, the message returns to an empty draft; a newer draft is preserved and the failed message remains available to edit/retry. Existing browser resilience checks pass, including stable retry ID, immediate empty input, preserved newer draft, disabled pending actions and ignored late reply after restart. Records: `qa/agreement-exit-results.json`, `qa/resilience-results.json`.
+
+Latest deployed UI repair: `dpl_HHU7Ftbx9FiJTm7GY6dGJeSBTfvQ`. The accepted-exit and send-resilience browser checks were also run against the public UI using explicitly mocked API responses.

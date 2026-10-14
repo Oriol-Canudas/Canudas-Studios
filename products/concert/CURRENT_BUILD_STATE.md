@@ -5,7 +5,7 @@ Date: 2026-10-14. Builder: Codex, explicitly authorized by Oriol to build and pu
 Live: https://gamex-concert.vercel.app
 
 Vercel project: `gamex-concert`, isolated from the other Perspectives deployments.
-Deployment: `dpl_Gda3oc3E12ZXUo5Prd1DirXWNjhr`.
+Deployment: `dpl_HHU7Ftbx9FiJTm7GY6dGJeSBTfvQ`.
 Versioned branch: `codex/concert-immersion-english`.
 Application directory: `products/concert`.
 
@@ -24,3 +24,5 @@ Follow-up: user rejected the synthesized sound quality and requested readable co
 Audio review pending: Oriol also rejected the generated crowd-only sound. New agreed direction is soft cinematic music with occasional distant cheering encouraging the artists back onstage. Audio is now OFF by default with a fresh sound preference key. A separate 30-second music-and-cheer preview has been prepared for listening review before installation; it is not the active soundtrack.
 
 Music is now integrated at the user’s explicit request: 60-second cinematic underscore plus separate, stronger eight-second audience encore call. Sound on enables both. No continuous crowd-only bed is used. Opening now spells out one final performance: Lia premieres a new song alone OR both artists sing their best-known song together. The new score is installed; prior preview-pending notes above are historical.
+
+Conversation flow repair: prominent primary exit after Lia acceptance, secondary exit at any other time; both lead to agreement review before execution. Sending with Enter clears the input instantly and shows a pending bubble; failed send recovery and preservation of any newly typed draft remain supported.
