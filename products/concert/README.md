@@ -1,0 +1,66 @@
+# PERSPECTIVES — La cançó era per a tu
+
+Playable concert proof of concept: [gamex-concert.vercel.app](https://gamex-concert.vercel.app).
+
+You produce a concert whose closing slot can hold one complete song. Lia wants her solo premiere and does not want to erase Nora; Nora will not perform a reconciliation she has not agreed to. Reactive authored preparation leads to a bounded conversation with Lia, confirmation with Nora, your production cue, and a visible performance and reveal.
+
+This is a separate product directory and Vercel project. It does not replace The Last Message, The Last Ascent or Flight 702.
+
+## Run
+
+Node 24; from this directory:
+
+```sh
+npm ci
+npm run dev -- --port 8785
+npm test
+npm run build
+```
+
+For local live AI, supply `OPENAI_API_KEY` in the server process environment. Vite's development middleware runs the same API handler. No secret belongs in a `VITE_` variable, the client bundle, or version control. Without a key, authored play remains accessible and the AI entry explicitly reports that the connection is unavailable.
+
+Production is linked to Vercel project `gamex-concert` in team `ocanudas-7641`. The existing Production secret was entered as `PerspectivesConcert`; the server accepts that name as an alias for `OPENAI_API_KEY` without revealing or recreating its value. `OPENAI_MODEL` is optional; current default is `gpt-4.1`.
+
+```sh
+npx vercel link --project gamex-concert --scope ocanudas-7641
+npx vercel deploy --prod --scope ocanudas-7641
+```
+
+The current deployment uses the CLI. Git auto-deployment is not configured for this project. Do not repoint another prototype's project.
+
+## Code and state
+
+- `src/story.mjs`: fixed story, authored choices, discoveries, outcome packages.
+- `src/engine.mjs`: preparation replay, private/communicated information separation, proposal versions and consent rules.
+- `src/main.jsx` and `src/style.css`: continuous mobile/desktop experience, local save, notes, AI composer, confirmation and endings.
+- `server/lia.mjs`: character context and OpenAI Responses generation with strict structured output. A separate model check reviews a proposed acceptance for semantic grounding and clarifies incomplete terms instead of silently completing the player's offer.
+- `api/negotiate.mjs`: server-only credentials, signed session envelope, bounded calls, metadata diagnostics and warm-instance deduplication.
+- `tests/engine.test.mjs`: deterministic state invariants.
+- `qa/`: browser and live-model evaluation scripts; generated screenshots and session records stay local and are gitignored.
+
+Past facts, private discoveries, relayed information, proposals, accepted versions and executed outcomes remain distinct. Reading a note does not inform Lia. The model controls Lia's dialogue and proposes an interpretation; it cannot edit the authored past or consent for Nora. Nora confirms the current package in an authored scene. Promising tour reconsideration, withdrawing that promise or admitting a privacy breach changes the confirmation path.
+
+There are three agreement packages: solo, televised duet with public separation, and televised duet with separation acknowledged privately now and a joint statement tomorrow. An optional off-air encore requires both artists. No agreement is also a playable ending. This is not an unrestricted story generator.
+
+## Prototype boundaries
+
+- Six successful player turns in the live conversation. Invalid/failed responses preserve the draft and turn count. Up to one interpretation repair; accepted offers receive a separate grounding check. Overall server generation deadline is 48 seconds.
+- Browser-local save and explicit JSON export; no database, accounts or cross-device sync. The AI envelope expires after two hours; this does not erase the local authored save or an existing agreement.
+- Every model request uses `store:false`. Provider usage, request IDs and latency are recorded; raw dialogue is not written to server logs. Dialogue stays in the local browser and signed request context. Clearing the local save removes browser history for this game.
+- Six turns is a gameplay limit, not a global spending cap. The 90-request/hour/IP guard and deduplication are best-effort per warm server instance. They do not guarantee global quota enforcement or protect a broadly advertised production launch.
+- Grounding review is itself probabilistic. Passing the recorded examples is evidence of these examples, not proof of universal factual consistency or good persuasion quality.
+- Nine static images, restrained transitions and optional original synthesized ambient sound. No recorded character voices or full concert song.
+- Responsive browser checks include 360–430 px widths and a 390×480 keyboard-sized viewport. Actual iPhone Safari/keyboard behavior and enjoyment with fresh human players remain acceptance work.
+
+## Browser evaluation
+
+The QA scripts use Playwright. Install it in your test environment and provide a Chromium installation, or set `QA_PLAYWRIGHT` to its module path and `QA_CHROME` to an executable path.
+
+```sh
+node qa/browser.cjs        # local authored route and unavailable API
+node qa/resilience.cjs     # mocked API; failure/retry/draft/late-response behavior
+node qa/live-journeys.cjs  # published public-duet and solo paths; spends API tokens
+node qa/api-cases.mjs      # live model probes; spends API tokens
+```
+
+The hypothesis under test is whether preparation makes the player want to intervene, and whether their own words change an agreement in a way they understand and value. A deployed app and passing technical tests do not answer that human question.
