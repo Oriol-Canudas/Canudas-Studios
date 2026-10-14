@@ -1,73 +1,81 @@
 export const CAST = {
-  nora: {name:'Nora', role:'Coautora · l’altra meitat de la cançó', image:'nora-guarded', listening:'nora-listening'},
-  lia: {name:'Lia', role:'Cantant · a un pas d’estrenar-se sola', image:'lia-guarded', listening:'lia-receptive'},
-  bruno: {name:'Bruno', role:'Producció · el directe no espera', image:'bruno', listening:'bruno'}
+ nora:{name:'Nora',role:'Co-writer · the other half of the song',image:'nora-guarded',listening:'nora-listening'},
+ lia:{name:'Lia',role:'Singer · one step away from going solo',image:'lia-guarded',listening:'lia-receptive'},
+ bruno:{name:'Bruno',role:'Production · the broadcast cannot wait',image:'bruno',listening:'bruno'}
+};
+export const MOODS = {
+ guarded:{image:'lia-guarded',label:'Holding back'},
+ receptive:{image:'lia-receptive',label:'Considering your offer'},
+ hurt:{image:'lia-hurt',label:'That hit a nerve'},
+ firm:{image:'lia-firm',label:'Drawing a line'}
 };
 export const OPENING = [
-  {who:'',text:'Cinc minuts abans de tancar el directe.',cue:'Els aplaudiments travessen la cortina. Nora deixa el micròfon damunt d’un flight case.'},
-  {who:'bruno',text:'Hem anat llargs. Antena ens deixa quatre minuts: el single o la vostra cançó. Totes dues, no.'},
-  {who:'nora',text:'Doncs el single. Jo no surto.'},
-  {who:'lia',text:'No em facis això ara. Havíem de parlar després.'},
-  {who:'nora',text:'Després de què? De la cançó o de la gira que ja tens preparada?',cue:'Lia mira el programa plegat que Nora duu a la mà.'},
-  {who:'bruno',text:'Tu portes el programa. Jo necessito saber qui puja. No puc fer-los dir que sí.'}
+ {who:'',text:'Five minutes before the broadcast ends.',cue:'Applause carries through the curtain. Nora leaves her microphone on a flight case.'},
+ {who:'bruno',text:'We ran over. The network is giving us four minutes. Your single or your song together. Not both.'},
+ {who:'nora',text:'Then the single. I’m not going on.'},
+ {who:'lia',text:'Don’t do this now. We were going to talk afterwards.'},
+ {who:'nora',text:'After what? The song, or the solo tour you’ve already planned?',cue:'Lia looks at the folded running sheet in Nora’s hand.'},
+ {who:'bruno',text:'You’re producing this. I need to know who’s going on. I can’t make them say yes.'}
 ];
+// Reading time includes action cues; automatic scenes never require rapid reading.
+export function openingDuration(beat){const words=[beat.text,beat.cue||''].join(' ').trim().split(/\s+/).length;return Math.max(12000,words*400+4000);}
 export const NODES = {
- N0:{who:'nora',line:'Si canto amb ella, demà tothom dirà que no passa res. I sí que passa.',choices:[
-  ['meaning','Què no vols que el públic entengui?','Que em quedo. No vull fer una última cançó que sembli una promesa de totes les següents.','N1',['boundary']],
-  ['sheet','Què has vist al programa?','“Lia. Gira en solitari.” Jo encara esperava que decidíssim juntes què faríem. Em va dir: “Després del concert decidim què fem amb nosaltres.”','N2',['phrase']],
-  ['goodbye','Si fos un comiat de veritat, voldries cantar?','Potser. Però un comiat no és cantar i tornar a esperar al camerino.','N1',['boundary']]]},
- N1:{who:'nora',line:'Puc fer una última cançó. No puc continuar fent veure que encara no hem decidit res.',choices:[
-  ['terms','Quines condicions vols que li traslladi?','Que se’n va una sòcia, no una substituta enfadada. La cançó també és meva. I que no anunciï que continuem. Això sí que li pots dir.','N3',['offer']],
-  ['private','Ho vols dir davant de tothom?','Si ella ho reconeix en privat i no ven una reconciliació, potser no cal fer-ho aquesta nit. Però demà hem de revisar juntes què expliquem.','N3',['private']],
-  ['promise','Et prometo que tornarà a parlar de fer la gira juntes.','Si de veritat ho tornarà a considerar, escoltaré la proposta. Però no em facis pujar per tornar-me a dir que ja estava decidit.','N3',['promise']]]},
- N2:{who:'nora',line:'Jo hi vaig sentir una porta oberta.',choices:[
-  ['residency','Què vas deixar pendent esperant aquesta conversa?','Una residència. Vaig deixar passar la data. Ella sabia que me l’havien ofert; no li vaig dir que l’havia rebutjada.','N2b',['residency']],
-  ['departure','Què necessites decidir avui, encara que no cantis?','Que deixo el projecte. Que aquesta vegada “després” no sigui una altra manera de dir-me que esperi.','N1',['boundary']],
-  ['respect','Puc defensar això sense entrar en res personal.','Sí. No necessites explicar la meva vida per respectar el que t’estic demanant.','N1',[]]]},
- N2b:{who:'nora',line:'I no esperava només una gira.',choices:[
-  ['kiss','Si vols explicar-m’ho, t’escolto.','Ens vam fer un petó. Fa dos anys. Per mi no va acabar allà. Per ella… no ho sé. Això es queda aquí, si us plau.','N1',['kiss']],
-  ['enough','No cal que m’expliquis més per prendre’t seriosament.','Gràcies. Comença per no prometre’m una altra espera.','N1',[]]]},
- N3:{who:'nora',line:'Vull saber què s’està proposant de veritat abans de tornar a agafar aquest micròfon.',choices:[
-  ['relay','Li trasllado només les teves condicions professionals.','D’acord. Una última cançó. No un sí a continuar.','hub',['relay'],'offer'],
-  ['hear','Primer vull escoltar què proposa ella.','D’acord. Però no li diguis que he acceptat.','hub',[]],
-  ['repair','He promès massa sobre la gira. No ho puc garantir.','Llavors retira-ho. Si canto, vull que s’entengui que és un comiat. No vull tornar a sortir d’aquí amb dues versions.','hub',['repair'],'promise'] ]},
- L0:{who:'lia',line:'Fa mesos que preparo aquest single. Però si surto sola ara, semblarà que l’he esborrada. Si no surto, sembla que no pugui existir sense ella.',choices:[
-  ['chronology','Ja havies decidit la gira quan vau parlar?','Vaig autoritzar que la preparessin. Abans, sí. Volia explicar-l’hi després del concert. Vaig dir “nosaltres” perquè no sabia com dir “jo”.','L1',['date','phrase','acknowledgement']],
-  ['cost','Què perds si avui no estrenes el single?','Aquest directe. La banda, la premsa, l’estrena junts. La cançó no desapareix demà. Però aquest moment sí.','L1',['cost']],
-  ['keep','Què vols conservar d’ella?','La manera com em mira abans de començar. Sap quan no arribo a una nota. Però no li puc oferir que tot continuï igual.','L1',['dependence']]]},
- L1:{who:'lia',line:'No sé com deixar-la marxar sense fer veure que no m’importa.',choices:[
-  ['listen','Escoltaré què estaria disposada a fer ella.','Fes-ho. Però no li prometis una gira que no estic oferint.','hub',[]],
-  ['relay_lia','Nora ofereix una última cançó, sense continuar.','Una última? Jo creia que només cantaria si aturava la gira. D’acord. Aleshores hem de parlar de què diríem.','hub',['relay'],'offer'],
-  ['plan','Vull preparar un pla amb tu.','Vine. Digues què em proposes, sabent què deixem fora.','brief',[]]]},
- B0:{who:'bruno',line:'Repertori, qui canta i què diem abans. Amb això puc treballar.',choices:[
-  ['date','Quan es va autoritzar la gira?','Fa tres dies. Mira l’hora d’aquesta ordre de preparació. Jo no era a la conversa que van tenir després.','B1',['date']],
-  ['encore','Poden cantar fora d’antena?','El recinte ens deixa una cançó curta després. El públic d’aquí la veuria. El de casa, no. I necessito el sí de totes dues.','B1',['encore']],
-  ['ready','Mantén les dues entrades preparades.','Preparades, sí. En antena només n’entrarà una.','hub',[]]]},
- B1:{who:'bruno',line:'Jo mantinc les dues entrades. Tu necessites un acord.',choices:[
-  ['contrast','Vull contrastar l’ordre de la gira amb Lia.','Parla amb ella. L’ordre no explica tota la conversa.','C1',[],'contradiction'],
-  ['done','Ja tinc prou per proposar un tancament.','Quan estigui acceptat, em dones entrada.','hub',[]]]},
- C1:{who:'lia',line:'Que encara estava obert. Ho sé. No li vaig dir una cosa que podia haver-li dit. Però tampoc li puc oferir ara una vida que no vull.',choices:[
-  ['own','Això sí que pots assumir-ho davant seu.','Sí. Sense prometre-li el contrari demà.','hub',['acknowledgement']],
-  ['tonight','Ara necessitem decidir què pots oferir aquesta nit.','Parlem-ne.','brief',['acknowledgement']]]},
- C2:{who:'nora',line:'Necessito sentir-l’hi dir a ella. Però això sí que és diferent de demanar-me que no espatlli el concert.',choices:[
-  ['include','Ho inclouré en el que li proposi.','Vull sentir un final clar, no una altra cosa que depengui de demà.','N1',['ackRelayed']],
-  ['norescue','No et demanaré que surtis per arreglar-li la nit.','Puc voler cantar per mi, també. No em treguis aquesta possibilitat.','N1',['ackRelayed']]]}
+ N0:{who:'nora',line:'If I sing with her, tomorrow everyone will say nothing has changed. It has.',choices:[
+ ['meaning','What don’t you want the audience to assume?','That I’m staying. I don’t want one last song to sound like a promise of all the ones after it.','N1',['boundary']],
+ ['sheet','What did you see on the running sheet?','“Lia. Solo tour.” I was still waiting for us to decide together. She said, “After the concert, we’ll decide what to do with us.”','N2',['phrase']],
+ ['goodbye','If it were a real goodbye, would you want to sing?','Maybe. But a goodbye isn’t singing, then going back to waiting in the dressing room.','N1',['boundary']]]},
+ N1:{who:'nora',line:'I can sing one last song. I can’t keep pretending we haven’t decided anything.',choices:[
+ ['terms','What conditions can I take back to her?','She’s losing a partner, not an angry substitute. That song is mine too. And she cannot announce that we’re staying together. You can tell her that.','N3',['offer']],
+ ['private','Do you want to say it in front of everyone?','If she acknowledges it privately and doesn’t sell a reunion, maybe it doesn’t have to be tonight. But tomorrow, we review what we say together.','N3',['private']],
+ ['promise','I promise she’ll reconsider doing the tour together.','If she really will reconsider, I’ll hear the offer. But don’t get me onstage just to tell me it was already decided.','N3',['promise']]]},
+ N2:{who:'nora',line:'I heard a door being left open.',choices:[
+ ['residency','What did you put on hold for that conversation?','A residency. I let the deadline pass. She knew I’d been offered it. I didn’t tell her I turned it down.','N2b',['residency']],
+ ['departure','What do you need to decide tonight, even if you don’t sing?','That I’m leaving the project. That this time, “afterwards” isn’t another way of asking me to wait.','N1',['boundary']],
+ ['respect','I can stand up for that without bringing in anything personal.','Yes. You don’t need to tell my life story to respect what I’m asking for.','N1',[]]]},
+ N2b:{who:'nora',line:'And I wasn’t only waiting for a tour.',choices:[
+ ['kiss','If you want to tell me, I’m listening.','We kissed. Two years ago. For me, it didn’t end there. For her… I don’t know. This stays here, please.','N1',['kiss']],
+ ['enough','You don’t have to tell me more for me to take you seriously.','Thank you. Start by not promising me another wait.','N1',[]]]},
+ N3:{who:'nora',line:'I want to know what’s really being offered before I pick up that microphone again.',choices:[
+ ['relay','I’ll share only your professional conditions.','All right. One last song. Not a yes to carrying on.','hub',['relay'],'offer'],
+ ['hear','First, I want to hear what she’s offering.','Okay. But don’t tell her I’ve agreed.','hub',[]],
+ ['repair','I promised too much about the tour. I can’t guarantee it.','Then take it back. If I sing, I want it understood as a farewell. I won’t leave here with two versions again.','hub',['repair'],'promise']]},
+ L0:{who:'lia',line:'I’ve spent months getting this single ready. But if I go on alone now, it looks like I’ve erased her. If I don’t go on, it looks like I can’t exist without her.',choices:[
+ ['chronology','Had you already decided on the tour when you spoke?','I’d authorized the preparations. Before that conversation, yes. I wanted to tell her after the concert. I said “us” because I didn’t know how to say “me.”','L1',['date','phrase','acknowledgement']],
+ ['cost','What do you lose if the single doesn’t premiere tonight?','This broadcast. The band, the press, the premiere, all together. The song won’t disappear tomorrow. But this moment will.','L1',['cost']],
+ ['keep','What do you want to keep with her?','The way she looks at me before we start. She knows when I won’t reach a note. But I can’t offer to keep everything the same.','L1',['dependence']]]},
+ L1:{who:'lia',line:'I don’t know how to let her go without making it look like I don’t care.',choices:[
+ ['listen','I’ll listen to what she would be willing to do.','Do that. But don’t promise her a tour I’m not offering.','hub',[]],
+ ['relay_lia','Nora is offering one last song, without staying together.','One last song? I thought she’d only sing if I stopped the tour. Okay. Then we need to talk about what we’d say.','hub',['relay'],'offer'],
+ ['plan','I want to work out a plan with you.','Come here. Tell me what you’re proposing, knowing what we’d be giving up.','brief',[]]]},
+ B0:{who:'bruno',line:'The song, who sings it, and what we say beforehand. Give me that and I can work with it.',choices:[
+ ['date','When was the tour authorized?','Three days ago. Look at the timestamp on this preparation order. I wasn’t in the conversation they had afterwards.','B1',['date']],
+ ['encore','Could they sing off air?','The venue will let us do one short song afterwards. People here would see it. People at home wouldn’t. And I need both of them to agree.','B1',['encore']],
+ ['ready','Keep both entrances ready.','Ready, yes. Only one is going on air.','hub',[]]]},
+ B1:{who:'bruno',line:'I’m keeping both entrances ready. You need an agreement.',choices:[
+ ['contrast','I want to ask Lia about the timing of that order.','Talk to her. The order doesn’t tell you the whole conversation.','C1',[],'contradiction'],
+ ['done','I have enough to propose an ending.','Once it’s agreed, give me the cue.','hub',[]]]},
+ C1:{who:'lia',line:'That it was still open. I know. I didn’t tell her something I could have told her. But I can’t offer her a life I don’t want now.',choices:[
+ ['own','You can own that in front of her.','Yes. Without promising the opposite tomorrow.','hub',['acknowledgement']],
+ ['tonight','Right now, we need to decide what you can offer tonight.','Let’s talk.','brief',['acknowledgement']]]},
+ C2:{who:'nora',line:'I need to hear her say it. But that is different from asking me not to ruin her concert.',choices:[
+ ['include','I’ll make that part of my proposal.','I want a clear ending. Not something else that depends on tomorrow.','N1',['ackRelayed']],
+ ['norescue','I won’t ask you to go on just to save her night.','I might want to sing for myself too. Don’t take that possibility away from me.','N1',['ackRelayed']]]}
 };
 export const FACTS = {
- boundary:['Una última cançó no pot prometre continuïtat.','Nora'],
- offer:['Nora permet traslladar les seves condicions professionals: comiat, autoria i cap promesa de continuar.','Nora · oferta condicionada'],
- phrase:['“Després del concert decidim què fem amb nosaltres.”','Conversa sobre el futur'],
- date:['La gira en solitari es va autoritzar fa tres dies, abans d’aquella conversa.','Ordre de preparació / Lia'],
- residency:['Nora va deixar passar una residència esperant la conversa. Lia no sap que l’ha rebutjada.','Nora · conversa privada'],
- kiss:['Un petó fa dos anys. Nora encara hi veu una possibilitat. T’ha demanat confidencialitat.','Nora · confidencial'],
- private:['Nora consideraria separar-se en privat, si demà revisen juntes què expliquen.','Nora · condició'],
- cost:['El single perdria aquesta estrena televisada. La cançó seguiria existint demà.','Lia'],
- dependence:['Lia vol conservar la complicitat musical, però no pot oferir continuar igual.','Lia'],
- encore:['Un bis fora d’antena és possible si totes dues ho accepten. A casa no es veuria.','Bruno'],
- acknowledgement:['Lia reconeix haver deixat una porta oberta quan ja preparava la gira sola.','Lia']
+ boundary:['One last song cannot promise a future together.','Nora'],
+ offer:['Nora allows her professional conditions to be shared: a farewell, credit, and no promise to continue.','Nora · conditional offer'],
+ phrase:['“After the concert, we’ll decide what to do with us.”','A conversation about their future'],
+ date:['The solo tour was authorized three days ago, before that conversation.','Preparation order / Lia'],
+ residency:['Nora let a residency deadline pass while waiting for the conversation. Lia doesn’t know she turned it down.','Nora · private conversation'],
+ kiss:['A kiss two years ago. Nora still sees a possibility. She asked you to keep it confidential.','Nora · confidential'],
+ private:['Nora would consider a private separation if they review tomorrow’s statement together.','Nora · condition'],
+ cost:['The single would lose tonight’s TV premiere. The song would still exist tomorrow.','Lia'],
+ dependence:['Lia wants to keep their musical closeness, but cannot offer to keep everything the same.','Lia'],
+ encore:['An off-air encore is possible if both agree. Viewers at home wouldn’t see it.','Bruno'],
+ acknowledgement:['Lia admits she left a door open after she had already begun planning the solo tour.','Lia']
 };
 export const PROGRAMS = {
- solo:{title:'El single de Lia',short:'Single en solitari',cost:'El comiat compartit queda fora del directe.',intro:'Avui començo una etapa diferent. Gràcies, Nora, per les cançons que hem fet possibles.',terms:['Lia actua sola i estrena el single.','Agraïment real a Nora com a coautora.','Cap excusa, suport o reconciliació atribuïda a Nora.'],image:'ending-solo'},
- public:{title:'Un comiat juntes',short:'Duet de comiat',cost:'El single perd l’estrena d’avui. La separació es fa pública.',intro:'Aquesta és la primera cançó que vam escriure juntes. Avui tanquem aquesta etapa. Gràcies, Nora.',terms:['La cançó compartida ocupa els quatre minuts.','Comiat professional públic, sense detalls íntims.','Autoria reconeguda i cap promesa de continuar.'],image:'ending-duet'},
- private:{title:'La cançó, sense anunciar el final',short:'Duet · separació en privat',cost:'El single queda fora. El públic no sabrà la separació fins demà.',intro:'Aquesta cançó la vam escriure juntes. Nora, és tan teva com meva.',terms:['Lia reconeix ara, en privat, que Nora deixa el projecte.','Introducció neutral i verídica; cap promesa de continuar.','Demà revisaran juntes el comunicat abans de publicar-lo.'],image:'ending-duet'}
+ solo:{title:'Lia’s single',short:'Solo premiere',cost:'Their shared farewell stays off the broadcast.',intro:'Tonight I’m starting a different chapter. Thank you, Nora, for the songs we made possible together.',terms:['Lia performs alone and premieres the single.','Honest thanks to Nora as co-writer.','No excuses, endorsement or reconciliation attributed to Nora.'],image:'ending-solo'},
+ public:{title:'A farewell together',short:'Farewell duet',cost:'The single loses tonight’s premiere. The separation becomes public.',intro:'This is the first song we wrote together. Tonight we’re closing that chapter. Thank you, Nora.',terms:['Their shared song fills the four-minute slot.','A public professional farewell, without intimate details.','Shared credit and no promise to continue the duo.'],image:'ending-duet'},
+ private:{title:'The song, without announcing the end',short:'Duet · private separation',cost:'The single is left out. The audience won’t know about the separation until tomorrow.',intro:'We wrote this song together. Nora, it’s as much yours as mine.',terms:['Lia acknowledges privately, now, that Nora is leaving.','An honest, neutral introduction; no promise to continue.','Both review tomorrow’s statement before it is published.'],image:'ending-duet'}
 };

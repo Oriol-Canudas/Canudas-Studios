@@ -1,4 +1,4 @@
-# PERSPECTIVES — La cançó era per a tu
+# PERSPECTIVES — The Song Was for You
 
 Playable concert proof of concept: [gamex-concert.vercel.app](https://gamex-concert.vercel.app).
 
@@ -49,8 +49,14 @@ There are three agreement packages: solo, televised duet with public separation,
 - Every model request uses `store:false`. Provider usage, request IDs and latency are recorded; raw dialogue is not written to server logs. Dialogue stays in the local browser and signed request context. Clearing the local save removes browser history for this game.
 - Six turns is a gameplay limit, not a global spending cap. The 90-request/hour/IP guard and deduplication are best-effort per warm server instance. They do not guarantee global quota enforcement or protect a broadly advertised production launch.
 - Grounding review is itself probabilistic. Passing the recorded examples is evidence of these examples, not proof of universal factual consistency or good persuasion quality.
-- Nine static images, restrained transitions and optional original synthesized ambient sound. No recorded character voices or full concert song.
+- Eleven static images, restrained transitions and original synthesized ambient sound with explicit controls. No recorded character voices or full concert song.
 - Responsive browser checks include 360–430 px widths and a 390×480 keyboard-sized viewport. Actual iPhone Safari/keyboard behavior and enjoyment with fresh human players remain acceptance work.
+
+## English and immersion update
+
+The complete case is in English: opening, authored choices and replies, notes, agreements, endings, interface and live Lia dialogue. A new local save key preserves the older Catalan session separately. The opening allows at least 12 seconds per beat, including reading time for action cues; pause, previous, next and skip controls are available. Notes, restart confirmation and hidden tabs pause the opening.
+
+Sound starts on the Enter backstage gesture unless explicitly muted, and the control reflects a successfully resumed audio context. Portraits occupy a separate region above the dialogue. Lia has guarded, receptive, hurt and firm expressions, driven by the actual interpreted exchange; threat and private-disclosure events enforce firm and hurt respectively. Expressions do not grant consent. Nora is blonde in her portraits, cover and duet ending.
 
 ## Browser evaluation
 
@@ -60,6 +66,8 @@ The QA scripts use Playwright. Install it in your test environment and provide a
 node qa/browser.cjs        # local authored route and unavailable API
 node qa/resilience.cjs     # mocked API; failure/retry/draft/late-response behavior
 node qa/live-journeys.cjs  # published public-duet and solo paths; spends API tokens
+node qa/immersion.cjs      # local audio signal, pacing, portraits and responsive composer
+node qa/live-emotions.cjs  # published threat/disclosure reactions; spends API tokens
 node qa/api-cases.mjs      # live model probes; spends API tokens
 ```
 

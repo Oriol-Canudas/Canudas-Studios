@@ -1,11 +1,11 @@
 import {NODES} from './story.mjs';
-export const BUILD = 'concert-v0.1';
+export const BUILD = 'concert-v0.2-en';
 export function initialPrep(){return {node:'hub', first:null, events:[], used:[], visits:[], seen:[], facts:{}, sources:{}, relay:false,promise:false,repaired:false,ackRelayed:false,history:{nora:[],lia:[],bruno:[]}};}
 export function options(s){
  const def=NODES[s.node]; if(!def)return [];
  let choices=def.choices.filter(c=>!s.used.includes(c[0]) && (!c[5] || (c[5]==='promise'?s.promise:c[5]==='contradiction'?(s.facts.date&&s.facts.phrase):!!s.facts[c[5]])));
  if(s.node==='N1' && s.repaired) choices=choices.filter(c=>c[0]!=='private'&&c[0]!=='promise');
- if(def.who==='nora'&&s.facts.acknowledgement&&!s.ackRelayed&&s.visits.includes('nora')&&s.node!=='C2')choices.unshift(['relay_ack','Lia reconeix que et va deixar una porta oberta.','Necessito sentir-l’hi dir a ella. Però això sí que és diferent de demanar-me que no espatlli el concert.','C2',['ackRelayed']]);
+ if(def.who==='nora'&&s.facts.acknowledgement&&!s.ackRelayed&&s.visits.includes('nora')&&s.node!=='C2')choices.unshift(['relay_ack','Lia admits she left a door open for you.','I need to hear her say it. But that is different from asking me not to ruin her concert.','C2',['ackRelayed']]);
  return choices.slice(0,3);
 }
 export function entryNode(s,who){
@@ -49,7 +49,7 @@ export function reducePrep(before, action){
   else {s.facts[fact]=true;s.sources[fact]=who;}
  }
  if(choice[3]==='C1'){
-   s.history.lia.push({role:'player',text:'L’ordre de la gira és anterior al “després decidim”. Què podia entendre Nora?'},{role:'lia',text:NODES.C1.line});
+   s.history.lia.push({role:'player',text:'The tour order came before “we’ll decide afterwards.” What was Nora supposed to understand?'},{role:'lia',text:NODES.C1.line});
  }
  s.node=choice[3];return s;
 }
@@ -64,7 +64,7 @@ export function liaContext(s){
   authorizedOffer:s.relay?'Nora offers one last song as an ending, with credit and no continued-duo promise. This is NOT consent to a final package.':null};
 }
 export function initialNegotiation(){return {proposal:null,version:0,terms:{},encore:false,accepted:null,turns:0,threat:false,threatRepaired:false,privacyBreach:false,mood:'guarded',history:[],audit:[]};}
-export function negotiationOpening(prep){return prep.relay?'Nora ha dit que podria ser una última cançó. Si fem això, el single queda fora. Què vols que li ofereixi, exactament?':'Si surto sola, sembla que l’esborri. Si la faig quedar, potser només l’estic fent esperar un altre cop. Digues-me què proposes.';}
+export function negotiationOpening(prep){return prep.relay?'Nora said it could be one last song. If we do that, the single is out. What exactly do you want me to offer her?':'If I go on alone, it looks like I’m erasing her. If I make her stay, maybe I’m just asking her to wait again. Tell me what you’re proposing.';}
 const ALLOWED_TERMS=['cost','departure','credit','privacy','noContinuity','statement','soloAcknowledged'];
 export function requiredTerms(type){return type==='solo'?['soloAcknowledged','credit','privacy']:type==='public'?['cost','departure','credit','privacy','noContinuity']:type==='private'?['cost','departure','credit','privacy','noContinuity','statement']:[];}
 export function missingTerms(n){return n.proposal?requiredTerms(n.proposal).filter(t=>!n.terms[t]):['proposal'];}
@@ -78,7 +78,7 @@ export function applyInterpretation(before,raw,message){
  const acts=(raw.acts||[]).filter(a=>quoteOK(a.evidence));
  const closed=acts.some(a=>a.kind==='close');
  for(const a of acts){
-  if(a.kind==='threat'){n.threat=true;n.accepted=null;n.mood='guarded';}
+  if(a.kind==='threat'){n.threat=true;n.accepted=null;n.mood='firm';}
   if(a.kind==='withdraw_threat'){n.threat=false;n.threatRepaired=true;}
   if(a.kind==='private_disclosure')n.privacyBreach=true;
  }
@@ -98,7 +98,10 @@ export function applyInterpretation(before,raw,message){
   if(canAccept)n.accepted=n.version;
   else rejected.push('invalid_acceptance');
  }
- if(!n.threat)n.mood=raw.mood==='receptive'?'receptive':'guarded';
+ // Expression follows the current interaction. It never grants consent.
+ if(n.threat)n.mood='firm';
+ else if(acts.some(a=>a.kind==='private_disclosure'))n.mood='hurt';
+ else n.mood=['guarded','receptive','hurt','firm'].includes(raw.mood)?raw.mood:'guarded';
  n.turns++;
  n.history.push({role:'user',content:message},{role:'assistant',content:raw.dialogue});
  n.audit.push({turn:n.turns,proposal:n.proposal,version:n.version,accepted:n.accepted,rejected,acts:acts.map(a=>a.kind)});

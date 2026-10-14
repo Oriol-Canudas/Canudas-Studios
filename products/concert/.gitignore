@@ -3,5 +3,5 @@ dist/
 .vercel/
 .env*
 !.env.example
-qa/*.png
+qa/**/*.png
 qa/*.json

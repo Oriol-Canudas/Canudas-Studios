@@ -7,11 +7,11 @@ const fs=require('fs');const assert=require('node:assert/strict');
  const base=process.env.QA_URL||'http://127.0.0.1:8785';
  const click=async name=>page.getByRole('button',{name,exact:true}).click();
  await page.goto(base);await page.screenshot({path:'qa/01-cover.png'});
- await click('Entrar al backstage');await click('Anar al conflicte');await page.locator('.contact').filter({hasText:'Nora, espera. Vinc amb tu.'}).click();await click('Què no vols que el públic entengui?');await click('Quines condicions vols que li traslladi?');await page.screenshot({path:'qa/02-nora.png'});await click('Li trasllado només les teves condicions professionals.');await page.screenshot({path:'qa/03-hub.png'});
- assert(await page.getByText('Lia vol parlar amb tu').isVisible());
- await page.getByRole('button',{name:'Obrir notes'}).click();assert(await page.getByText('Nora permet traslladar', {exact:false}).isVisible());await click('Tancar notes');
- await page.locator('.contact').filter({hasText:'Lia'}).click();await click('Què perds si avui no estrenes el single?');await click('Vull preparar un pla amb tu.');await page.screenshot({path:'qa/04-brief.png'});
- await click('Parlar amb Lia');await page.waitForTimeout(700);
+ await click('Enter backstage');await click('Go backstage');await page.locator('.contact').filter({hasText:'Nora, wait. I’m coming with you.'}).click();await click('What don’t you want the audience to assume?');await click('What conditions can I take back to her?');await page.screenshot({path:'qa/02-nora.png'});await click('I’ll share only your professional conditions.');await page.screenshot({path:'qa/03-hub.png'});
+ assert(await page.getByText('Lia wants to talk to you').isVisible());
+ await page.getByRole('button',{name:'Open notes'}).click();assert(await page.getByText('Nora allows her professional', {exact:false}).isVisible());await click('Close notes');
+ await page.locator('.contact').filter({hasText:'Lia'}).click();await click('What do you lose if the single doesn’t premiere tonight?');await click('I want to work out a plan with you.');await page.screenshot({path:'qa/04-brief.png'});
+ await click('Talk to Lia');await page.waitForTimeout(700);
  if(base.includes('127.'))assert(await page.getByRole('alert').isVisible());
  const layout=[];
  for(const size of [{width:360,height:740},{width:390,height:844},{width:430,height:932},{width:1440,height:1000}]){

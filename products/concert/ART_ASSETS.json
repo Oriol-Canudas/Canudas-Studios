@@ -1,0 +1,13 @@
+{
+  "revision": "v0.2",
+  "tool": "OpenAI image generation, edits of existing approved portraits/scenes",
+  "assets": {
+    "nora-guarded": "7bbcbb95-7ee1-4fa7-8288-247fec201e82",
+    "nora-listening": "9f6cee5d-a7e1-4343-8d70-0784cadfbc2a",
+    "cover": "9441a70c-cdcd-4909-bb8a-53c2a8671ec0",
+    "ending-duet": "a8e5a834-a03d-4bc9-9a5a-d54c1dcc1543",
+    "lia-hurt": "659b324f-16c1-4f81-925e-604c72f0e5e2",
+    "lia-firm": "50bbc8a3-60cd-449e-bd57-86a6052a396e"
+  },
+  "direction": "Nora: honey-blonde bob, white blazer; Lia: dark auburn curls, black sparkling jacket. Preserve adult identities, lighting and composition. Lia hurt: vulnerable lowered gaze; Lia firm: direct eye contact and tightened jaw. Original source images remain recoverable at bb3cd01."
+}

@@ -1,5 +1,5 @@
 import {createHmac,timingSafeEqual,randomUUID} from 'node:crypto';
-import {initialNegotiation,replayPrep,negotiationOpening} from '../src/engine.mjs';
+import {initialNegotiation,replayPrep,negotiationOpening,BUILD} from '../src/engine.mjs';
 import {generateTurn} from '../server/lia.mjs';
 const sessions=new Map(),rate=new Map();
 // Accept the secret name configured by Oriol without needing to reveal or recreate it.
@@ -14,7 +14,7 @@ function verify(token){
 }
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
- if(req.method==='GET')return res.status(200).json({available:Boolean(key()),model:process.env.OPENAI_MODEL||'gpt-4.1',build:'concert-v0.1'});
+ if(req.method==='GET')return res.status(200).json({available:Boolean(key()),model:process.env.OPENAI_MODEL||'gpt-4.1',build:BUILD});
  if(req.method!=='POST')return res.status(405).json({error:'method'});
  if(!key())return res.status(503).json({error:'ai_unavailable'});
  const b=req.body||{};
