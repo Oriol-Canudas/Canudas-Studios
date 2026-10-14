@@ -11,8 +11,8 @@ export const MOODS = {
 };
 export const OPENING = [
  {who:'',text:'Five minutes before the broadcast ends.',cue:'Applause carries through the curtain. Nora leaves her microphone on a flight case.'},
- {who:'bruno',text:'We ran over. The network is giving us four minutes. Your single or your song together. Not both.'},
- {who:'nora',text:'Then the single. I’m not going on.'},
+ {who:'bruno',text:'We have time for one final performance. Lia can premiere her new song alone, or you two can sing your best-known song together. We can’t fit both.'},
+ {who:'nora',text:'Then she premieres her song. I’m not going on.'},
  {who:'lia',text:'Don’t do this now. We were going to talk afterwards.'},
  {who:'nora',text:'After what? The song, or the solo tour you’ve already planned?',cue:'Lia looks at the folded running sheet in Nora’s hand.'},
  {who:'bruno',text:'You’re the producer. Settle who’s going on; I’ll cue the stage crew. I can’t make them say yes.'}

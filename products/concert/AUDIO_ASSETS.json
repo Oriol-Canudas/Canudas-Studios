@@ -1,12 +1,34 @@
 {
- "revision":"recorded-crowd-v1",
- "asset":"public/audio/backstage-crowd-v1.mp3",
- "tool":"Magnific / ElevenLabs sound effects",
- "creation":"bxZ3Nak5Y2",
- "creation_url":"https://www.magnific.com/app/creation/bxZ3Nak5Y2",
- "credits_used":120,
- "duration_seconds":24,
- "prompt":"Backstage at an indoor concert, heard from behind a thick stage curtain. Natural distant audience murmur, occasional soft scattered applause and indistinct human cheers, spacious real hall acoustics. Calm subdued room tone, seamless continuous loop. No music, no instruments, no speech intelligible, no electrical hum, no white noise hiss, no sirens, no sudden loud sounds.",
- "processing":"100 Hz highpass, 4.5 kHz lowpass, loudness normalization -23 LUFS, true peak ceiling -6 dBTP; stereo MP3 128 kbps",
- "mix":"Default user volume 60%; scene gain 0.65 in opening/hub/ending and 0.28 during dialogue/negotiation/review. 1.2 second overlapping fades at loop boundary. Hidden tab mutes output. No synthetic noise, drones or beep motifs."
+  "revision": "cinematic-score-and-encore-v1",
+  "previous_rejected_asset": {
+    "revision": "recorded-crowd-v1",
+    "asset": "public/audio/backstage-crowd-v1.mp3",
+    "tool": "Magnific / ElevenLabs sound effects",
+    "creation": "bxZ3Nak5Y2",
+    "creation_url": "https://www.magnific.com/app/creation/bxZ3Nak5Y2",
+    "credits_used": 120,
+    "duration_seconds": 24,
+    "prompt": "Backstage at an indoor concert, heard from behind a thick stage curtain. Natural distant audience murmur, occasional soft scattered applause and indistinct human cheers, spacious real hall acoustics. Calm subdued room tone, seamless continuous loop. No music, no instruments, no speech intelligible, no electrical hum, no white noise hiss, no sirens, no sudden loud sounds.",
+    "processing": "100 Hz highpass, 4.5 kHz lowpass, loudness normalization -23 LUFS, true peak ceiling -6 dBTP; stereo MP3 128 kbps",
+    "mix": "Default user volume 60%; scene gain 0.65 in opening/hub/ending and 0.28 during dialogue/negotiation/review. 1.2 second overlapping fades at loop boundary. Hidden tab mutes output. No synthetic noise, drones or beep motifs."
+  },
+  "music": {
+    "asset": "public/audio/cinematic-score-v1.mp3",
+    "duration_seconds": 60.024,
+    "creation": "gOV0XeLSXO",
+    "tool": "Magnific / ElevenLabs Music v2",
+    "credits": 1200,
+    "direction": "Soft cinematic felt piano, acoustic guitar harmonics and organic strings; low intensity; instrumental",
+    "processing": "-21 LUFS, -4 dBTP, 1 second fade in"
+  },
+  "audience": {
+    "asset": "public/audio/encore-call-v2.mp3",
+    "duration_seconds": 8,
+    "creation": "jUWnIr4LD0",
+    "tool": "Magnific / ElevenLabs SFX",
+    "credits": 40,
+    "direction": "Large packed crowd calling artists back for an encore, collective cheers, rhythmic clapping, scattered whistles",
+    "processing": "100 Hz highpass, 6.5 kHz lowpass, -18 LUFS, -3 dBTP"
+  },
+  "mix": "Music loops with 1.2-second crossfades; quieter during dialogue. Crowd plays once at first backstage hub, once after substantial preparation, once near final AI warning; minimum 20-second gap and no replay on each click. Music ducks under the crowd. Mute and shared volume apply to both. Sound remains opt-in."
 }

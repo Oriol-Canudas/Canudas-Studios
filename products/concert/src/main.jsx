@@ -2,7 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {CAST,OPENING,NODES,FACTS,PROGRAMS,MOODS,openingDuration} from './story.mjs';
 import {BUILD,initialPrep,reducePrep,options,initialNegotiation,noraCanAccept,canExecute,missingTerms} from './engine.mjs';
-import {setSound,setAudioScene,setVolume,getVolume} from './audio.mjs';
+import {setSound,setAudioScene,setVolume,getVolume,cueAudience,resetAudienceCues} from './audio.mjs';
 import './style.css';
 const SAVE='perspectives-concert-v2-en';
 const SOUND_SAVE='perspectives-concert-sound-review';
@@ -27,6 +27,7 @@ function App(){
  useEffect(()=>{const change=()=>setHidden(document.hidden);document.addEventListener('visibilitychange',change);return()=>document.removeEventListener('visibilitychange',change);},[]);
  useEffect(()=>{[...Object.values(MOODS),...Object.values(CAST)].forEach(m=>{const img=new window.Image();img.src=`/art/${m.image}.png`;});},[]);
  useEffect(()=>{setAudioScene(g.screen,hidden);},[g.screen,hidden]);
+ useEffect(()=>{if(g.screen==='hub'&&s.used.length===0)cueAudience('opening-call');else if(g.screen==='hub'&&s.used.length>=4)cueAudience('backstage-return');else if(g.screen==='ai'&&n.turns>=4)cueAudience('last-call');},[g.screen,s.used.length,n.turns,sound,hidden]);
  useEffect(()=>{if(g.screen!=='opening'||paused||hidden||notes||reset||beat>=OPENING.length)return;const t=setTimeout(()=>setBeat(b=>b+1),openingDuration(OPENING[beat]));return()=>clearTimeout(t);},[g.screen,paused,hidden,notes,reset,beat]);
  useEffect(()=>{if(g.screen==='opening'&&beat>=OPENING.length)update({screen:'hub'});},[g.screen,beat]);
  useEffect(()=>{if(g.screen!=='ending'||paused||hidden||notes||reset)return;const t=setTimeout(()=>endBeat>=2?update({screen:'reveal'}):setEndBeat(b=>b+1),14000);return()=>clearTimeout(t);},[g.screen,endBeat,paused,hidden,notes,reset]);
@@ -91,7 +92,7 @@ function App(){
   if(busy||(!none&&!canExecute(s,n,g.confirmed,g.admitted)))return;
   epoch.current++;update({screen:'ending',ending:none?'none':n.proposal});setEndBeat(0);setPaused(false);
  }
- function resetGame(){epoch.current++;requestRef.current=null;setG(fresh());setReset(false);setBeat(0);setError('');setPaused(false);setNotes(false);}
+ function resetGame(){resetAudienceCues();epoch.current++;requestRef.current=null;setG(fresh());setReset(false);setBeat(0);setError('');setPaused(false);setNotes(false);}
  function exportSession(){const blob=new Blob([JSON.stringify({...g,build:BUILD,token:undefined},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='concert-session.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  const isAI=g.screen==='ai';
  const notify=s.promise&&!s.seen?.includes('promise')?{who:'nora',tag:'An unresolved promise',text:'Nora expects Lia to reconsider the tour. Lia hasn’t agreed.'}:s.relay&&!s.seen?.includes('relay')?{who:'lia',tag:'Lia wants to talk to you',text:'“Come here. I want to understand this ‘one last song’.”'}:s.first==='lia'&&!s.seen?.includes('microphone')?{who:'bruno',tag:'Bruno has received a message',text:'Nora has asked him to remove her microphone from the running order.'}:s.first==='nora'&&!s.seen?.includes('soundcheck')?{who:'lia',tag:'On the other side of the curtain',text:'Lia is preparing to open the single. That can still change.'}:null;
@@ -99,7 +100,7 @@ function App(){
  const outcome=g.ending&&g.ending!=='none'?PROGRAMS[g.ending]:null;
  return <div className={`app ${isAI?'chat-app':''} ${keyboard?'keyboard-open':''}`}>
   <div className="ambient" aria-hidden="true"><Image name="backstage"/></div>
-  <header className="topbar"><button className="brand" onClick={()=>setReset(true)} aria-label="PERSPECTIVES · start again">P<span>PERSPECTIVES</span></button><div className="top-actions">{g.screen!=='cover'&&<button className="iconbtn" onClick={()=>setNotes(true)} aria-label="Open notes"><Icon name="note"/><span className="desktop-only">What you know</span>{Object.keys(s.facts).length>0&&<i className="dot"/>}</button>}<button className="iconbtn sound-toggle" disabled={audioBusy} onClick={()=>toggleSound(!sound)} aria-pressed={sound} aria-label={sound?'Turn sound off':'Turn sound on'}><Icon name={sound?'sound':'mute'}/><span>{audioBusy?'Starting…':sound?'Sound on':'Sound off'}</span></button><details className="audio-level"><summary aria-label="Adjust volume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6M16 14v6"/></svg></summary><label>Ambience volume<input aria-label="Ambience volume" type="range" min="0" max="100" value={Math.round(volume*100)} onChange={e=>{const v=Number(e.target.value)/100;setVolumeState(v);setVolume(v);}}/></label></details></div></header>{soundError&&<div className="audio-error" role="alert">{soundError}<button onClick={()=>setSoundError('')}>Dismiss</button></div>}
+  <header className="topbar"><button className="brand" onClick={()=>setReset(true)} aria-label="PERSPECTIVES · start again">P<span>PERSPECTIVES</span></button><div className="top-actions">{g.screen!=='cover'&&<button className="iconbtn" onClick={()=>setNotes(true)} aria-label="Open notes"><Icon name="note"/><span className="desktop-only">What you know</span>{Object.keys(s.facts).length>0&&<i className="dot"/>}</button>}<button className="iconbtn sound-toggle" disabled={audioBusy} onClick={()=>toggleSound(!sound)} aria-pressed={sound} aria-label={sound?'Turn sound off':'Turn sound on'}><Icon name={sound?'sound':'mute'}/><span>{audioBusy?'Starting…':sound?'Sound on':'Sound off'}</span></button><details className="audio-level"><summary aria-label="Adjust volume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6M16 14v6"/></svg></summary><label>Soundtrack volume<input aria-label="Soundtrack volume" type="range" min="0" max="100" value={Math.round(volume*100)} onChange={e=>{const v=Number(e.target.value)/100;setVolumeState(v);setVolume(v);}}/></label></details></div></header>{soundError&&<div className="audio-error" role="alert">{soundError}<button onClick={()=>setSoundError('')}>Dismiss</button></div>}
   <main className={`shell screen-${g.screen}`}>
    <aside className={`desktop-art ${isAI?'live-portrait':''}`} aria-hidden="true"><Image name={g.screen==='ending'?(outcome?.image||'backstage'):g.screen==='dialogue'?(CAST[person]?.image||'cover'):isAI?mood.image:'cover'}/><div>{isAI?<><p className="eyebrow">JUST YOU AND LIA</p><h2>Lia</h2><p className={`mood-label mood-${n.mood}`}>{mood.label}</p><p className="presence-cue">{lastCue}</p></>:<><p className="eyebrow">FIVE MINUTES BEFORE</p><h2>The Song<br/>Was for You<span>.</span></h2><p>One night. Two versions.<br/>The ending isn’t written yet.</p></>}</div></aside>
    <section className="stage">
