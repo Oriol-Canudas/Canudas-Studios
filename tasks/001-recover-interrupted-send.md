@@ -85,4 +85,35 @@ Scope proof: candidate checkout/index clean before and after QA; baseline-to-can
 
 ### Remaining limits
 
-Chromium fixtures prove these client paths, not live-model semantics, human enjoyment, real iOS keyboard behavior or exactly-once inference across server instances. No paid calls or deployment occurred. Browser storage must work; missing legacy request IDs cannot be invented. Existing token expiry and three-attempt cap remain. Different draft text cannot send until unresolved delivery is recovered; the saved agreement can still be used to finish. Normal composer submission clears the text explicitly submitted; the dedicated recovery retry preserves it. Temporary evidence may be removed by system cleanup; durable reproduction lives in the focused browser suite and this committed verdict.
+Chromium fixtures prove these client paths, not live-model semantics, human enjoyment, real iOS keyboard behavior or exactly-once inference across server instances. During the original build and independent QA, no paid calls or deployment occurred. Browser storage must work; missing legacy request IDs cannot be invented. Existing token expiry and three-attempt cap remain. Different draft text cannot send until unresolved delivery is recovered; the saved agreement can still be used to finish. Normal composer submission clears the text explicitly submitted; the dedicated recovery retry preserves it. Temporary evidence may be removed by system cleanup; durable reproduction lives in the focused browser suite and this committed verdict.
+
+
+## Accepted publication — 2026-10-15
+
+User accepted the independent QA PASS and explicitly authorized pushing the three completed commits and deploying this Concert product. This follow-up authorizes publication; the original frozen design/build limits remain the record of the earlier work.
+
+- Checkout: `outputs/concert-build`; branch `codex/concert-immersion-english`, initially clean.
+- Pushed commits: `305d84f`, `a913c77`, `ac278a0`; GitHub remote branch confirmed at `ac278a0a193591bb9721f352296fd6a6cfaa5e7c` before deployment. No merge or force push.
+- Deployed commit: `ac278a0a193591bb9721f352296fd6a6cfaa5e7c`; product bytes match independently tested candidate `a913c776`.
+- Confirmed deployment directory: `products/concert`. Existing project: `ocanudas-7641/gamex-concert`, `prj_pmy012EZyymfl5MvxHQrIRhzYz3R`; local link and remote project inspection agree. Root `.`, Node 24, Vite, output `dist`.
+- Command from that directory: `npx --no-install vercel deploy --prod --scope ocanudas-7641 --yes` (exit 0).
+- Deployment: `dpl_CF4F5VGzohnZLu8mmESJSefCbSoK`, production, READY; created 2026-10-15 10:45:40 Europe/Madrid. Confirmed with `vercel inspect` after completion.
+- Immutable deployment URL: https://gamex-concert-5rgflgu6e-ocanudas-7641.vercel.app
+- Public production URL: https://gamex-concert.vercel.app
+- Inspector: https://vercel.com/ocanudas-7641/gamex-concert/CF4F5VGzohnZLu8mmESJSefCbSoK
+
+### Published interface verification — PASS
+
+`node /tmp/concert-published-20261015/verify.cjs` exited 0 against the public production URL (HTTP 200). This loads the published UI/assets; every `/api/**` request is intercepted using controlled browser fixtures, with service workers blocked. No paid model/backend inference calls occurred.
+
+Actual send POST held → newer draft typed and saved → reload → “Delivery unconfirmed · no reply applied” and explicit retry control. No automatic resend, no permanent Sending label. Prep/facts, accepted public agreement/version, consent/admission and draft match the pre-reload state. Explicit retry reuses original text, token and request ID; one player bubble, one reply and one validated fixture turn applied. Another reload remains passive and preserves the newer draft. Existing accepted agreement then proceeds through Nora confirmation to Cue the duet and public performance. Continuation controls remain visible at 655×1050, 390×844 and 390×480; no horizontal overflow or JavaScript errors.
+
+The unchanged existing regression was also run directly against production and exited 0:
+
+```sh
+QA_URL=https://gamex-concert.vercel.app QA_CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' node qa/agreement-exit.cjs
+```
+
+This script also intercepts its negotiation endpoint. Coordinator personally inspected published recovery and performance screenshots. Evidence: `/tmp/concert-published-20261015/{verify.cjs,results.json,delivery-unconfirmed.png,retry-complete.png,performance.png}` and ignored `products/concert/qa/agreement-exit-results.json` / `qa/exit-*.png` from the production rerun.
+
+Only this task and Concert current-state documentation change after deployment; their recording commit does not change deployed product bytes. No other products changed. Publication verification covers the deployed interface under fixtures, not live AI behavior, real iOS keyboard, human acceptance or exactly-once server inference.
