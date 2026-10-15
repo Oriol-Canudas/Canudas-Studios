@@ -3,8 +3,24 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "vite --host 127.0.0.1", "build": "vite build", "preview": "vite preview --host 127.0.0.1", "test": "node --test tests/*.test.mjs" },
-  "dependencies": { "react": "^19.2.8", "react-dom": "^19.2.8" },
-  "devDependencies": { "vite": "^8.3.0", "@vitejs/plugin-react": "^6.1.1" },
-  "engines": { "node": "24.x" }
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test tests/*.test.mjs",
+    "qa:local": "node qa/run-local.cjs",
+    "qa:interrupted": "node qa/run-local.cjs interrupted-send"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "playwright": "1.62.1",
+    "vite": "^8.3.0"
+  },
+  "engines": {
+    "node": "24.x"
+  }
 }

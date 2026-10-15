@@ -60,7 +60,23 @@ Sound is off by default pending listening review; explicitly enabling it stores 
 
 ## Browser evaluation
 
-The QA scripts use Playwright. Install it in your test environment and provide a Chromium installation, or set `QA_PLAYWRIGHT` to its module path and `QA_CHROME` to an executable path.
+Playwright is a locked development dependency. With Node 24, from this directory:
+
+```sh
+npm ci
+npx playwright install chromium  # one-time browser download; or use QA_CHROME
+npm test
+npm run qa:local
+# Run just the interrupted-send browser cases:
+npm run qa:interrupted
+# Existing installed Chrome can avoid the browser download (macOS example):
+QA_CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run qa:local
+```
+
+`qa:local` builds and starts static Vite preview on `127.0.0.1:8796`, then runs the existing authored-route, resilience and agreement-exit scripts plus interrupted-send recovery cases, sequentially. Preview has no API handler; test requests are either unavailable locally or intercepted by controlled fixtures, so this command cannot make paid model calls. It refuses an occupied port and stops preview afterward. It does not run the `live-*` or `api-cases` scripts. JSON evidence and screenshots are written under ignored `qa/` paths. `QA_PLAYWRIGHT` can still point to an existing module installation. The individual scripts below require their own local server and are separate from the safe runner; live scripts explicitly spend API tokens.
+
+The recovery test holds a response before reload, checks both newer-draft and empty-draft cases across two reloads, and migrates an existing pending-message save. Retry keeps the original message, signed token and request ID; no reload automatically resends. A successful retry applies one server-validated fixture turn, keeps one player bubble and one reply, and preserves the newer draft. Recovery cannot determine whether the server processed the original send. Server deduplication remains best-effort, and an expired token still requires finishing with the saved agreement or starting again. Browser storage must be writable for a new message to be dispatched. Existing interrupted saves with a request ID and token are recoverable; a missing original identifier is never invented.
+
 
 ```sh
 node qa/browser.cjs        # local authored route and unavailable API
