@@ -1,5 +1,5 @@
 export const CAST = {
- nora:{name:'Nora',role:'Co-writer · the other half of the song',image:'nora-guarded',listening:'nora-listening'},
+ nora:{name:'Nora',role:'Co-writer · the other half of their duet',image:'nora-guarded',listening:'nora-listening'},
  lia:{name:'Lia',role:'Singer · one step away from going solo',image:'lia-guarded',listening:'lia-receptive'},
  bruno:{name:'Bruno',role:'Stage manager · cues the show on your call',image:'bruno',listening:'bruno'}
 };
@@ -11,10 +11,10 @@ export const MOODS = {
 };
 export const OPENING = [
  {who:'',text:'Five minutes before the broadcast ends.',cue:'Applause carries through the curtain. Nora leaves her microphone on a flight case.'},
- {who:'bruno',text:'We have time for one final performance. Lia can premiere her new song alone, or you two can sing your best-known song together. We can’t fit both.'},
- {who:'nora',text:'Then she premieres her song. I’m not going on.'},
+ {who:'bruno',text:'We have time for one of two different songs: Lia’s brand-new solo song, or the song you two wrote together. We can’t fit both.'},
+ {who:'nora',text:'Then she premieres her new solo song. I’m not going on.'},
  {who:'lia',text:'Don’t do this now. We were going to talk afterwards.'},
- {who:'nora',text:'After what? The song, or the solo tour you’ve already planned?',cue:'Lia looks at the folded running sheet in Nora’s hand.'},
+ {who:'nora',text:'After what? Our duet, or the solo tour you’ve already planned?',cue:'Lia looks at the folded running sheet in Nora’s hand.'},
  {who:'bruno',text:'You’re the producer. Settle who’s going on; I’ll cue the stage crew. I can’t make them say yes.'}
 ];
 // Reading time includes action cues; automatic scenes never require rapid reading.
@@ -25,7 +25,7 @@ export const NODES = {
  ['sheet','What did you see on the running sheet?','“Lia. Solo tour.” I was still waiting for us to decide together. She said, “After the concert, we’ll decide what to do with us.”','N2',['phrase']],
  ['goodbye','If it were a real goodbye, would you want to sing?','Maybe. But a goodbye isn’t singing, then going back to waiting in the dressing room.','N1',['boundary']]]},
  N1:{who:'nora',line:'I can sing one last song. I can’t keep pretending we haven’t decided anything.',choices:[
- ['terms','What conditions can I take back to her?','She’s losing a partner, not an angry substitute. That song is mine too. And she cannot announce that we’re staying together. You can tell her that.','N3',['offer']],
+ ['terms','What conditions can I take back to her?','She’s losing a partner, not an angry substitute. The song we wrote together is mine too. And she cannot announce that we’re staying together. You can tell her that.','N3',['offer']],
  ['private','Do you want to say it in front of everyone?','If she acknowledges it privately and doesn’t sell a reunion, maybe it doesn’t have to be tonight. But tomorrow, we review what we say together.','N3',['private']],
  ['promise','I promise she’ll reconsider doing the tour together.','If she really will reconsider, I’ll hear the offer. But don’t get me onstage just to tell me it was already decided.','N3',['promise']]]},
  N2:{who:'nora',line:'I heard a door being left open.',choices:[
@@ -39,9 +39,9 @@ export const NODES = {
  ['relay','I’ll share only your professional conditions.','All right. One last song. Not a yes to carrying on.','hub',['relay'],'offer'],
  ['hear','First, I want to hear what she’s offering.','Okay. But don’t tell her I’ve agreed.','hub',[]],
  ['repair','I promised too much about the tour. I can’t guarantee it.','Then take it back. If I sing, I want it understood as a farewell. I won’t leave here with two versions again.','hub',['repair'],'promise']]},
- L0:{who:'lia',line:'I’ve spent months getting this single ready. But if I go on alone now, it looks like I’ve erased her. If I don’t go on, it looks like I can’t exist without her.',choices:[
+ L0:{who:'lia',line:'I’ve spent months getting my new solo song ready. But if I go on alone now, it looks like I’ve erased her. If I don’t go on, it looks like I can’t exist without her.',choices:[
  ['chronology','Had you already decided on the tour when you spoke?','I’d authorized the preparations. Before that conversation, yes. I wanted to tell her after the concert. I said “us” because I didn’t know how to say “me.”','L1',['date','phrase','acknowledgement']],
- ['cost','What do you lose if the single doesn’t premiere tonight?','This broadcast. The band, the press, the premiere, all together. The song won’t disappear tomorrow. But this moment will.','L1',['cost']],
+ ['cost','What do you lose if the new solo song doesn’t premiere tonight?','This broadcast. The band, the press, the premiere, all together. The song won’t disappear tomorrow. But this moment will.','L1',['cost']],
  ['keep','What do you want to keep with her?','The way she looks at me before we start. She knows when I won’t reach a note. But I can’t offer to keep everything the same.','L1',['dependence']]]},
  L1:{who:'lia',line:'I don’t know how to let her go without making it look like I don’t care.',choices:[
  ['listen','I’ll listen to what she would be willing to do.','Do that. But don’t promise her a tour I’m not offering.','hub',[]],
@@ -69,13 +69,13 @@ export const FACTS = {
  residency:['Nora let a residency deadline pass while waiting for the conversation. Lia doesn’t know she turned it down.','Nora · private conversation'],
  kiss:['A kiss two years ago. Nora still sees a possibility. She asked you to keep it confidential.','Nora · confidential'],
  private:['Nora would consider a private separation if they review tomorrow’s statement together.','Nora · condition'],
- cost:['The single would lose tonight’s TV premiere. The song would still exist tomorrow.','Lia'],
+ cost:['Lia’s new solo song would lose tonight’s TV premiere. The song would still exist tomorrow.','Lia'],
  dependence:['Lia wants to keep their musical closeness, but cannot offer to keep everything the same.','Lia'],
  encore:['An off-air encore is possible if both agree. Viewers at home wouldn’t see it.','Bruno'],
  acknowledgement:['Lia admits she left a door open after she had already begun planning the solo tour.','Lia']
 };
 export const PROGRAMS = {
- solo:{title:'Lia’s single',short:'Solo premiere',cost:'Their shared farewell stays off the broadcast.',intro:'Tonight I’m starting a different chapter. Thank you, Nora, for the songs we made possible together.',terms:['Lia performs alone and premieres the single.','Honest thanks to Nora as co-writer.','No excuses, endorsement or reconciliation attributed to Nora.'],image:'ending-solo'},
- public:{title:'A farewell together',short:'Farewell duet',cost:'The single loses tonight’s premiere. The separation becomes public.',intro:'This is the first song we wrote together. Tonight we’re closing that chapter. Thank you, Nora.',terms:['Their shared song fills the four-minute slot.','A public professional farewell, without intimate details.','Shared credit and no promise to continue the duo.'],image:'ending-duet'},
- private:{title:'The song, without announcing the end',short:'Duet · private separation',cost:'The single is left out. The audience won’t know about the separation until tomorrow.',intro:'We wrote this song together. Nora, it’s as much yours as mine.',terms:['Lia acknowledges privately, now, that Nora is leaving.','An honest, neutral introduction; no promise to continue.','Both review tomorrow’s statement before it is published.'],image:'ending-duet'}
+ solo:{title:'Lia’s new solo song',short:'Solo premiere',cost:'Their shared farewell stays off the broadcast.',intro:'Tonight I’m starting a different chapter. Thank you, Nora, for the songs we made possible together.',terms:['Lia performs alone and premieres the new solo song.','Honest thanks to Nora for their shared songs.','No excuses, endorsement or reconciliation attributed to Nora.'],image:'ending-solo'},
+ public:{title:'A farewell together',short:'Farewell duet',cost:'Lia’s new solo song loses tonight’s premiere. The separation becomes public.',intro:'This is the first song we wrote together. Tonight we’re closing that chapter. Thank you, Nora.',terms:['The duet they wrote together fills the four-minute slot.','A public professional farewell, without intimate details.','Shared credit and no promise to continue the duo.'],image:'ending-duet'},
+ private:{title:'Their duet, without announcing the end',short:'Duet · private separation',cost:'Lia’s new solo song is left out. The audience won’t know about the separation until tomorrow.',intro:'We wrote this song together. Nora, it’s as much yours as mine.',terms:['Lia acknowledges privately, now, that Nora is leaving.','An honest, neutral introduction; no promise to continue.','Both review tomorrow’s statement before it is published.'],image:'ending-duet'}
 };

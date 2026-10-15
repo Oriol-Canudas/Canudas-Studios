@@ -10,7 +10,7 @@ const fs=require('fs');const assert=require('node:assert/strict');
  await click('Enter backstage');await click('Go backstage');await page.locator('.contact').filter({hasText:'Nora, wait. I’m coming with you.'}).click();await click('What don’t you want the audience to assume?');await click('What conditions can I take back to her?');await page.screenshot({path:'qa/02-nora.png'});await click('I’ll share only your professional conditions.');await page.screenshot({path:'qa/03-hub.png'});
  assert(await page.getByText('Lia wants to talk to you').isVisible());
  await page.getByRole('button',{name:'Open notes'}).click();assert(await page.getByText('Nora allows her professional', {exact:false}).isVisible());await click('Close notes');
- await page.locator('.contact').filter({hasText:'Lia'}).click();await click('What do you lose if the single doesn’t premiere tonight?');await click('I want to work out a plan with you.');await page.screenshot({path:'qa/04-brief.png'});
+ await page.locator('.contact').filter({hasText:'Lia'}).click();await click('What do you lose if the new solo song doesn’t premiere tonight?');await click('I want to work out a plan with you.');await page.screenshot({path:'qa/04-brief.png'});
  await click('Talk to Lia');await page.waitForTimeout(700);
  if(base.includes('127.'))assert(await page.getByRole('alert').isVisible());
  const layout=[];
