@@ -1,4 +1,10 @@
-# Verification — concert v0.2 English, 14 October 2026
+# Current verification — 15 October 2026
+
+Task 002 candidate: `6441d1d8ca27aacf94ab71e5962ae5e6975f29bd`. Explicit two-song terminology throughout authored UI and Lia instructions; tap-to-advance opening with isolated controls and reading timers. Independent QA and publication record: `../../tasks/002-opening-clarity-and-tap.md`.
+
+The records below are prior dated results and do not imply that live-model behavior was rerun for this copy/gesture change. Current task uses controlled fixtures only.
+
+## Historical verification — concert v0.2 English, 14 October 2026
 
 Live: https://gamex-concert.vercel.app
 Deployment: `dpl_p5dYFMyvjuaVqSEypVZ1G8QDnDzK` (READY; public alias personally tested).
