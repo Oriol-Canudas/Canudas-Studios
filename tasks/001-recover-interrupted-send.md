@@ -31,7 +31,9 @@ Evidence: `/tmp/concert-baseline-interrupted.json`, `/tmp/concert-baseline-inter
 
 ## BUILD handoff
 
-Pending. One worker, allowed files only:
+Implementation worker: `concert_build`, completed before `concert_qa` started.
+Candidate: `a913c776b952ed227461b8279a1b4ea6a6362593` (parent workflow commit `305d84f`).
+One worker, allowed files only:
 - `products/concert/src/main.jsx`
 - `products/concert/src/send-recovery.mjs` (optional small helper)
 - `products/concert/tests/send-recovery.test.mjs`
@@ -40,8 +42,47 @@ Pending. One worker, allowed files only:
 - `products/concert/package.json`, `products/concert/package-lock.json`
 - `products/concert/README.md`, `products/concert/PRODUCTION_LOG.md`
 
-Worker must hand off a candidate commit and actual verification results. It must not change this frozen brief, root workflow files, server/engine/story or unrelated files.
+Worker changed exactly the nine permitted Concert files (including the optional helper). Client persists the original request before dispatch, migrates pending saves to unconfirmed delivery, retries explicitly without replacing the current draft, and deduplicates the player bubble. Completed replies clear the saved request; restart invalidates stale responses. Export redacts the newly nested signed token.
+
+Pinned Playwright and the local runner make browser checks repeatable. Run from `products/concert`, with Node 24:
+
+```sh
+npm ci
+npx playwright install chromium  # or provide QA_CHROME for installed Chrome
+npm test
+npm run qa:local
+```
+
+The runner builds, serves static preview on 127.0.0.1:8796 and runs four offline browser suites; it does not start API middleware or run paid/live scripts. `npm run qa:interrupted` runs only the focused browser cases. Generated evidence stays ignored under `products/concert/qa/`.
+
+Worker handoff reported successful installation, 25 Node tests, build and four browser suites. Independent QA reran these rather than accepting the report. No story, engine, server or other-product changes.
 
 ## QA verdict
 
-Pending independent QA at the worker's candidate commit. QA has no product-code edit permission. Coordinator records its verdict and evidence here after checking them.
+**PASS** — independent agent `concert_qa` tested candidate `a913c776b952ed227461b8279a1b4ea6a6362593`. QA had no product-code edit permission and made no tracked edits. Coordinator inspected the actual diff, independent JSON evidence and rendered mobile evidence before recording this verdict.
+
+| Frozen criterion | Independent result |
+| --- | --- |
+| 1. Delayed reload recovery | PASS: interrupted message recoverable, no permanent Sending marker. |
+| 2. Honest delivery state | PASS: Delivery unconfirmed; no reply applied. |
+| 3. Draft preservation | PASS: empty, same-text, different newer drafts and legacy saves; dedicated recovery retry preserves the composer. |
+| 4. Explicit original-envelope retry | PASS: original message/token/request ID reused; repeated reloads produce no POST. |
+| 5. Single application | PASS: one player bubble, one reply, one validated fixture turn; subsequent reload remains passive. |
+| 6. State boundaries | PASS: prep/facts, accepted agreement, Nora confirmation, admission, drafts and turns unchanged by passive reload, including non-default accepted state. |
+| 7. Regressions | PASS: existing authored journey, unavailable API, failed send/retry, restart/late-response safety and agreement→Nora→performance checks. |
+
+Independently executed with exit 0: `npm ci`, `npm test` (25/25), `npm run build`, `QA_CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run qa:local` (four suites), `node /tmp/concert-independent-baseline.cjs`, and `node /tmp/concert-independent-extra.cjs`. QA independently reproduced the defect from an archived `e7d0a7b` baseline without switching the active checkout. Extra probes covered failed retry→reload→success, non-default agreement/consent, same/different drafts, blocked different-text send and storage failure preventing dispatch.
+
+Independent evidence (local artifacts, not committed):
+- `/tmp/concert-independent-qa/independent-qa.json` — candidate, command exits, criterion results, limitations and source checks.
+- `/tmp/concert-independent-baseline-interrupted.json` and `.png` — original defect.
+- `/tmp/concert-independent-extra-results.json` and `/tmp/concert-independent-extra.cjs` — additional independent probes.
+- `/tmp/concert-independent-retry-different.png` and `/tmp/concert-independent-retry-same.png` — settled mobile recovery renders.
+- `/tmp/concert-independent-geometry.json` and `/tmp/concert-independent-geometry.cjs` — matched baseline/candidate bounds at 390×844, before/after composer focus. Lia x=18, turns right=371, textarea x=15/right=323, all inspected scrollLeft=0. Suspected clipping in image presentation did not reproduce in actual browser geometry; its display cause is unconfirmed.
+- `products/concert/qa/{browser,resilience,agreement-exit,interrupted-send}-results.json` and recovery screenshots — suites rerun by QA.
+
+Scope proof: candidate checkout/index clean before and after QA; baseline-to-candidate diff contains only Concert and the three requested root workflow files. Coordinator ran `git diff --check`, inspected the actual file list and verified candidate SHA. The final recording commit changes only this task, so tested product bytes remain identical to the candidate.
+
+### Remaining limits
+
+Chromium fixtures prove these client paths, not live-model semantics, human enjoyment, real iOS keyboard behavior or exactly-once inference across server instances. No paid calls or deployment occurred. Browser storage must work; missing legacy request IDs cannot be invented. Existing token expiry and three-attempt cap remain. Different draft text cannot send until unresolved delivery is recovered; the saved agreement can still be used to finish. Normal composer submission clears the text explicitly submitted; the dedicated recovery retry preserves it. Temporary evidence may be removed by system cleanup; durable reproduction lives in the focused browser suite and this committed verdict.
