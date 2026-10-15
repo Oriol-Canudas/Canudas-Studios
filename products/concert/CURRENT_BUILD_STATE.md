@@ -1,17 +1,24 @@
 # Concert prototype — delivery state
 
-Updated: 2026-10-15. Oriol accepted independent task 001 QA and explicitly authorized GitHub push and publication.
+Updated: 2026-10-15. Task 002 independently verified and published.
 
 Live: https://gamex-concert.vercel.app
+Vercel project: `ocanudas-7641/gamex-concert`, `prj_pmy012EZyymfl5MvxHQrIRhzYz3R`.
+Current deployment: `dpl_BjuL3p4mZeaBy7c2uTgrtBwq6HRi` — production READY.
+Deployment URL: https://gamex-concert-ltoi56xx3-ocanudas-7641.vercel.app
+Deployed commit: `e2da375` (product code identical to independently verified `6441d1d8ca27aacf94ab71e5962ae5e6975f29bd`).
+Branch: `codex/concert-immersion-english`. App directory: `products/concert`.
+Git auto-deployment is not configured; CLI publication is separate from Git push. Other products unchanged.
 
-Vercel project: `gamex-concert`, isolated from the other Perspectives deployments.
-Current deployment: `dpl_CF4F5VGzohnZLu8mmESJSefCbSoK` — production READY, confirmed by Vercel inspect. Created 2026-10-15 10:45:40 Europe/Madrid.
-Deployment URL: https://gamex-concert-5rgflgu6e-ocanudas-7641.vercel.app
-Deployed commit: `ac278a0a193591bb9721f352296fd6a6cfaa5e7c` (same product code as independently verified `a913c776`).
-Versioned branch: `codex/concert-immersion-english`.
-Application directory: `products/concert`. Confirmed local link and remote project: `ocanudas-7641/gamex-concert`, `prj_pmy012EZyymfl5MvxHQrIRhzYz3R`, root `.`, Node 24, Vite, output `dist`. CLI publication remains separate from Git push; Git auto-deployment is not configured.
+## Current accepted change — two different songs and scene taps
 
-## Current accepted change — interrupted-send recovery
+Bruno explicitly distinguishes Lia’s new solo song from the duet she and Nora wrote together. Authored dialogue, questions, notes, programmes, endings and Lia instructions use consistent terminology. Nora’s credit refers to their shared songs, not Lia’s new solo song. Existing AI history is preserved.
+
+Tap the non-interactive opening scene to advance one beat, including while paused. Last tap reaches backstage. Controls, text selection and drag gestures do not also advance; manual advancement resets reading time. Existing automatic pacing and game state remain intact.
+
+**Independent QA: PASS** on all seven acceptance criteria, 25/25 Node tests, build and five offline browser suites. Baseline tap defect independently reproduced. Published opening suite also PASS with intercepted API, including 390x844 and 390x480. Published Lia line and cost question verified on mobile; no model calls. Evidence: task `../../tasks/002-opening-clarity-and-tap.md`, `/tmp/concert-published-002.json`, `/tmp/concert-published-lia-002.png`, ignored `qa/opening-results.json` and screenshots. Real-model wording adherence and physical iOS behavior were not retested.
+
+## Previous accepted change — interrupted-send recovery
 
 The three task commits (`305d84f`, `a913c77`, `ac278a0`) were pushed on the existing branch without merging. The accepted minimal workflow is DESIGN → one bounded BUILD worker → a different independent QA agent. Root `AGENTS.md`, `.agents/skills/gamex-qa/SKILL.md` and `tasks/001-recover-interrupted-send.md` hold its instructions and record.
 

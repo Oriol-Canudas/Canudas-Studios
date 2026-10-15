@@ -35,6 +35,8 @@ Independently archived baseline and reproduced missing tap behavior. 25/25 Node 
 Limits: controlled Chromium fixtures, no live-model calls or physical iOS checks. Existing real AI transcript remains historical. Prompt requests clearer terminology; live adherence was not tested.
 
 ## Publication
-Independent QA passed; coordinator publishing the verified product to existing gamex-concert. Final IDs and published verification follow.
+Published `e2da375` (documentation plus verified product6441d1d) to existing `gamex-concert`. Deployment `dpl_BjuL3p4mZeaBy7c2uTgrtBwq6HRi`, production READY, aliased https://gamex-concert.vercel.app; deployment URL https://gamex-concert-ltoi56xx3-ocanudas-7641.vercel.app.
+
+Published controlled `qa/opening.cjs`: PASS. Exact user-reported Lia line and cost question verified at390x844 with API intercepted: PASS; `/tmp/concert-published-002.json` and screenshot `/tmp/concert-published-lia-002.png`. No paid calls; no other-product changes. Existing saved progress/history preserved; replaying the whole opening requires a voluntary restart.
 
 User steering: screenshot Lia L0 and its cost question showed “this single” after the opening distinguished two songs. User requests consistent references throughout, not only a clearer first line. This is an authorized copy-scope expansion; frozen mechanical invariants remain unchanged.

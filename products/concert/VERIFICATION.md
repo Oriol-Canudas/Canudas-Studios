@@ -1,6 +1,6 @@
 # Current verification — 15 October 2026
 
-Task 002 candidate: `6441d1d8ca27aacf94ab71e5962ae5e6975f29bd`. Explicit two-song terminology throughout authored UI and Lia instructions; tap-to-advance opening with isolated controls and reading timers. Independent QA and publication record: `../../tasks/002-opening-clarity-and-tap.md`.
+Task 002 candidate: `6441d1d8ca27aacf94ab71e5962ae5e6975f29bd`. Explicit two-song terminology throughout authored UI and Lia instructions; tap-to-advance opening with isolated controls and reading timers. Independent QA PASS (all seven criteria; 25 tests and five browser suites), followed by published opening and exact Lia-copy checks with API intercepted. Deployment `dpl_BjuL3p4mZeaBy7c2uTgrtBwq6HRi` READY. No paid model calls. Independent QA and publication record: `../../tasks/002-opening-clarity-and-tap.md`.
 
 The records below are prior dated results and do not imply that live-model behavior was rerun for this copy/gesture change. Current task uses controlled fixtures only.
 
