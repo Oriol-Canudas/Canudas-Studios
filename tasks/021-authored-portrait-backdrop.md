@@ -26,4 +26,6 @@ Acceptance6: during a fresh normal-motion authored reply, follow-up choices are 
 
 ## Result
 
-Pending. Coordinator publishes accepted task020+021 together to existing gamex-concert and verifies public assets and controlled browser journey.
+Independent QA PASS at bce3fd8749588c74311eab41efad35beb4e31423. Build and authored-portrait, hierarchy, dialogue, reply-reveal, scenes and portrait suites passed. Actual Nora confession/permission/history, all cast/five sizes, state/privacy/draft/reload, natural completion/skip and explicit prior-reply deadline probe passed. No defects or source edits during QA. Evidence: /private/tmp/task021-independent-qa and durable outputs/perspectives/concert-authored-portraits-20261016/independent-qa. Physical iPhone/Safari and human emotional impact remain unverified.
+
+Accepted locally. User added Task022 emotional gateway; coordinator will publish accepted020+021+022 together after022 independent QA.
