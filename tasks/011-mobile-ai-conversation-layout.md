@@ -18,4 +18,4 @@ Allowed products/concert/src/main.jsx (viewport/focus/scroll/render-only), src/s
 5. Independent QA checks exact candidate diff and each above condition, with baseline reproduction and evidence. Clearly label synthetic viewport/native keyboard limitation. Coordinator publishes same tested product, verifies public assets and keyboard probes, records result.
 
 ## BUILD / QA / publication
-Pending.
+BUILD candidate08cdd7f28d04e2489cfe2f6e50bd93c0944dc31f. Separate QA PASS:62 Node tests, build, keyboard/interrupted-send/agreement-exit/scenes/intro-voice suites; independent baseline reproduction and accepted-state Nora confirmation→encore probe. Transcript203px at430 and133px at360; composer follows170/250 pan, natural bubbles, drafts/request identity/agreements preserved. Report /tmp/concert-keyboard-independent-qa.json. PhysicaliOS remains unverified. A19px font-load residual scroll before fonts settle is documented; settled geometry passes and transcript stays scrollable. Publication will include task012 after its separate QA, on the same existing Vercel project.
