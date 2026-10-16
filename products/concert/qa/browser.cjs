@@ -7,7 +7,7 @@ const fs=require('fs');const assert=require('node:assert/strict');
  const base=process.env.QA_URL||'http://127.0.0.1:8785';
  const click=async name=>page.getByRole('button',{name,exact:true}).click();
  await page.goto(base);await page.screenshot({path:'qa/01-cover.png'});
- await click('Enter backstage');await click('Go backstage');await page.locator('.contact').filter({hasText:'Nora, wait. I’m coming with you.'}).click();await click('What would singing it tell the audience?');await click('What would make it an encore you could mean?');await page.screenshot({path:'qa/02-nora.png'});await click('I’ll take her your conditions for tonight’s encore.');await page.screenshot({path:'qa/03-hub.png'});
+ await click('Enter backstage');await click('Go backstage');await page.locator('.contact').filter({hasText:'Nora, wait. I’m coming with you.'}).click();await click('What would they get wrong if you went back out together?');await click('What would you need from her before you step back onstage?');await page.screenshot({path:'qa/02-nora.png'});await click('I’ll ask her to tell you about the tour before singing, credit you, and make no promise about another tour. It’s your offer, not your yes.');await page.screenshot({path:'qa/03-hub.png'});
  assert(await page.getByText('Lia has heard Nora’s offer').isVisible());
  await page.getByRole('button',{name:'Open notes'}).click();assert(await page.getByText('Nora permits sharing her conditions', {exact:false}).isVisible());await click('Close notes');
  await page.locator('.contact').filter({hasText:'Lia'}).click();await click('What would change if you did the encore without her?');await click('I want to work out an offer with you.');await page.screenshot({path:'qa/04-brief.png'});

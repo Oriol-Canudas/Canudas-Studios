@@ -6,7 +6,15 @@ export function initialPrep(){return {node:'hub',first:null,events:[],used:[],vi
 function available(s,c){return !s.used.includes(c[0])&&(!c[5]||(c[5]==='promise'?s.promise:c[5]==='contradiction'?(s.facts.date&&s.facts.phrase):!!s.facts[c[5]]));}
 export function options(s){
  const def=NODES[s.node];if(!def)return [];
- let choices=def.choices.filter(c=>available(s,c));
+ let choices=def.choices.filter(c=>available(s,c)).map(c=>[...c]);
+ // A confession needs a player response before any rehearsal exposition.
+ if(s.node==='N2b'&&s.facts.love&&(s.events.at(-1)==='love'||!s.facts.rehearsal_account))choices=choices.map(c=>{
+  if(c[0]==='permission')return [c[0],'It stays here. What can I tell her about the music?','That I still wanted the music. That I made rehearsals miserable: her timing, my entrances, always something wrong. You can tell her those things. Nothing about how I feel.','N3',['permission','professional','rehearsal_account']];
+  if(c[0]==='accountability')return [c[0],'It stays here. What happened in rehearsals?','I kept finding something wrong: her timing, my entrances. I made it hard to be in the room with me. That doesn’t mean she could leave me thinking the tour was still open.','N1',['rehearsal_account']];
+  if(c[0]==='tonight_nora')return [c[0],'I won’t repeat it. What do you need before going back out?','To hear from her about the tour before I touch that microphone. Singing doesn’t give her my answer about anything else.','N1',[]];
+  return c;
+ });
+ if(s.node==='L3'&&(s.facts.offer||s.facts.private))choices=choices.map(c=>c[0]==='listen'?[c[0],'I’ll take that back to her. Her conditions are already clear.','Tell her the tour plan hasn’t changed. The encore is still a question, not my yes.','hub',[]]:c);
  if(s.node==='N3')choices=choices.filter(c=>!(c[0]==='relay_context'&&s.contextRelayed)&&!(c[0]==='relay_private'&&s.privateRelayed)&&!(c[0]==='relay'&&s.relay));
  if(def.who==='nora'&&s.facts.acknowledgement&&!s.ackRelayed&&s.visits.includes('nora')&&s.node!=='C2')choices.unshift(['relay_ack','Lia admits she kept the decision from you. I want you to hear what she said.','I need to hear that from her. But don’t turn it into a reason I owe her the last song.','C2',['ackRelayed']]);
  // On a return, keep unexplored root topics reachable without replaying the opening monologue.
@@ -22,12 +30,15 @@ export function entryNode(s,who){
  if(who==='lia'&&s.contextRelayed&&!s.seen.includes('context'))return 'LC';
  const root={nora:'N0',lia:'L0',bruno:'B0'}[who];if(!root)return null;return NODES[root].choices.some(c=>available(s,c))?root:s.unlocked.find(k=>NODES[k]?.who===who&&NODES[k].choices.some(c=>available(s,c)))||root;
 }
+const offerReaction='I heard her offer: tell her about the tour before singing, credit her, no promise of another tour. She hasn’t said yes. Neither have I.';
+// Derive receipt ordering from existing replay events; no save-schema addition.
+function offerHeard(s){const delivered=Math.max(...['relay','relay_private','relay_lia'].map(id=>s.events.lastIndexOf(id)));return delivered>=0&&(s.events[delivered]==='relay_lia'||s.events.lastIndexOf('visit:lia')>delivered);}
 export function returnLine(s,who){
- if(who==='nora')return s.promise?'Have you spoken to her about what you promised me?':s.relay?'What is she actually offering?':s.facts.love?'You know why this is hard. That doesn’t make the decision yours.':'Have you found a way for the encore not to promise I’ll be back?';
- if(who==='lia')return s.contextRelayed&&!s.seen.includes('context')?NODES.LC.line:s.relay?'You said she’d consider the encore. What would I have to say?':s.facts.acknowledgement?'I know what I need to own. We still have to decide what happens out there.':'What have you heard? I still need to decide what I can stand behind.';
+ if(who==='nora')return s.promise?'Have you spoken to her about what you promised me?':s.relay?!offerHeard(s)?'Have you reached her yet? If not, ask me what you still need before you go.':'You’ve spoken to her. I still need her answer before I pick up that mic. What else do you need from me?':s.facts.love?'You know why this is hard. That doesn’t make the decision yours.':s.facts.offer||s.facts.private?'You have my conditions. Anything else you need before you take them to her?':'What else do you need to ask me before you go back to her?';
+ if(who==='lia')return s.contextRelayed&&!s.seen.includes('context')?NODES.LC.line:s.relay?offerReaction:s.facts.acknowledgement?'I planned the tour without her. I still have to say it to her face. What do you need to ask me?':'I’m still here. Ask me what you need before we decide who goes back out.';
  return 'Still holding. Both vocal microphones, Lia’s only, or house lights?';
 }
-const relayText={offer:'Nora would consider the encore if you acknowledge the decision before singing, credit her and make no promise about another tour. She has not agreed yet.',private:'Nora would consider the encore if you tell her before going on that she isn’t on the next tour, keep physical space onstage, and agree tomorrow’s statement together. She has not agreed yet.',context:'Nora says she still believed in the music. She knows she hurt you at rehearsals. That was not her asking you to end the project.'};
+const relayText={offer:'Nora would consider the encore if you acknowledge the decision before singing, credit her and make no promise about another tour. She has not agreed yet.',private:'Nora would consider the encore if you tell her before going on that she isn’t on the next tour, credit her, make no promise of another tour, keep physical space onstage, and agree tomorrow’s statement together. She has not agreed yet.',context:'Nora says she still believed in the music. She knows she hurt you at rehearsals. That was not her asking you to end the project.'};
 export function reducePrep(before,action){
  const s=structuredClone(before);s.current=null;
  if(action==='repair_review'){if(!s.promise)throw Error('No promise to repair');s.promise=false;s.repaired=true;s.events.push(action);s.history.nora.push({role:'player',text:'I promised something I couldn’t guarantee. That was mine, not Lia’s. I withdraw it.'},{role:'nora',text:'Then I need this offer to come from her, without anything hidden inside it.'});return s;}
@@ -35,25 +46,26 @@ export function reducePrep(before,action){
  if(action==='brief'){if(!s.used.length)throw Error('Need context');s.node='brief';return s;}
  if(action.startsWith('visit:')){
   const who=action.split(':')[1];if(!['nora','lia','bruno'].includes(who))throw Error('Unknown character');if(!s.first&&who==='bruno')throw Error('Choose an artist first');if(!s.first)s.first=who;
+  const hearingContext=who==='lia'&&s.contextRelayed&&!s.seen.includes('context');
   const returning=s.visits.includes(who);s.node=entryNode(s,who);s.returns[who]=returning;
   s.current={who,line:returning?returnLine(s,who):NODES[s.node].line,player:null};
-  if(who==='lia'&&s.contextRelayed&&!s.seen.includes('context')){s.current.line=NODES.LC.line;s.seen.push('context');}
-  if(who==='lia'&&s.relay&&!s.seen.includes('relay'))s.seen.push('relay');
+  if(hearingContext){s.current.line=NODES.LC.line;s.seen.push('context');}
+  if(who==='lia'&&s.relay&&!offerHeard(s)){s.current.line=hearingContext?s.current.line+'\n'+offerReaction:offerReaction;if(!s.seen.includes('relay'))s.seen.push('relay');}
   if(who==='nora'&&s.promise&&!s.seen.includes('promise'))s.seen.push('promise');
   if(who==='bruno'&&s.first==='lia'&&!s.seen.includes('microphone'))s.seen.push('microphone');
   if(!returning)s.visits.push(who);s.history[who].push({role:who,text:s.current.line,entry:true});s.events.push(action);return s;
  }
  const choice=options(s).find(c=>c[0]===action);if(!choice)throw Error('Unavailable choice: '+action);
- const who=NODES[s.node].who;s.history[who].push({role:'player',text:choice[1]},{role:who,text:choice[2]});s.current={who,line:choice[2],player:choice[1],cue:choice[6]||null};s.used.push(action);s.events.push(action);
+ const who=action==='contrast'?'lia':NODES[s.node].who;s.history[who].push({role:'player',text:choice[1]},{role:who,text:choice[2]});s.current={who,line:choice[2],player:choice[1],cue:choice[6]||null};s.used.push(action);s.events.push(action);
  for(const fact of choice[4]){
   if(fact.startsWith('deliver_')){
    const type=fact.slice(8);s.deliveries.push({to:'lia',kind:type,text:relayText[type],status:'delivered'});
    if(type==='context')s.contextRelayed=true;else {s.relay=true;if(type==='private')s.privateRelayed=true;}
   }else if(fact==='promise')s.promise=true;else if(fact==='repair'){s.promise=false;s.repaired=true;}else if(fact==='ackRelayed')s.ackRelayed=true;else{s.facts[fact]=true;s.sources[fact]=who;}
  }
- s.node=choice[3];if(NODES[s.node]&&!s.unlocked.includes(s.node))s.unlocked.push(s.node);if(NODES[s.node]?.who===who&&NODES[s.node].line!==choice[2]){s.current.continuation=NODES[s.node].line;s.history[who].at(-1).text+='\n'+s.current.continuation;}
- if(s.node==='N2b'){s.facts.rehearsal_account=true;s.sources.rehearsal_account='nora';}
- if(s.node==='C1'){const words='You reserved the dates without Nora before telling her you’d talk about her coming. What was she supposed to understand?';s.history.lia.push({role:'player',text:words},{role:'lia',text:NODES.C1.line});s.current={who:'lia',player:words,line:NODES.C1.line};}
+ s.node=choice[3];if(NODES[s.node]&&!s.unlocked.includes(s.node))s.unlocked.push(s.node);if(action!=='love'&&NODES[s.node]?.who===who&&NODES[s.node].line!==choice[2]){s.current.continuation=NODES[s.node].line;s.history[who].at(-1).text+='\n'+s.current.continuation;}
+ if(s.node==='N2b'&&action!=='love'){s.facts.rehearsal_account=true;s.sources.rehearsal_account='nora';}
+
  return s;
 }
 export function replayPrep(events){if(!Array.isArray(events)||events.length>100)throw Error('Invalid preparation');let s=initialPrep();for(const e of events)s=reducePrep(s,e);return s;}
