@@ -1,6 +1,14 @@
 # Concert prototype — delivery state
 
-## Current release — simpler Lia briefing, 16 October 2026
+## Current release — full-height opening and dialogue tint, 16 October 2026
+
+Live: https://gamex-concert.vercel.app/?v=full-screen-opening-20261016. Opening artwork fills the available viewport behind compact overlaid menus, with larger speaker portraits (112×132 mobile,128×150 desktop,80×94 compact), readable captions and prominent Backstage navigation. Compact captions scroll independently. Existing authored character speech is subtly blue-grey; player replies remain plum. Story, voices/crowd timing, saves, drafts, agreement/consent and the portrait AI layout are unchanged. The optional goal field remains removed.
+
+Candidate `26a78cfd1dfe718a9b54e207d253c50316d038f5`, independent QA PASS all six task018 criteria. Build and five browser suites passed, including all11 beats×six sizes and extra390×660/668→844/rotation checks. Baseline/candidate renders inspected; body tint contrast11.89:1. Published commit `5284687b9b2796252e0f19ce4bfece9b2db8b392`, deployment `dpl_3afa129FtyHQxRmHdL3xmUMNVt22`, Production READY in the same gamex-concert project. Immutable: https://gamex-concert-bn6idll3o-ocanudas-7641.vercel.app.
+
+Public verification PASS: anonymous200; client JS/CSS hashes match the tested build; microphone policy unchanged; non-inferential metadata available. Isolated public opening/navigation/tint and dynamic available-height checks passed with API intercepted. No paid calls or other-product changes. Durable evidence: `../../../perspectives/concert-opening-release-20261016/`. Physical iPhone/Safari remains unverified. Full-portrait translucent authored dialogue and task017 Lia→Nora→cue/expanded endings remain design previews only and are not in this release.
+
+## Previous release — simpler Lia briefing, 16 October 2026
 
 Live: https://gamex-concert.vercel.app/?v=goal-removed-20261016. Removed the optional personal-goal input before Lia; existing saved goals remain in history and drafts are preserved. No other runtime change. Candidate93aeb13 independently passed all task016 criteria, build/scenes/portrait and fresh/legacy error/retry/reload probes. Deployed e5e2c28 as dpl_A11JPjfftvUb37ZkJ1v6SPjy3bjt, READY; immutable https://gamex-concert-f6xgqatm2-ocanudas-7641.vercel.app. Public asset identity and independent public briefing probe PASS with controlled fixtures; no paid calls. Evidence: ../../../perspectives/concert-goal-removal-20261016/. Physical iOS/live AI remain unverified. Task017 agreement/payoff flow is a proposal only.
 
