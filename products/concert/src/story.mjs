@@ -22,22 +22,22 @@ export function openingDuration(beat){const words=[beat.text,beat.cue||''].join(
 export const NODES={
  N0:{who:'nora',line:'I’ve written so many of those songs with her. I’ve sung them beside her every night. And now I’m reading that I’m not on the next tour. She still expects me to go back out and sing the one that means the most to us.',choices:[
  ['meaning','What would singing it tell the audience?','That we’re still choosing this together. They don’t see the message on her phone. They see us.','N1',['boundary']],
- ['sheet','What did she tell you before tonight?','Two days ago: “After the concert, we’ll talk about you coming on the next tour.” I thought she meant it was still possible.','N2',['phrase']],
+ ['sheet','What did she tell you before tonight?','Two days ago: “After the concert, we’ll talk about you coming on the next tour.” I thought she meant it was still possible.','N2',['phrase','conversation_date']],
  ['goodbye','Are you refusing the encore, or refusing to keep working with her?','I won’t keep finding out where I stand from her phone. I haven’t decided whether I want to give up this song tonight. It’s mine too.','N1',['boundary']]]},
  N1:{who:'nora',line:'I might want to sing it. I won’t sing a promise she doesn’t mean.',choices:[
  ['terms','What would make it an encore you could mean?','She tells me I’m not on the next tour, herself. She says we wrote this together. And she doesn’t make the encore sound like a promise that I’ll be back.','N3',['offer']],
  ['private','Would you need the audience to know tonight?','Not necessarily. She tells me before we go on. No taking my hand for the crowd. Tomorrow we agree what to tell people. You can offer her that. I’m not saying yes yet.','N3',['private']],
  ['promise','I can get her to take you on the tour.','Has she said that? Because if you’re asking me to go on for that reason, I need it to be real.','N3',['promise']]]},
  N2:{who:'nora',line:'This didn’t start with the message. We haven’t been able to say anything straight to each other for weeks.',choices:[
- ['changed','What changed between you?','Eva started coming to the shows. Lia was happy. I stopped staying after rehearsals. It was easier to leave than keep watching them.','N2a',['eva']],
+ ['changed','What changed between you?','Eva started coming to the shows. Lia was happy. I stopped staying after rehearsals. It was easier to leave than keep watching them.','N2a',['eva','nora_distance']],
  ['interpretation','Lia may have thought you didn’t want the project anymore.','I wanted to keep singing with her. I don’t want to keep working like this. I was angry with her, and I let it come out every time we played.','N2b',['professional']],
  ['respect','We can stay with what you need tonight.','Then don’t ask me to look at her the way I always have, and call it business as usual.','N1',[]]]},
  N2a:{who:'nora',line:'It wasn’t only the singing I wanted to keep. I just never found a way to tell her that.',choices:[
- ['love','What couldn’t you tell her?','That I love her. Not just the music. She hasn’t promised me that. I know. Please don’t take this to her.','N2b',['love','professional'],null,'She looks towards the door, then back.'],
+ ['love','What couldn’t you tell her?','That I love her. Not just the music. She hasn’t promised me that. I know. Please don’t take this to her.','N2b',['love'],null,'She looks towards the door, then back.'],
  ['enough','You don’t have to tell me for me to take you seriously.','Then take this seriously: I still cared about the music. I just didn’t know how to be beside her anymore.','N2b',['professional']]]},
  N2b:{who:'nora',line:'I kept finding something wrong with every rehearsal. Her timing. My entrances. Things I’d never cared about before. I made it hard to be in the room with me.',choices:[
  ['permission','Can I tell her you still believed in the music?','Yes. That, and that I know I hurt her at rehearsals. You can tell her those things. The rest stays here.','N3',['permission','professional']],
- ['accountability','You can own that without accepting how she handled the tour.','I can. I was unfair in the room. She still let me believe the decision was open. Both happened.','N1',['professional']],
+ ['accountability','You can own that without accepting how she handled the tour.','I can. I was unfair in the room. She still let me believe the decision was open. Both happened.','N1',['rehearsal_account']],
  ['tonight_nora','For tonight, let’s work out what you can honestly agree to.','One last song might be possible. A future she doesn’t want isn’t.','N1',[]]]},
  N3:{who:'nora',line:'Bring me what she’s actually willing to do. Don’t come back with what you hope she means.',choices:[
  ['repair','I promised you a place on the tour. She hasn’t agreed. I take that back.','Then don’t ask me to trust that promise again. Bring me an offer I can hear from her.','hub',['repair'],'promise'],
@@ -84,11 +84,14 @@ export const FACTS={
  boundary:['The encore cannot promise a future Nora has not agreed to.','Nora'],
  offer:['Nora permits sharing her conditions: acknowledgment before singing, shared credit, no promise of another tour. Not consent.','Nora · conditional offer'],
  private:['Nora would consider a private acknowledgment before singing, space onstage, and a jointly reviewed statement tomorrow. You may offer it. Not consent.','Nora · conditional offer'],
- phrase:['Two days ago Lia said they would talk about Nora coming on the next tour after the concert.','Nora / Lia'],
+ phrase:['Lia said they would talk about Nora coming on the next tour after the concert, leaving her participation sounding open.','Nora / Lia'],
+ conversation_date:['Nora says Lia left that question open in their conversation two days ago.','Nora'],
  date:['Dates for a lineup without Nora were held three days ago. Today’s message confirms that plan.','Lia / Bruno'],
- eva:['Lia has started seeing Eva. Nora says it became harder to stay after rehearsals.','Their accounts'],
+ eva:['Lia has started seeing Eva.','Lia / Nora'],
+ nora_distance:['Nora says she stopped staying after rehearsals because watching Lia with Eva was hard.','Nora’s account'],
  love:['Nora is in love with Lia. She asked you not to tell her.','Nora · confidential'],
- professional:['Nora still believed in the music. She accepts that she made rehearsals difficult.','Nora’s account'],
+ professional:['Nora says she still believed in the music.','Nora’s account'],
+ rehearsal_account:['Nora describes criticizing rehearsals and accepts that she made it hard to be in the room with her.','Nora’s account'],
  permission:['Nora permits sharing her professional explanation. Permission is not delivery.','Nora · permission'],
  lia_interpretation:['Lia took Nora’s distance as a sign she no longer wanted the project. An interpretation, not Nora’s decision.','Lia’s account'],
  reported_exchange:['Lia heard “Do what you want” as permission. That was not an agreement about the tour.','Lia’s account'],

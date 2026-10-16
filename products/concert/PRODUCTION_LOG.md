@@ -41,3 +41,11 @@ New versioned save retains/exportably distinguishes old two-song state; old sign
 Worker verification:36 deterministic Node tests PASS; build PASS; seven controlled browser suites, including eight new encore journeys, run via static preview with no provider credentials or paid inference. Screenshots and JSON evidence are ignored under `qa/`. New logic tests include same-package versioning, latest-negation semantic audit fixtures, fabricated versus real confidence, permission/delivery, contextual returns after root exhaustion, forward speech and replayable promise repair. Independent QA verdict is not asserted here and belongs in coordinator task004.
 
 Limitations: controlled fixture dialogue is not evidence of real-model semantic quality. Physical iOS interaction, human comprehension/enjoyment and live-model evaluation remain separate acceptance work. No new services, dependencies, assets, push or deployment by BUILD.
+
+### Task004 independent-QA correction batch
+
+Independent QA rejected candidate5170abb: an actor refusal could retain an earlier yes when the separate audit still considered the offer terms grounded; a Lia-only Eva note also attributed Nora testimony never heard. Corrected generation/audit schema to distinguish willingness (agree/continue/withhold/withdraw) from semantic term support. Refusal and unresolved participation revoke the old acceptance version, so prior Nora confirmation cannot be reused. Closing an unchanged offer can preserve an explicitly continued yes. Withdrawing the without-Nora offer disables immediate reacceptance of that same offer through the authored alternative; actual remaining negotiation and no encore remain available.
+
+Notes now separate Lia seeing Eva, Nora's distance, her spoken rehearsal accountability and her professional belief. Love alone/accountability does not manufacture the belief claim. Legacy notice actions use transparent themed styling and minimum44px targets.
+
+Worker revalidation:43 Node tests PASS, build PASS and all seven offline browser suites PASS, now11 encore journeys. Regression uses provider-shaped fixtures through `generateTurn` and actual browser send/review to verify stale cue removal, solo-refusal protection, source-aware notes and unchanged-close semantics. No paid calls, push or deployment. Independent re-QA still required for the new candidate.

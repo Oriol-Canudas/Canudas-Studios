@@ -52,12 +52,13 @@ export function reducePrep(before,action){
   }else if(fact==='promise')s.promise=true;else if(fact==='repair'){s.promise=false;s.repaired=true;}else if(fact==='ackRelayed')s.ackRelayed=true;else{s.facts[fact]=true;s.sources[fact]=who;}
  }
  s.node=choice[3];if(NODES[s.node]&&!s.unlocked.includes(s.node))s.unlocked.push(s.node);if(NODES[s.node]?.who===who&&NODES[s.node].line!==choice[2]){s.current.continuation=NODES[s.node].line;s.history[who].at(-1).text+='\n'+s.current.continuation;}
+ if(s.node==='N2b'){s.facts.rehearsal_account=true;s.sources.rehearsal_account='nora';}
  if(s.node==='C1'){const words='You reserved the dates without Nora before telling her you’d talk about her coming. What was she supposed to understand?';s.history.lia.push({role:'player',text:words},{role:'lia',text:NODES.C1.line});s.current={who:'lia',player:words,line:NODES.C1.line};}
  return s;
 }
 export function replayPrep(events){if(!Array.isArray(events)||events.length>100)throw Error('Invalid preparation');let s=initialPrep();for(const e of events)s=reducePrep(s,e);return s;}
 export function liaContext(s){return {conversationWithPlayer:s.history.lia,deliveredMessages:s.deliveries.filter(d=>d.to==='lia'&&d.status==='delivered').map(d=>d.text),relayedProfessionalOffer:s.relay,relayedProfessionalContext:s.contextRelayed,ownHistory:'You front the band. Nora co-writes and sings many songs, a central creative member. Three days ago you asked Bruno to reserve next-tour dates without Nora. Two days ago you told her you would discuss her participation after the concert. Today the booking confirmation arrived. You read her harsh rehearsals and distance as no longer wanting the project. You have been seeing Eva. You do not know Nora’s current feelings. The main set is complete; the crowd calls for the customary shared encore song.'};}
-export function initialNegotiation(prep=initialPrep()){return {proposal:null,version:0,terms:{},encore:false,accepted:null,turns:0,threat:false,threatRepaired:false,privacyBreach:false,knowsLove:!!prep.facts.love,mood:'guarded',history:[],audit:[]};}
+export function initialNegotiation(prep=initialPrep()){return {proposal:null,version:0,terms:{},encore:false,accepted:null,turns:0,threat:false,threatRepaired:false,privacyBreach:false,knowsLove:!!prep.facts.love,withdrawnProposal:null,willingness:'withhold',mood:'guarded',history:[],audit:[]};}
 export function negotiationOpening(s){return s.contextRelayed?'She still wanted the music. I made a whole plan out of thinking she didn’t. That doesn’t make the tour disappear. What do you want me to tell her now?':s.relay?'You said she’d consider doing the encore, without being promised the next tour. I heard you. I don’t know what I can say to her that makes tonight feel honest.':'They’re calling for us. I can go back with the band without her. I don’t know how to sing it with her knowing she won’t be coming on the next tour. Tell me what you’re asking.';}
 const ALLOWED_TERMS=['departure','credit','privacy','noContinuity','statement','soloAcknowledged','stageSpace'];
 export function requiredTerms(type){return type==='solo'?['soloAcknowledged','credit','privacy']:type==='public'?['departure','credit','privacy','noContinuity']:type==='private'?['departure','credit','privacy','noContinuity','statement']:[];}
@@ -72,15 +73,22 @@ export function applyInterpretation(before,raw,message){
  const termQuoteOK=q=>[message,...before.history.filter(m=>m.role==='user').map(m=>m.content)].some(text=>quoteIn(q,text));
  const acts=(raw.acts||[]).filter(a=>quoteOK(a.evidence));
  const closed=acts.some(a=>a.kind==='close');
+ const actorWithheld=['withhold','withdraw'].includes(raw.willingness);
+ const unchangedClose=closed&&!raw.requiresClarification&&!raw.withdrawnTerms?.length&&!actorWithheld&&!raw.proposal&&['agree','continue'].includes(raw.willingness);
+ const continuing=raw.willingness==='continue'&&!raw.requiresClarification&&!raw.withdrawnTerms?.length;
+ // Grounded terms are not an actor's continuing consent. Revoke the version as well
+ // so a later new yes can never reuse Nora's confirmation from before the withdrawal.
+ if(before.accepted===before.version&&(actorWithheld||(raw.accepted!==true&&!unchangedClose&&!continuing))){n.accepted=null;if(n.version===before.version)n.version++;}
+
  for(const a of acts){
-  if(a.kind==='threat'){n.threat=true;n.accepted=null;n.mood='firm';}
+  if(a.kind==='threat'){n.threat=true;n.accepted=null;if(before.accepted===before.version&&n.version===before.version)n.version++;n.mood='firm';}
   if(a.kind==='withdraw_threat'){n.threat=false;n.threatRepaired=true;}
   if(a.kind==='private_disclosure'&&n.knowsLove)n.privacyBreach=true;
  }
  const proposal=['solo','public','private'].includes(raw.proposal)?raw.proposal:null;
  if(proposal && (!quoteOK(raw.proposalEvidence)||closed))rejected.push('unsupported_proposal');
  else if(proposal && (proposal!==n.proposal)){
-  n.version++; n.proposal=proposal;n.accepted=null;n.encore=false;
+  if(n.version===before.version)n.version++; n.proposal=proposal;n.accepted=null;n.encore=false;
   // Different packages are different commitments; the model must ground the new terms.
   n.terms={};
  }
@@ -88,9 +96,11 @@ export function applyInterpretation(before,raw,message){
   if(ALLOWED_TERMS.includes(t.term)&&termQuoteOK(t.evidence)&&!closed){if(!n.terms[t.term]&&before.accepted===before.version&&n.version===before.version){n.version++;n.accepted=null;}n.terms[t.term]=t.evidence;}
   else rejected.push('ungrounded_term:'+t.term);
  }
- const canAccept=n.proposal && !missingTerms(n).length && !n.threat && !closed;
- if(raw.accepted===true){
-  if(canAccept)n.accepted=n.version;
+ if(raw.willingness==='withdraw'||(before.accepted===before.version&&raw.accepted===false&&!raw.willingness&&!closed))n.withdrawnProposal=n.proposal;
+ n.willingness=raw.willingness||(raw.accepted?'agree':'withhold');
+ const canAccept=n.proposal && !missingTerms(n).length && !n.threat && !closed && !actorWithheld;
+ if(raw.accepted===true&&!closed){
+  if(canAccept){n.accepted=n.version;n.withdrawnProposal=null;}
   else rejected.push('invalid_acceptance');
  }
  // Expression follows the current interaction. It never grants consent.
@@ -99,11 +109,11 @@ export function applyInterpretation(before,raw,message){
  else n.mood=['guarded','receptive','hurt','firm'].includes(raw.mood)?raw.mood:'guarded';
  n.turns++;
  n.history.push({role:'user',content:message},{role:'assistant',content:raw.dialogue});
- n.audit.push({turn:n.turns,proposal:n.proposal,version:n.version,accepted:n.accepted,rejected,acts:acts.map(a=>a.kind)});
+ n.audit.push({turn:n.turns,proposal:n.proposal,version:n.version,accepted:n.accepted,rejected,willingness:raw.willingness||null,acts:acts.map(a=>a.kind)});
  return {n,rejected,closed};
 }
 export function noraCanAccept(prep,n,admitted=false){
- if(n.accepted!==n.version||!n.proposal||n.threat)return {ok:false,reason:'lia'};
+ if(n.willingness==='withdraw'||n.accepted!==n.version||!n.proposal||n.threat)return {ok:false,reason:'lia'};
  if(n.proposal==='solo')return {ok:true,reason:'not_required'};
  if(n.privacyBreach)return {ok:false,reason:admitted?'refused':'breach'};
  if(prep.promise)return {ok:false,reason:'promise'};
