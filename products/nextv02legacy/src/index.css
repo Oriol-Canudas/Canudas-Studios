@@ -35,3 +35,26 @@ h1, h2, h3 {
   font-family: var(--font-display);
   font-weight: 500;
 }
+
+/* Slow, gentle pan/zoom for the memory-clip slideshow — never a hard cut. */
+@keyframes clip-kenburns {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.12) translate(-1.5%, -1.5%);
+  }
+}
+
+.clip-kenburns {
+  animation: clip-kenburns 6s ease-in-out forwards;
+}
+
+@keyframes clip-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}

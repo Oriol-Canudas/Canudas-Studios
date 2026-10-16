@@ -73,3 +73,13 @@ export interface MemoryChapter {
   illustrationUrl: string | null
   createdAt: string
 }
+
+export interface ClipSlide {
+  imageUrl: string
+  caption: string
+}
+
+export interface ChapterClip {
+  slides: ClipSlide[]
+  musicUrl: string | null
+}

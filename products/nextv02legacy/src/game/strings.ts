@@ -21,6 +21,10 @@ export const UI_STRINGS = {
       backHome: "Tornar a l'inici",
       share: 'Envia per WhatsApp',
       close: 'Tancar',
+      createClip: 'Crea un petit vídeo',
+      creatingClip: 'Preparant-ho amb cura…',
+      watchClip: 'Veure el vídeo',
+      clipFailed: 'No he pogut crear el vídeo. Torna-ho a provar.',
     },
     conversation: {
       confirmed: 'Confirmat',
@@ -79,6 +83,10 @@ export const UI_STRINGS = {
       backHome: 'Volver al inicio',
       share: 'Enviar por WhatsApp',
       close: 'Cerrar',
+      createClip: 'Crear un pequeño vídeo',
+      creatingClip: 'Preparándolo con cariño…',
+      watchClip: 'Ver el vídeo',
+      clipFailed: 'No he podido crear el vídeo. Inténtalo de nuevo.',
     },
     conversation: {
       confirmed: 'Confirmado',
@@ -137,6 +145,10 @@ export const UI_STRINGS = {
       backHome: 'Back to home',
       share: 'Send via WhatsApp',
       close: 'Close',
+      createClip: 'Create a little video',
+      creatingClip: 'Putting it together with care…',
+      watchClip: 'Watch the video',
+      clipFailed: "I couldn't create the video. Try again.",
     },
     conversation: {
       confirmed: 'Confirmed',

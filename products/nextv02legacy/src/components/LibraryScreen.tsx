@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
-import { requestChapterLibrary } from '../game/directorClient'
-import type { MemoryChapter } from '../game/types'
+import { requestChapterLibrary, requestChapterClip } from '../game/directorClient'
+import type { MemoryChapter, ChapterClip } from '../game/types'
+import ClipPlayer from './ClipPlayer'
 
-function shareChapter(chapter: MemoryChapter, shareLabel: string) {
+function shareChapter(chapter: MemoryChapter) {
   const text = `${chapter.title}\n\n${chapter.testimonyText}`
 
   if (navigator.share) {
@@ -16,7 +17,6 @@ function shareChapter(chapter: MemoryChapter, shareLabel: string) {
   }
 
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
-  void shareLabel
 }
 
 export default function LibraryScreen() {
@@ -24,10 +24,33 @@ export default function LibraryScreen() {
   const t = getStrings(profile.language).library
   const [chapters, setChapters] = useState<MemoryChapter[] | null>(null)
   const [opened, setOpened] = useState<MemoryChapter | null>(null)
+  const [clips, setClips] = useState<Record<string, ChapterClip>>({})
+  const [clipLoadingId, setClipLoadingId] = useState<string | null>(null)
+  const [clipError, setClipError] = useState<string | null>(null)
+  const [playingClip, setPlayingClip] = useState<ChapterClip | null>(null)
 
   useEffect(() => {
     requestChapterLibrary().then(setChapters)
   }, [])
+
+  async function handleClipAction(chapter: MemoryChapter) {
+    const cached = clips[chapter.id]
+    if (cached) {
+      setPlayingClip(cached)
+      return
+    }
+    setClipError(null)
+    setClipLoadingId(chapter.id)
+    try {
+      const clip = await requestChapterClip(chapter.id)
+      setClips((prev) => ({ ...prev, [chapter.id]: clip }))
+      setPlayingClip(clip)
+    } catch {
+      setClipError(t.clipFailed)
+    } finally {
+      setClipLoadingId(null)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center px-5 py-8">
@@ -77,9 +100,24 @@ export default function LibraryScreen() {
             <div className="p-6 flex flex-col gap-4">
               <h2 className="font-display text-2xl text-ink leading-snug">{opened.title}</h2>
               <p className="text-lg text-ink leading-relaxed whitespace-pre-wrap">{opened.testimonyText}</p>
-              <div className="flex gap-3 pt-2">
+
+              {clipError && <p className="text-red-800 text-base">{clipError}</p>}
+
+              <button
+                onClick={() => handleClipAction(opened)}
+                disabled={clipLoadingId === opened.id}
+                className="bg-terracotta-deep text-surface rounded-xl py-3 text-lg font-medium disabled:opacity-60"
+              >
+                {clipLoadingId === opened.id
+                  ? t.creatingClip
+                  : clips[opened.id]
+                    ? t.watchClip
+                    : t.createClip}
+              </button>
+
+              <div className="flex gap-3">
                 <button
-                  onClick={() => shareChapter(opened, t.share)}
+                  onClick={() => shareChapter(opened)}
                   className="flex-1 bg-terracotta text-surface rounded-xl py-3 text-lg font-medium"
                 >
                   {t.share}
@@ -95,6 +133,8 @@ export default function LibraryScreen() {
           </div>
         </div>
       )}
+
+      {playingClip && <ClipPlayer clip={playingClip} onClose={() => setPlayingClip(null)} />}
     </div>
   )
 }

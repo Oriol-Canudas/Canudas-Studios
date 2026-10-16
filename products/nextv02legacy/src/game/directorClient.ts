@@ -6,6 +6,7 @@ import type {
   PendingQuestion,
   ChapterDraft,
   MemoryChapter,
+  ChapterClip,
 } from './types'
 
 export interface DirectorRequestBody {
@@ -66,4 +67,19 @@ export async function requestChapterLibrary(): Promise<MemoryChapter[]> {
   if (!res.ok) return []
   const data = await res.json()
   return Array.isArray(data?.chapters) ? data.chapters : []
+}
+
+export async function requestChapterClip(chapterId: string): Promise<ChapterClip> {
+  const res = await fetch('/api/chapter-clip', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chapterId }),
+  })
+
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({ error: 'unknown_error' }))
+    throw new Error(payload.error ?? `request_failed_${res.status}`)
+  }
+
+  return (await res.json()) as ChapterClip
 }
