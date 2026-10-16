@@ -62,11 +62,16 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
   await leave();await contact('Nora');await action('changed');await action('love');
   const facts=(await read()).prep.facts;assert(facts.love);assert(facts.rehearsal_account);assert.equal(await page.locator('.character-speech .spoken').count(),1);assert((await page.locator('.choices').innerText()).includes('It stays here.'));await shot('confession');await action('tonight_nora');assert.deepEqual((await read()).prep.facts,facts);
  });
+ await journey('lia-first-pending-ack-before-love',async({page,read,action,start,contact,leave,shot})=>{
+  await start('Lia');await action('chronology');await leave();await contact('Nora');for(const id of ['sheet','changed','love'])await action(id);
+  const before=(await read()).prep;assert(before.facts.acknowledgement);assert(!before.ackRelayed);assert.deepEqual(E.options(before).map(c=>c[0]),['permission','accountability','tonight_nora']);assert.deepEqual(await page.locator('.choices .btn span').allTextContents(),E.options(before).map(c=>c[1]));assert.equal(await page.getByRole('button',{name:/Lia admits she kept/}).count(),0);await page.locator('.toast').waitFor({state:'hidden',timeout:6000});await shot('protected-confession');
+  await action('tonight_nora');const practical=(await read()).prep;assert.deepEqual(practical.facts,before.facts);assert.deepEqual(practical.deliveries,before.deliveries);assert(practical.facts.acknowledgement);assert(!practical.ackRelayed);assert(E.options(practical).some(c=>c[0]==='relay_ack'));await shot('deferred-ack-available');await action('relay_ack');assert((await read()).prep.ackRelayed);assert.equal((await read()).negotiation.accepted,null);assert(!/love/.test(JSON.stringify(E.liaContext((await read()).prep))));
+ });
  for(const staged of [false,true])await journey(staged?'staged-context-then-offer':'combined-context-and-offer',async({page,read,action,start,contact,leave,shot})=>{
   await start('Nora');for(const id of ['sheet','interpretation','permission','relay_context'])await action(id);
   if(staged){await contact('Lia');await leave();}await contact('Nora');for(const id of ['meaning','terms','relay'])await action(id);await contact('Lia');
   const line=await page.locator('.character-speech').innerText();assert.equal(line.split('I heard her offer').length-1,1);assert.equal(line.includes('still wanted the music'),!staged);assert.equal((await read()).negotiation.accepted,null);await shot('receipt');
  });
- fs.writeFileSync('qa/dialogue-results.json',JSON.stringify({pass:true,scope:'Actual authored browser choices; local static preview, controlled start response; no model calls',viewports:['390x844','390x480','1440x1000'],editorialLimit:'Not a measured enjoyment score',results},null,2));console.log('Dialogue: ten controlled authored journeys passed');
+ fs.writeFileSync('qa/dialogue-results.json',JSON.stringify({pass:true,scope:'Actual authored browser choices; local static preview, controlled start response; no model calls',viewports:['390x844','390x480','1440x1000'],editorialLimit:'Not a measured enjoyment score',results},null,2));console.log('Dialogue: eleven controlled authored journeys passed');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -4,11 +4,13 @@ export const SAVE='perspectives-concert-encore-v05';
 export const LEGACY_SAVE='perspectives-concert-v2-en';
 export function initialPrep(){return {node:'hub',first:null,events:[],used:[],visits:[],seen:[],facts:{},sources:{},relay:false,contextRelayed:false,privateRelayed:false,promise:false,repaired:false,ackRelayed:false,current:null,returns:{},unlocked:['N0','L0','B0'],deliveries:[],history:{nora:[],lia:[],bruno:[]}};}
 function available(s,c){return !s.used.includes(c[0])&&(!c[5]||(c[5]==='promise'?s.promise:c[5]==='contradiction'?(s.facts.date&&s.facts.phrase):!!s.facts[c[5]]));}
+const ACK_RELAY=['relay_ack','Lia admits she kept the decision from you. I want you to hear what she said.','I need to hear that from her. But don’t turn it into a reason I owe her the last song.','C2',['ackRelayed']];
 export function options(s){
  const def=NODES[s.node];if(!def)return [];
  let choices=def.choices.filter(c=>available(s,c)).map(c=>[...c]);
  // A confession needs a player response before any rehearsal exposition.
- if(s.node==='N2b'&&s.facts.love&&(s.events.at(-1)==='love'||!s.facts.rehearsal_account))choices=choices.map(c=>{
+ const privacyBeat=s.node==='N2b'&&s.facts.love&&(s.events.at(-1)==='love'||!s.facts.rehearsal_account);
+ if(privacyBeat)choices=choices.map(c=>{
   if(c[0]==='permission')return [c[0],'It stays here. What can I tell her about the music?','That I still wanted the music. That I made rehearsals miserable: her timing, my entrances, always something wrong. You can tell her those things. Nothing about how I feel.','N3',['permission','professional','rehearsal_account']];
   if(c[0]==='accountability')return [c[0],'It stays here. What happened in rehearsals?','I kept finding something wrong: her timing, my entrances. I made it hard to be in the room with me. That doesn’t mean she could leave me thinking the tour was still open.','N1',['rehearsal_account']];
   if(c[0]==='tonight_nora')return [c[0],'I won’t repeat it. What do you need before going back out?','To hear from her about the tour before I touch that microphone. Singing doesn’t give her my answer about anything else.','N1',[]];
@@ -16,7 +18,8 @@ export function options(s){
  });
  if(s.node==='L3'&&(s.facts.offer||s.facts.private))choices=choices.map(c=>c[0]==='listen'?[c[0],'I’ll take that back to her. Her conditions are already clear.','Tell her the tour plan hasn’t changed. The encore is still a question, not my yes.','hub',[]]:c);
  if(s.node==='N3')choices=choices.filter(c=>!(c[0]==='relay_context'&&s.contextRelayed)&&!(c[0]==='relay_private'&&s.privateRelayed)&&!(c[0]==='relay'&&s.relay));
- if(def.who==='nora'&&s.facts.acknowledgement&&!s.ackRelayed&&s.visits.includes('nora')&&s.node!=='C2')choices.unshift(['relay_ack','Lia admits she kept the decision from you. I want you to hear what she said.','I need to hear that from her. But don’t turn it into a reason I owe her the last song.','C2',['ackRelayed']]);
+ // Defer cross-character business until the player has answered the confidence.
+ if(!privacyBeat&&def.who==='nora'&&s.facts.acknowledgement&&!s.ackRelayed&&s.visits.includes('nora')&&s.node!=='C2')choices.unshift([...ACK_RELAY]);
  // On a return, keep unexplored root topics reachable without replaying the opening monologue.
  if(s.returns[def.who]){
   const root={nora:'N0',lia:'L0',bruno:'B0'}[def.who];
@@ -55,7 +58,10 @@ export function reducePrep(before,action){
   if(who==='bruno'&&s.first==='lia'&&!s.seen.includes('microphone'))s.seen.push('microphone');
   if(!returning)s.visits.push(who);s.history[who].push({role:who,text:s.current.line,entry:true});s.events.push(action);return s;
  }
- const choice=options(s).find(c=>c[0]===action);if(!choice)throw Error('Unavailable choice: '+action);
+ // Earlier v05 logs could relay an existing admission directly after love.
+ // Replay that explicit legacy action without exposing it in the protected UI menu.
+ const legacyAck=action==='relay_ack'&&s.node==='N2b'&&s.events.at(-1)==='love'&&s.facts.love&&s.facts.acknowledgement&&s.sources.acknowledgement==='lia'&&!s.ackRelayed&&s.visits.includes('nora');
+ const choice=options(s).find(c=>c[0]===action)||(legacyAck?[...ACK_RELAY]:null);if(!choice)throw Error('Unavailable choice: '+action);
  const who=action==='contrast'?'lia':NODES[s.node].who;s.history[who].push({role:'player',text:choice[1]},{role:who,text:choice[2]});s.current={who,line:choice[2],player:choice[1],cue:choice[6]||null};s.used.push(action);s.events.push(action);
  for(const fact of choice[4]){
   if(fact.startsWith('deliver_')){

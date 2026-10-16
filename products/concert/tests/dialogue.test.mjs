@@ -52,3 +52,16 @@ test('new context and offer together have one reaction each; staged and later of
 test('a later love confession still offers privacy responses when rehearsal accountability is already known',()=>{
  const s=run(['visit:nora','sheet','interpretation','leave','visit:nora','meaning','leave','visit:nora','goodbye','leave','visit:nora','changed','love']);assert(s.facts.rehearsal_account);assert(s.facts.professional);assert(s.facts.love);assert.equal(s.current.continuation,undefined);assert(options(s).every(c=>/stays here|won’t repeat/.test(c[1])));const preserved=structuredClone(s.facts);const next=reducePrep(s,'tonight_nora');assert.deepEqual(next.facts,preserved);assert(!next.facts.permission);assert(!next.contextRelayed);
 });
+
+test('Lia-first pending acknowledgment cannot displace any immediate privacy response and remains relayable afterward',()=>{
+ const s=run(['visit:lia','chronology','leave','visit:nora','sheet','changed','love']);assert(s.facts.acknowledgement);assert(!s.ackRelayed);assert.equal(s.current.continuation,undefined);assert.deepEqual(options(s).map(c=>c[0]),['permission','accountability','tonight_nora']);const before=structuredClone(s);
+ for(const action of ['permission','accountability','tonight_nora']){const next=reducePrep(s,action);assert(next.facts.acknowledgement);assert(!next.ackRelayed);assert(options(next).some(c=>c[0]==='relay_ack'),action);assert.equal(initialNegotiation(next).accepted,null);assert(!/love/.test(JSON.stringify(liaContext(next))));const delivered=reducePrep(next,'relay_ack');assert(delivered.ackRelayed);assert.equal(initialNegotiation(delivered).accepted,null);}
+ assert.deepEqual(s,before);const practical=reducePrep(s,'tonight_nora');assert.deepEqual(practical.facts,s.facts);assert.deepEqual(practical.deliveries,s.deliveries);
+});
+
+test('pre-fix love then acknowledgment event logs replay safely without restoring the immediate UI option',()=>{
+ const events=['visit:lia','chronology','leave','visit:nora','sheet','changed','love'];const s=run(events);assert(!options(s).some(c=>c[0]==='relay_ack'));assert(!s.ackRelayed);const old=run([...events,'relay_ack']);assert(old.ackRelayed);assert(old.facts.love);assert(old.facts.acknowledgement);assert.equal(initialNegotiation(old).accepted,null);assert(!old.facts.permission);assert(!old.contextRelayed);assert(!/love/.test(JSON.stringify(liaContext(old))));assert.deepEqual(replayPrep([...events,'relay_ack']),old);
+ const absent=run(['visit:nora','sheet','changed','love']);assert.throws(()=>reducePrep(absent,'relay_ack'),/Unavailable/);
+ const already=run(['visit:lia','chronology','leave','visit:nora','relay_ack','include','leave','visit:nora','sheet','changed','love']);assert.throws(()=>reducePrep(already,'relay_ack'),/Unavailable/);
+ const wrongSource=structuredClone(s);wrongSource.sources.acknowledgement='nora';assert.throws(()=>reducePrep(wrongSource,'relay_ack'),/Unavailable/);
+});
