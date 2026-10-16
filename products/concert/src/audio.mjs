@@ -1,13 +1,15 @@
+import {createIntroVoice} from './intro-voice.mjs';
 // Cinematic score bed with separate, occasional audience calls.
 const ASSET='/audio/cinematic-score-v1.mp3';
 const CROWD='/audio/encore-call-v2.mp3';
 const VOLUME_KEY='perspectives-concert-volume';
+let voice,voiceBus,voiceActive=false;const voiceListeners=new Set();
 let ctx,master,musicBus,analyser,buffer,crowdBuffer,loading,timer,nextStart=0,enabled=false,scene='cover',hidden=false,scheduled=0;
 const audiencePlayed=new Set();let lastAudienceAt=-Infinity,lastCue=null,cheerSource=null,cheerUntil=0;
 export function getVolume(){try{const raw=localStorage.getItem(VOLUME_KEY);return raw===null?.6:Math.max(0,Math.min(1,Number(raw)||0));}catch{return .6;}}
 let volume=getVolume();
-const sceneGain=()=>ctx && ctx.currentTime<cheerUntil ? .15 : (['dialogue','brief','ai','review','reveal'].includes(scene) ? .45 : .8);
-function mix(){if(!ctx)return;master.gain.cancelScheduledValues(ctx.currentTime);master.gain.setTargetAtTime(enabled&&!hidden?volume:0,ctx.currentTime,.35);musicBus.gain.cancelScheduledValues(ctx.currentTime);musicBus.gain.setTargetAtTime(sceneGain(),ctx.currentTime,.5);}
+const sceneGain=()=>voiceActive&&scene==='opening'?.12:ctx && ctx.currentTime<cheerUntil ? .15 : (['dialogue','brief','ai','review','reveal'].includes(scene) ? .45 : .8);
+function mix(){if(!ctx)return;master.gain.cancelScheduledValues(ctx.currentTime);master.gain.setTargetAtTime(enabled&&!hidden?volume:0,ctx.currentTime,enabled&&!hidden?.15:.03);musicBus.gain.cancelScheduledValues(ctx.currentTime);musicBus.gain.setTargetAtTime(sceneGain(),ctx.currentTime,voiceActive?.06:.5);}
 export function setVolume(value){volume=Math.max(0,Math.min(1,Number(value)||0));try{localStorage.setItem(VOLUME_KEY,String(volume));}catch{}mix();}
 export function setAudioScene(value,isHidden=false){scene=value;hidden=isHidden;mix();}
 function schedule(){
@@ -25,9 +27,11 @@ function schedule(){
 function initialize(){
  const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;if(!Audio)throw Error('Audio is not supported by this browser.');
  ctx=new Audio();master=ctx.createGain();master.gain.value=0;musicBus=ctx.createGain();musicBus.connect(master);analyser=ctx.createAnalyser();analyser.fftSize=2048;
- master.connect(analyser);analyser.connect(ctx.destination);
+ master.connect(analyser);analyser.connect(ctx.destination);voiceBus=ctx.createGain();voiceBus.connect(master);
+ voice=createIntroVoice(ctx,voiceBus,{duck:value=>{voiceActive=value;mix();},notify:value=>voiceListeners.forEach(fn=>fn(value))});
 }
 export async function setSound(on){
+ if(!on)voice?.cancel();
  if(!ctx){if(!on)return false;initialize();}
  if(on){
   // Resume directly on the click, before waiting for the file: required by mobile browsers.
@@ -43,7 +47,7 @@ export async function setSound(on){
 export function audioStatus(){
  if(!ctx)return {state:'not_started',enabled:false,rms:0};
  const samples=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(samples);
- return {state:ctx.state,enabled,rms:Math.sqrt(samples.reduce((n,v)=>n+v*v,0)/samples.length),asset:ASSET,duration:buffer?.duration||0,crowdAsset:CROWD,crowdDuration:crowdBuffer?.duration||0,audienceCues:[...audiencePlayed],lastCue,musicGain:musicBus.gain.value,volume,scene,hidden,scheduled};
+ return {state:ctx.state,enabled,rms:Math.sqrt(samples.reduce((n,v)=>n+v*v,0)/samples.length),asset:ASSET,duration:buffer?.duration||0,crowdAsset:CROWD,crowdDuration:crowdBuffer?.duration||0,audienceCues:[...audiencePlayed],lastCue,musicGain:musicBus.gain.value,voice:voice?.status(),voiceGain:voiceBus?.gain.value,volume,scene,hidden,scheduled};
 }
 
 export function cueAudience(id){
@@ -56,3 +60,8 @@ export function cueAudience(id){
  source.onended=()=>{source.disconnect();gain.disconnect();if(cheerSource===source){cheerSource=null;cheerUntil=0;mix();}};return true;
 }
 export function resetAudienceCues(){audiencePlayed.clear();lastAudienceAt=-Infinity;lastCue=null;cheerSource?.stop();cheerUntil=0;mix();}
+
+export function subscribeIntroVoice(listener){voiceListeners.add(listener);return()=>voiceListeners.delete(listener);}
+export function setIntroVoice({beat,playing,readingMs}){if(!voice)return;if(beat===null){voice.cancel();return;}voice.line(beat,readingMs);voice.setPlaying(playing&&enabled&&!hidden);}
+export function retryIntroVoice(){voice?.retry();}
+export function stopIntroVoice(){voice?.cancel();}
