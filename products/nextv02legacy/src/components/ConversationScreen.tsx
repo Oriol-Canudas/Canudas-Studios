@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { useGameStore } from '../game/store'
 import DirectorAvatar from './DirectorAvatar'
 import TypewriterText from './TypewriterText'
+import VoiceButton from './VoiceButton'
 
 export default function ConversationScreen() {
   const [draft, setDraft] = useState('')
+  const [showTextFallback, setShowTextFallback] = useState(false)
   const {
     turns,
     confirmedContext,
@@ -87,29 +89,42 @@ export default function ConversationScreen() {
               </button>
             </div>
           )}
-          <div className="flex gap-2">
-            <input
-              className="flex-1 border border-ink/20 rounded-xl px-4 py-3 text-lg bg-surface"
-              placeholder="Escriu la teva resposta…"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && draft.trim() && !isThinking) {
-                  sendSeniorReply(draft.trim())
-                  setDraft('')
-                }
-              }}
-            />
-            <button
-              disabled={!draft.trim() || isThinking}
-              onClick={() => {
-                sendSeniorReply(draft.trim())
-                setDraft('')
-              }}
-              className="bg-terracotta text-surface rounded-xl px-5 text-lg font-medium disabled:opacity-50"
-            >
-              Envia
-            </button>
+          <div className="flex flex-col items-center gap-3">
+            <VoiceButton />
+
+            {!showTextFallback ? (
+              <button
+                onClick={() => setShowTextFallback(true)}
+                className="text-ink-soft text-sm underline"
+              >
+                Prefereixo escriure-ho
+              </button>
+            ) : (
+              <div className="w-full flex gap-2">
+                <input
+                  className="flex-1 border border-ink/20 rounded-xl px-4 py-3 text-lg bg-surface"
+                  placeholder="Escriu la teva resposta…"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && draft.trim() && !isThinking) {
+                      sendSeniorReply(draft.trim())
+                      setDraft('')
+                    }
+                  }}
+                />
+                <button
+                  disabled={!draft.trim() || isThinking}
+                  onClick={() => {
+                    sendSeniorReply(draft.trim())
+                    setDraft('')
+                  }}
+                  className="bg-terracotta text-surface rounded-xl px-5 text-lg font-medium disabled:opacity-50"
+                >
+                  Envia
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

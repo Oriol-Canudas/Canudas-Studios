@@ -15,44 +15,63 @@ export default function HomeScreen() {
   }, [loadPendingQuestion])
 
   return (
-    <div className="min-h-screen bg-cream-deep flex flex-col items-center px-6 py-10">
-      <div className="w-full max-w-md flex flex-col gap-6">
-        <header className="text-center flex flex-col items-center gap-4">
-          <DirectorAvatar size="hero" />
-          <div>
-            <p className="text-ink-soft text-base mb-1">Bon dia</p>
-            <h1 className="font-display text-3xl text-ink">{profile.preferredName}</h1>
+    <div className="min-h-screen bg-cream-deep flex flex-col items-center">
+      <div className="w-full max-w-md">
+        <div className="relative">
+          <img
+            src="/landing-house.jpg"
+            alt=""
+            className="w-full h-56 object-cover rounded-b-[2.5rem] shadow-sm"
+          />
+          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
+            <DirectorAvatar size="hero" />
           </div>
-        </header>
+        </div>
 
-        <div className="flex flex-col gap-4">
-          {pendingQuestion && (
+        <div className="px-6 pt-16 pb-10 flex flex-col gap-6">
+          <header className="text-center">
+            <p className="text-ink-soft text-base mb-1">Bon dia, {profile.preferredName || ''}</p>
+            <h1 className="font-display text-3xl text-ink">
+              {profile.city ? `Des de ${profile.city}` : 'Benvinguda'}
+            </h1>
+          </header>
+
+          <div className="flex flex-col gap-4">
+            {pendingQuestion && (
+              <button
+                onClick={() => startSession(pendingQuestion.text, pendingQuestion.id)}
+                className="text-left bg-surface border-2 border-terracotta rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
+              >
+                <p className="text-xs uppercase tracking-wide text-terracotta font-semibold mb-2">
+                  La família et pregunta
+                </p>
+                <p className="font-display text-xl text-ink leading-snug">{pendingQuestion.text}</p>
+              </button>
+            )}
+
             <button
-              onClick={() => startSession(pendingQuestion.text, pendingQuestion.id)}
-              className="text-left bg-surface border-2 border-terracotta rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
+              onClick={() => startSession(SOMETHING_ON_YOUR_MIND_PROMPT)}
+              className="text-left bg-surface border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
             >
-              <p className="text-xs uppercase tracking-wide text-terracotta font-semibold mb-2">
-                La família et pregunta
-              </p>
-              <p className="font-display text-xl text-ink leading-snug">{pendingQuestion.text}</p>
+              <p className="font-display text-xl text-ink leading-snug">Tens alguna cosa al cap</p>
+              <p className="text-ink-soft text-base mt-1">Parlem del que vulguis, ara</p>
             </button>
-          )}
 
-          <button
-            onClick={() => startSession(SOMETHING_ON_YOUR_MIND_PROMPT)}
-            className="text-left bg-surface border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
-          >
-            <p className="font-display text-xl text-ink leading-snug">Tens alguna cosa al cap</p>
-            <p className="text-ink-soft text-base mt-1">Parlem del que vulguis, ara</p>
-          </button>
-
-          <button
-            onClick={() => startSession(TODAYS_SPARK_PROMPT)}
-            className="text-left bg-surface border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
-          >
-            <p className="font-display text-xl text-ink leading-snug">Una espurna d'avui</p>
-            <p className="text-ink-soft text-base mt-1">Una cosa que et vull preguntar</p>
-          </button>
+            <button
+              onClick={() => startSession(TODAYS_SPARK_PROMPT)}
+              className="text-left bg-surface border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform relative overflow-hidden"
+            >
+              <img
+                src="/landing-memory.jpg"
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover opacity-15"
+              />
+              <div className="relative">
+                <p className="font-display text-xl text-ink leading-snug">Una espurna d&apos;avui</p>
+                <p className="text-ink-soft text-base mt-1">Una cosa que et vull preguntar</p>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </div>

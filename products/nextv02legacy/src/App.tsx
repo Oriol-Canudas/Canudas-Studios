@@ -1,4 +1,5 @@
 import { useGameStore } from './game/store'
+import IntakeScreen from './components/IntakeScreen'
 import HomeScreen from './components/HomeScreen'
 import ConversationScreen from './components/ConversationScreen'
 import ChapterConfirmScreen from './components/ChapterConfirmScreen'
@@ -15,7 +16,9 @@ export default function App() {
     case 'sessionClose':
       return <SessionCloseScreen />
     case 'home':
-    default:
       return <HomeScreen />
+    case 'intake':
+    default:
+      return <IntakeScreen />
   }
 }

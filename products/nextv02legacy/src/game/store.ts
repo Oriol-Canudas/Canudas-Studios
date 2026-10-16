@@ -14,6 +14,28 @@ function makeId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }
 
+const PROFILE_STORAGE_KEY = 'nextv02legacy.profile'
+
+function loadSavedProfile(): SeniorProfile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed?.preferredName || !parsed?.city || !parsed?.language) return null
+    return parsed as SeniorProfile
+  } catch {
+    return null
+  }
+}
+
+function saveProfile(profile: SeniorProfile) {
+  try {
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile))
+  } catch {
+    // localStorage unavailable — intake just re-asks next time, not fatal.
+  }
+}
+
 interface GameState {
   screen: ScreenName
   profile: SeniorProfile
@@ -38,6 +60,7 @@ interface GameState {
 
   goTo: (screen: ScreenName) => void
   setProfile: (p: SeniorProfile) => void
+  completeIntake: (p: SeniorProfile) => void
   loadPendingQuestion: () => Promise<void>
   startSession: (openingTopic: string, questionId?: string | null) => Promise<void>
   sendSeniorReply: (text: string) => Promise<void>
@@ -48,11 +71,12 @@ interface GameState {
   reset: () => void
 }
 
-const initialProfile: SeniorProfile = { preferredName: 'Montserrat', language: 'ca' }
+const savedProfile = loadSavedProfile()
+const fallbackProfile: SeniorProfile = { preferredName: '', city: '', age: 0, language: 'ca' }
 
 export const useGameStore = create<GameState>((set, get) => ({
-  screen: 'home',
-  profile: initialProfile,
+  screen: savedProfile ? 'home' : 'intake',
+  profile: savedProfile ?? fallbackProfile,
   pendingQuestion: null,
   activeQuestionId: null,
 
@@ -72,6 +96,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   goTo: (screen) => set({ screen }),
   setProfile: (p) => set({ profile: p }),
+  completeIntake: (p) => {
+    saveProfile(p)
+    set({ profile: p, screen: 'home' })
+  },
 
   loadPendingQuestion: async () => {
     const question = await requestPendingQuestion()

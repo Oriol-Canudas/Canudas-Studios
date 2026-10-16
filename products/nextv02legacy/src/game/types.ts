@@ -41,10 +41,12 @@ export interface DirectorTurnResult {
 
 export interface SeniorProfile {
   preferredName: string
-  language: 'es' | 'ca'
+  city: string
+  age: number
+  language: 'es' | 'ca' | 'en'
 }
 
-export type ScreenName = 'home' | 'conversation' | 'chapterConfirm' | 'sessionClose'
+export type ScreenName = 'intake' | 'home' | 'conversation' | 'chapterConfirm' | 'sessionClose'
 
 export interface PendingQuestion {
   id: string

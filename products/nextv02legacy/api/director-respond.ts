@@ -28,7 +28,7 @@ interface ContextItem {
 
 interface SeniorProfile {
   preferredName: string
-  language: 'es' | 'ca'
+  language: 'es' | 'ca' | 'en'
 }
 
 interface DirectorTurnResult {
@@ -82,7 +82,9 @@ function buildInstructions(profile: SeniorProfile, pendingOfferedContext: Contex
   const langLine =
     profile.language === 'ca'
       ? 'Respon sempre en català, en to proper i càlid.'
-      : 'Responde siempre en español, en un tono cercano y cálido.'
+      : profile.language === 'en'
+        ? 'Always respond in English, in a warm, close tone.'
+        : 'Responde siempre en español, en un tono cercano y cálido.'
 
   return [
     `You are "the Director" inside a product that helps ${profile.preferredName}, a person in her 70s, relive her own life, understand it better, and turn it into shared family history — not just capture it.`,
@@ -149,7 +151,7 @@ export default async function handler(req: any, res: any) {
   const body = req.body ?? {}
   const profile: SeniorProfile = {
     preferredName: sanitizeText(body?.profile?.preferredName) || 'ella',
-    language: body?.profile?.language === 'es' ? 'es' : 'ca',
+    language: ['es', 'en'].includes(body?.profile?.language) ? body.profile.language : 'ca',
   }
   const history = sanitizeHistory(body?.history)
   const pendingOfferedContext = sanitizeContextItems(body?.pendingOfferedContext)

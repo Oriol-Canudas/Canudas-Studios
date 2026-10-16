@@ -35,7 +35,7 @@ interface ContextItem {
 
 interface SeniorProfile {
   preferredName: string
-  language: 'es' | 'ca'
+  language: 'es' | 'ca' | 'en'
 }
 
 function aiAvailable(): boolean {
@@ -82,7 +82,9 @@ function buildCraftInstructions(profile: SeniorProfile): string {
   const langLine =
     profile.language === 'ca'
       ? 'Escriu-ho en català.'
-      : 'Escríbelo en español.'
+      : profile.language === 'en'
+        ? 'Write it in English.'
+        : 'Escríbelo en español.'
 
   return [
     `You are crafting a finished chapter from a conversation the Director just had with ${profile.preferredName}, a person in her 70s, about her own life.`,
@@ -169,7 +171,7 @@ export default async function handler(req: any, res: any) {
 
   const profile: SeniorProfile = {
     preferredName: sanitizeText(body?.profile?.preferredName) || 'ella',
-    language: body?.profile?.language === 'es' ? 'es' : 'ca',
+    language: ['es', 'en'].includes(body?.profile?.language) ? body.profile.language : 'ca',
   }
   const history = sanitizeHistory(body?.history)
   const confirmedContext = sanitizeContextItems(body?.confirmedContext)
