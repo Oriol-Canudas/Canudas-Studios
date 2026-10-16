@@ -1,0 +1,21 @@
+# 011 — Keep the AI conversation usable with the mobile keyboard
+
+## DESIGN — frozen 16 October 2026
+User reports AI conversation UI breaks when focusing input: whole page moves, conversation disappears, boxes compress. User screenshot IMG_0481.PNG shows composer at top, conversation offscreen and large blank space above iPhone keyboard. User also requests value/effort assessment of STT/TTS; assessment only, no speech integration or paid calls this task. Coordinator will research separately.
+
+Baseline clean760984517028bdb6a4e9776bd7587bad48246057, branch codex/concert-encore-v05. /tmp/concert-keyboard-baseline.cjs records baseline with isolated static8810 and synthetic visualViewport430px/offset170 then250: app stays at top0/bottom430 instead of following visible viewport; last pan leaves chat-log entirely above visible top250; log only74.5px high. Native iOS not directly available; distinguish synthetic reproduction and screenshot from real-device verification. Resize effect ignores visualViewport.offsetTop and scroll events; global scrollIntoView may move ancestor/document. Short screen (<600) is classified as keyboard even without input focus.
+
+Benefit: type while still seeing Lia's latest reply, stable composer above keyboard, natural message heights, restored immersive portrait after keyboard closes. Minimal layout correction, not a new game/chat redesign. Keyboard layout may compact/hide decorative/global headers and duplicate helper text while preserving identity, agreement status, notes, suggestions, send and explicit exit access. Keep input >=16px; no pinch zoom disabling.
+
+## BUILD scope
+Allowed products/concert/src/main.jsx (viewport/focus/scroll/render-only), src/style.css, optional small viewport helper .mjs, qa/keyboard.cjs and qa/run-local.cjs registration, focused helper tests if justified, PRODUCTION_LOG.md. No story/dialogue/engine/negotiation/server/audio implementation/assets/saves/version/dependencies changes. Coordinator owns brief/release docs and STT/TTS assessment. One bounded BUILD worker then separate non-editing QA. Worker no deploy/push; coordinator has standing authorization for existing Vercel gamex-concert publication after PASS.
+
+## Frozen acceptance
+1. AI screen follows actual visible viewport height AND vertical offset through resize+scroll; test synthetic shrink430 then360 and nonzero offsets170/250 with layout viewport844. Composer bottom aligns visible viewport bottom (within3px), input and Send are reachable; no unfilled gap from ignoring viewport pan. No document/ancestor scrollIntoView for chat auto-scroll. No disabled zoom, repeated forced page scrolling or uncontrolled focus loops.
+2. Keyboard/focus compact layout leaves >=120px readable transcript at390x430 and >=90px at390x360; latest response remains readable/scrollable. Bubbles retain natural height with no content overlap/squashing even with many long messages. Composer never overlaps log/identity/status; input >=16px. At390x844,390x480,1440x1000 ordinary layout readable. Notes/error/retry can scroll if needed, all actions reachable. Portrait returns when viewport restored, not hidden just because a desktop input is focused. Safe-area treatment avoids a large bottom gap.
+3. Actual focus, typing/new draft, submit, delayed reply, failed/unconfirmed retry, overlay open/close and keyboard dismissal retain drafts, original request identity, agreement/consent/turns and all existing behavior. Review exit reachable both before and after Lia acceptance, before separate Nora confirmation/performance. Resizing/rotation does not mutate saved game. Pinch zoom remains available. Window without visualViewport gracefully falls back.
+4. Scope only layout; opening captions/voices, Lia-first order, authored dialogue/story/AI generation/audio/saves unchanged. No paid calls; static controlled fixtures only. Existing62 Node tests, production build and focused keyboard/interrupted-send/agreement-exit/scenes/intro-voice suites pass; actual mobile rendered screenshots inspected.
+5. Independent QA checks exact candidate diff and each above condition, with baseline reproduction and evidence. Clearly label synthetic viewport/native keyboard limitation. Coordinator publishes same tested product, verifies public assets and keyboard probes, records result.
+
+## BUILD / QA / publication
+Pending.
