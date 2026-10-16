@@ -15,6 +15,12 @@ export const UI_STRINGS = {
       sparkPrompt: 'Una nit o un dia dels seus vint anys que encara recorda perfectament',
       libraryButton: 'Biblioteca de records',
     },
+    topicPicker: {
+      title: 'Què et ve de gust explicar avui?',
+      back: "Tornar a l'inici",
+      freeformTitle: 'Alguna cosa diferent',
+      freeformSubtitle: 'El que tinguis al cap, ara',
+    },
     library: {
       title: 'Biblioteca de records',
       empty: 'Encara no hi ha cap record guardat. Torna aquí després de la primera conversa.',
@@ -78,6 +84,12 @@ export const UI_STRINGS = {
       sparkPrompt: 'Una noche o un día de tus veinte años que todavía recuerdas perfectamente',
       libraryButton: 'Biblioteca de recuerdos',
     },
+    topicPicker: {
+      title: '¿Qué te apetece contar hoy?',
+      back: 'Volver al inicio',
+      freeformTitle: 'Algo diferente',
+      freeformSubtitle: 'Lo que tengas en mente, ahora',
+    },
     library: {
       title: 'Biblioteca de recuerdos',
       empty: 'Todavía no hay ningún recuerdo guardado. Vuelve aquí después de la primera conversación.',
@@ -140,6 +152,12 @@ export const UI_STRINGS = {
       somethingOnMindPrompt: "Tell me something that's on your mind today — anything at all.",
       sparkPrompt: 'A night or a day from your twenties that you still remember perfectly',
       libraryButton: 'Library of memories',
+    },
+    topicPicker: {
+      title: 'What would you like to talk about today?',
+      back: 'Back to home',
+      freeformTitle: 'Something else',
+      freeformSubtitle: "Whatever's on your mind, right now",
     },
     library: {
       title: 'Library of memories',

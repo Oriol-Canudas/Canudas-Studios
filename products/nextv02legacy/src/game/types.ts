@@ -50,6 +50,7 @@ export type ScreenName =
   | 'language'
   | 'intake'
   | 'home'
+  | 'topicPicker'
   | 'conversation'
   | 'chapterConfirm'
   | 'sessionClose'

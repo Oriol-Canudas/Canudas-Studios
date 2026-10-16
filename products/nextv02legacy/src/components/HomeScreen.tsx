@@ -45,7 +45,7 @@ export default function HomeScreen() {
             )}
 
             <button
-              onClick={() => startSession(t.somethingOnMindPrompt)}
+              onClick={() => goTo('topicPicker')}
               className="text-left bg-surface/90 backdrop-blur-sm border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
             >
               <p className="font-display text-xl text-ink leading-snug">{t.somethingOnMindTitle}</p>
@@ -53,7 +53,7 @@ export default function HomeScreen() {
             </button>
 
             <button
-              onClick={() => startSession(t.sparkPrompt)}
+              onClick={() => goTo('topicPicker')}
               className="text-left bg-surface/90 backdrop-blur-sm border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform relative overflow-hidden"
             >
               <img
