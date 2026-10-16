@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { useGameStore } from '../game/store'
+import { getStrings } from '../game/strings'
 
 type RecorderState = 'idle' | 'recording' | 'transcribing' | 'error'
 
@@ -11,6 +12,7 @@ export default function VoiceButton() {
   const streamRef = useRef<MediaStream | null>(null)
 
   const { profile, sendSeniorReply, isThinking } = useGameStore()
+  const t = getStrings(profile.language).voice
 
   async function startRecording() {
     setErrorMsg('')
@@ -27,7 +29,7 @@ export default function VoiceButton() {
       mediaRecorderRef.current = recorder
       setState('recording')
     } catch {
-      setErrorMsg('No he pogut accedir al micròfon.')
+      setErrorMsg(t.micError)
       setState('error')
     }
   }
@@ -56,7 +58,7 @@ export default function VoiceButton() {
         sendSeniorReply(text.trim())
       }
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : 'No he pogut entendre l’àudio.')
+      setErrorMsg(e instanceof Error ? e.message : t.transcribeError)
       setState('error')
     }
   }
@@ -73,16 +75,12 @@ export default function VoiceButton() {
             ? 'w-20 h-20 rounded-full bg-terracotta-deep text-surface flex items-center justify-center shadow-lg animate-pulse disabled:opacity-50'
             : 'w-20 h-20 rounded-full bg-terracotta text-surface flex items-center justify-center shadow-lg disabled:opacity-50'
         }
-        aria-label={state === 'recording' ? 'Atura la gravació' : 'Parla'}
+        aria-label={state === 'recording' ? t.stopRecording : t.speak}
       >
         <span className="text-3xl">{state === 'recording' ? '■' : '🎙'}</span>
       </button>
       <p className="text-ink-soft text-base">
-        {state === 'recording'
-          ? 'T’escolto…'
-          : state === 'transcribing'
-            ? 'Entenent el que dius…'
-            : 'Toca per parlar'}
+        {state === 'recording' ? t.listening : state === 'transcribing' ? t.understanding : t.tapToSpeak}
       </p>
       {errorMsg && <p className="text-red-800 text-sm text-center max-w-xs">{errorMsg}</p>}
     </div>

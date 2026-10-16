@@ -5,6 +5,7 @@ import HomeScreen from './components/HomeScreen'
 import ConversationScreen from './components/ConversationScreen'
 import ChapterConfirmScreen from './components/ChapterConfirmScreen'
 import SessionCloseScreen from './components/SessionCloseScreen'
+import LibraryScreen from './components/LibraryScreen'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
@@ -16,6 +17,8 @@ export default function App() {
       return <ChapterConfirmScreen />
     case 'sessionClose':
       return <SessionCloseScreen />
+    case 'library':
+      return <LibraryScreen />
     case 'home':
       return <HomeScreen />
     case 'intake':

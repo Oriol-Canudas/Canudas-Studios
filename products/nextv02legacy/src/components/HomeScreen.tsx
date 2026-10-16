@@ -1,20 +1,21 @@
 import { useEffect } from 'react'
 import { useGameStore } from '../game/store'
-
-const SOMETHING_ON_YOUR_MIND_PROMPT =
-  "Explica'm alguna cosa que tinguis al cap avui — el que sigui."
-const TODAYS_SPARK_PROMPT =
-  'Una nit o un dia dels seus vint anys que encara recorda perfectament'
+import { getStrings } from '../game/strings'
 
 export default function HomeScreen() {
-  const { profile, pendingQuestion, loadPendingQuestion, startSession } = useGameStore()
+  const { profile, pendingQuestion, loadPendingQuestion, startSession, goTo } = useGameStore()
+  const t = getStrings(profile.language).home
 
   useEffect(() => {
     loadPendingQuestion()
   }, [loadPendingQuestion])
 
   return (
-    <div className="min-h-screen bg-cream-deep flex flex-col items-center">
+    <div className="min-h-screen bg-cream-deep flex flex-col items-center relative">
+      <div className="fixed inset-0 -z-10">
+        <img src="/landing-memory.jpg" alt="" className="w-full h-full object-cover opacity-10" />
+      </div>
+
       <div className="w-full max-w-md">
         <img
           src="/director.jpg"
@@ -24,9 +25,9 @@ export default function HomeScreen() {
 
         <div className="px-6 pt-8 pb-10 flex flex-col gap-6">
           <header className="text-center">
-            <p className="text-ink-soft text-base mb-1">Bon dia, {profile.preferredName || ''}</p>
+            <p className="text-ink-soft text-base mb-1">{t.greeting(profile.preferredName || '')}</p>
             <h1 className="font-display text-3xl text-ink">
-              {profile.city ? `Des de ${profile.city}` : 'Benvinguda'}
+              {profile.city ? t.fromCity(profile.city) : t.welcome}
             </h1>
           </header>
 
@@ -34,36 +35,43 @@ export default function HomeScreen() {
             {pendingQuestion && (
               <button
                 onClick={() => startSession(pendingQuestion.text, pendingQuestion.id)}
-                className="text-left bg-surface border-2 border-terracotta rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
+                className="text-left bg-surface/90 backdrop-blur-sm border-2 border-terracotta rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
               >
                 <p className="text-xs uppercase tracking-wide text-terracotta font-semibold mb-2">
-                  La família et pregunta
+                  {t.familyAsks}
                 </p>
                 <p className="font-display text-xl text-ink leading-snug">{pendingQuestion.text}</p>
               </button>
             )}
 
             <button
-              onClick={() => startSession(SOMETHING_ON_YOUR_MIND_PROMPT)}
-              className="text-left bg-surface border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
+              onClick={() => startSession(t.somethingOnMindPrompt)}
+              className="text-left bg-surface/90 backdrop-blur-sm border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
             >
-              <p className="font-display text-xl text-ink leading-snug">Tens alguna cosa al cap</p>
-              <p className="text-ink-soft text-base mt-1">Parlem del que vulguis, ara</p>
+              <p className="font-display text-xl text-ink leading-snug">{t.somethingOnMindTitle}</p>
+              <p className="text-ink-soft text-base mt-1">{t.somethingOnMindSubtitle}</p>
             </button>
 
             <button
-              onClick={() => startSession(TODAYS_SPARK_PROMPT)}
-              className="text-left bg-surface border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform relative overflow-hidden"
+              onClick={() => startSession(t.sparkPrompt)}
+              className="text-left bg-surface/90 backdrop-blur-sm border border-ink/10 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform relative overflow-hidden"
             >
               <img
                 src="/landing-memory.jpg"
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover opacity-15"
+                className="absolute inset-0 w-full h-full object-cover opacity-20"
               />
               <div className="relative">
-                <p className="font-display text-xl text-ink leading-snug">Una espurna d&apos;avui</p>
-                <p className="text-ink-soft text-base mt-1">Una cosa que et vull preguntar</p>
+                <p className="font-display text-xl text-ink leading-snug">{t.sparkTitle}</p>
+                <p className="text-ink-soft text-base mt-1">{t.sparkSubtitle}</p>
               </div>
+            </button>
+
+            <button
+              onClick={() => goTo('library')}
+              className="text-left bg-gold/20 backdrop-blur-sm border border-gold/40 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
+            >
+              <p className="font-display text-xl text-ink leading-snug">{t.libraryButton}</p>
             </button>
           </div>
         </div>

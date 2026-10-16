@@ -113,6 +113,44 @@ function extractMessageText(output: any[]): string {
   return texts.join('\n').trim()
 }
 
+// Same "subtle painted realism" style agreed on for the Director's own
+// portrait — academic realist oil painting, fine brushwork, warm palette
+// — kept consistent across every illustration in the Library so it reads
+// as one book, not a grab-bag of styles.
+const ILLUSTRATION_STYLE =
+  'Subtle painted realism: academic realist oil painting, fine controlled brushwork visible only on close inspection, warm amber/terracotta/umber palette, soft natural light. No frame, no border, no text, no watermark — fills the entire canvas.'
+
+function buildIllustrationPrompt(title: string, testimonyText: string): string {
+  const excerpt = testimonyText.slice(0, 500)
+  return `${ILLUSTRATION_STYLE}\n\nScene to paint, drawn from this chapter of someone's life story — "${title}": ${excerpt}`
+}
+
+// Best-effort — a failed illustration never blocks confirming the chapter
+// itself, since the Library can show the text alone if this comes back null.
+async function generateIllustrationBase64(prompt: string): Promise<string | null> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 25000)
+  try {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, size: '1024x1024' }),
+      signal: controller.signal,
+    })
+    if (!response.ok) return null
+    const data: any = await response.json()
+    const b64 = data?.data?.[0]?.b64_json
+    return typeof b64 === 'string' ? b64 : null
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -154,6 +192,26 @@ export default async function handler(req: any, res: any) {
 
     if (chapter.question_id) {
       await supabase.from('questions').update({ status: 'answered' }).eq('id', chapter.question_id)
+    }
+
+    if (aiAvailable()) {
+      const b64 = await generateIllustrationBase64(
+        buildIllustrationPrompt(chapter.title, chapter.testimony_text),
+      )
+      if (b64) {
+        const path = `${chapterId}.png`
+        const { error: uploadError } = await supabase.storage
+          .from('chapter-illustrations')
+          .upload(path, Buffer.from(b64, 'base64'), { contentType: 'image/png', upsert: true })
+        if (!uploadError) {
+          const { data: pub } = supabase.storage.from('chapter-illustrations').getPublicUrl(path)
+          await supabase.from('chapters').update({ illustration_url: pub.publicUrl }).eq('id', chapterId)
+        } else {
+          logDiagnostic({ outcome: 'illustration_upload_failed', message: uploadError.message, chapterId })
+        }
+      } else {
+        logDiagnostic({ outcome: 'illustration_generation_failed', chapterId })
+      }
     }
 
     logDiagnostic({ outcome: 'confirmed', chapterId })

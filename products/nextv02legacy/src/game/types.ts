@@ -46,7 +46,14 @@ export interface SeniorProfile {
   language: 'es' | 'ca' | 'en'
 }
 
-export type ScreenName = 'language' | 'intake' | 'home' | 'conversation' | 'chapterConfirm' | 'sessionClose'
+export type ScreenName =
+  | 'language'
+  | 'intake'
+  | 'home'
+  | 'conversation'
+  | 'chapterConfirm'
+  | 'sessionClose'
+  | 'library'
 
 export interface PendingQuestion {
   id: string
@@ -57,4 +64,12 @@ export interface ChapterDraft {
   id: string
   title: string
   testimonyText: string
+}
+
+export interface MemoryChapter {
+  id: string
+  title: string
+  testimonyText: string
+  illustrationUrl: string | null
+  createdAt: string
 }

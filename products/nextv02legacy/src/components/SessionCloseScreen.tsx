@@ -1,10 +1,12 @@
 import { useGameStore } from '../game/store'
+import { getStrings } from '../game/strings'
 import DirectorAvatar from './DirectorAvatar'
 import TypewriterText from './TypewriterText'
 
 export default function SessionCloseScreen() {
   const { profile, reset } = useGameStore()
-  const closingLine = `Gràcies, ${profile.preferredName}. Ho guardo per avui.`
+  const t = getStrings(profile.language).sessionClose
+  const closingLine = t.closingLine(profile.preferredName)
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center justify-center px-6 text-center gap-6">
@@ -17,7 +19,7 @@ export default function SessionCloseScreen() {
         onClick={reset}
         className="bg-terracotta text-surface rounded-xl px-6 py-3 text-lg font-medium"
       >
-        Tornar a l'inici
+        {t.backHome}
       </button>
     </div>
   )

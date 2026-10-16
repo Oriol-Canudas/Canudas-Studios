@@ -5,6 +5,7 @@ import type {
   DirectorTurnResult,
   PendingQuestion,
   ChapterDraft,
+  MemoryChapter,
 } from './types'
 
 export interface DirectorRequestBody {
@@ -58,4 +59,11 @@ export async function requestChapterFinalize(
   }
 
   return (await res.json()) as ChapterDraft
+}
+
+export async function requestChapterLibrary(): Promise<MemoryChapter[]> {
+  const res = await fetch('/api/chapters-list')
+  if (!res.ok) return []
+  const data = await res.json()
+  return Array.isArray(data?.chapters) ? data.chapters : []
 }
