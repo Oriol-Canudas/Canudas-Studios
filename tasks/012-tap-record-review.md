@@ -19,4 +19,14 @@ Official OpenAI file-transcription guide fetched16October2026 recommends gpt-tra
 5. All Node tests and production build; focused speech-input, keyboard, interrupted-send, agreement-exit, scenes, intro-voice suites pass independently. Actual UI and rendered states inspected by separate non-editing QA. Test Safari-like MP4 and Chromium-like WebM selection, late completions, failure/retry and duplicate clicks. Physical iPhone permission/recording/transcription accuracy remain explicitly unverified unless actually checked.
 
 ## BUILD / QA / release
-Baseline08cdd7f28d04e2489cfe2f6e50bd93c0944dc31f, accepted independently under task011. Branch codex/concert-encore-v05. Product tree clean before handoff; coordinator documentation changes only. BUILD/QA/publication pending.
+Baseline08cdd7f28d04e2489cfe2f6e50bd93c0944dc31f, accepted independently under task011. Branch codex/concert-encore-v05. Product tree clean before handoff; coordinator documentation changes only. BUILD and independent QA complete; publication pending below.
+
+
+## Independent QA — accepted candidate
+Final candidate `e293c5cc8da685d1d23af0dd05ba6cb24e170e18`; all five criteria PASS. Runtime product bytes match `242c1f69079b79b755e2dea471d99ac9dc3fc2f0`, independently checked with77 Node tests, production build and interrupted-send/agreement-exit/scenes/intro-voice suites. Final candidate changes only two QA scripts and production log; separate QA freshly rebuilt and reran speech-input+keyboard successfully. No paid provider calls.
+
+QA first found unbounded pending/rejected audio startup. BUILD fixed gesture-time AudioContext resume,10second startup deadline and acquired/late track cleanup; independent deterministic probes pass. Native AudioParam reads can lag one render frame, so QA now waits at most250ms for exactzero and verifies nine sustained zero samples before Stop/restoration. Keyboard geometry explicitly waits for fonts and two layout frames; original assertions are unchanged. The known15–19px transient cold-font scroll residual remains documented, not claimed fixed.
+
+Actual Chrome fake-device recording produced11,392bytes WebM,1.93seconds; tracks ended and existing soundtrack preference restored. Controlled MP4/WebM paths verify review/edit/exact Send, current draft preservation, zero turns before Send, failure/cancellation/overflow recovery. Transcript stays203px at430px visible height and133px at360px; pan offsets, notes, retry, restored portrait and review exit pass. Rendered mobile screenshots inspected by QA and coordinator.
+
+Durable evidence: `../../perspectives/concert-publication-keyboard-20261016/concert-speech-independent-qa.json`, startup/mixer probes, independent speech/keyboard screenshots and JSON. Physical iPhone keyboard/permission/MP4 behavior, actual provider entitlement/recognition accuracy/latency, and subjective experience remain unverified. Safari-like codec fixtures are not Safari testing. No TTS or other-product change.
