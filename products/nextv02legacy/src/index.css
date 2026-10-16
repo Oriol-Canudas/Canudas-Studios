@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  background-color: #F6EFE4;
+}
+
+body {
+  margin: 0;
+  background-color: #F6EFE4;
+  color: #3A2E26;
+  font-family: 'Karla', system-ui, sans-serif;
+  overscroll-behavior-y: none;
+}
