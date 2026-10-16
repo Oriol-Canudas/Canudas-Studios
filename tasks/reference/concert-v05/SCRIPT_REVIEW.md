@@ -205,7 +205,7 @@ Màxim tres opcions visibles: reparació pendent té prioritat, després relay p
 
 ### L0 · Primera entrada
 
-**Lia:** “We just played a whole set of songs we wrote together. They want us back for the one everyone sings. She saw the message, put down her mic, and now I don't know how to get through it without her.”
+**Lia:** “We just played so many of the songs we wrote together. They want us back for the one everyone sings. She saw the message, put down her mic, and now I don't know how to get through it without her.”
 
 | Què pots dir | Resposta de Lia | Continuació |
 |---|---|---|

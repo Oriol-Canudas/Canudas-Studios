@@ -30,3 +30,6 @@ Proposed Lia line for discussion: “My new solo song was meant to be my next ch
 
 ## Superseding narrative direction — user15 October
 Oriol rejects competing songs: one shared signature closing song; Nora sees solo-tour confirmation on Lia phone. Nora is in love, Lia seeing another girl; Nora grows distant/harsh, Lia misreads that as loss of belief in project. Full script review requested, not implementation. Review artifact: ../perspectives/experience-design/concert-design-v04/SCRIPT_REVIEW.md. Earlier two-song proposal above is historical and not current design. UI candidate remains held and reusable; old story engine still unchanged.
+
+## Integrated acceptance16 October2026
+Candidate hierarchy f397b4a retained in encore-v05; independently verified as part of24f2f22 under task004 criteria3/9/10. Current speech, response, continuation, choice and history attribution inspected on mobile. All10 task004 criteria PASS. See task004 for full delivery; this is not a separate deployment.

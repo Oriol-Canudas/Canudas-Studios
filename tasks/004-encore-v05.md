@@ -33,3 +33,22 @@ Status: BUILD authorized by Oriol on16 October2026 ("let's do it. ja som a codex
 
 ## Execution
 BUILD dispatched16 October. Root owns task003/task004 and CURRENT_BUILD_STATE/VERIFICATION; worker owns bounded product files only. All provisional v05 implementation details use the recommended script defaults; do not silently change meaningful behavior. Keep technical solo/public/private IDs if preserving schema avoids churn, but change their semantics and all visible text to new story.
+
+## Coordinator checkpoint16 October
+Baseline archived at /tmp/concert-encore-baseline-20261016/baseline.json. Production inspected via Vercel: remains dpl_BjuL3p4mZeaBy7c2uTgrtBwq6HRi READY before publication. Root personally played static mobile booking→Nora professional permission→delivery→Lia specific reaction, without love discovery: PASS (/tmp/concert-encore-checkpoint.json and screenshots). Long toast overlap identified and worker shortened it while retaining exact inline delivery receipts. Root also identified and worker corrected missing forward-node continuation and old cached client starts. These are scoped flow/compatibility corrections, not changed acceptance. Catalogue wording clarified from entire set to substantial repertoire in source reference.
+
+## BUILD round1
+Worker encore_build candidate5170abb84ede83f4c8e062c97eb40d369f2109a4. Reports36 Node tests/build/seven offline browser suites includingeight encore journeys PASS. No paid calls/push/deploy. Worker evidence /tmp/concert-encore-build-20261016/worker-validation.json; historical live files in that folder are NOT current evidence.
+
+## Independent QA round1 — FAIL
+Agent encore_qa independently reran36 tests/build/seven suites PASS, inspected mobile/desktop, and added adversarial probes. Criteria4 and6 FAIL:
+- Lia-only visit:lia→why→eva_lia notes manufacture Nora's account despite empty Nora history.
+- Existing accepted public/version1+confirmed Nora1, model explicit refusal accepted:false plus terms-supported audit preserves old acceptance/version and permits execution. Grounded offer terms do not equal current artist willingness.
+Evidence /tmp/concert-independent-qa-20261016/{probes.cjs,probe-results.json,lia-only-nora-note.png,refusal-still-cue.png}. All other criteria pass within controlled fixture/source scope; no live-model/iOS/enjoyment claim. Product/test source unchanged during QA.
+Returned to same worker for a bounded fix: source-aware notes (including related shared-fact provenance), actor-willingness withdrawal separate from grounded terms, provider+browser regression, and minor legacy-button styling. Acceptance unchanged. Independent QA must repeat on newcandidate before publication.
+
+## BUILD round2
+Candidate24f2f22b19b83bbd237a7e8c3b8cf918e9006810. Worker reports43 Node tests/build/seven browser suites PASS, including11 encore journeys. Explicit model and audit willingness separate from grounded terms; withdrawals revoke accepted version and Nora confirmation; unchanged agreed close preserves consent; withdrawn without-Nora package cannot bypass refusal via authored fallback. Notes now source-aware; legacy buttons styled with44px targets. Evidence /tmp/concert-encore-repair-20261016/. Independent re-QA dispatched; publication remains pending.
+
+## Independent QA round2 — PASS
+Different agent encore_qa independently verified24f2f22b19b83bbd237a7e8c3b8cf918e9006810 against all10 frozen criteria.43 Node tests/build/seven browser suites including11 encore journeys PASS; original adversarial failures resolved, explicit continuing close preserved, withdrawals revoke stale consent/version, without-Nora fallback cannot bypass refusal, source-specific discovery and provider privacy verified. Mobile390x480/390x844 and desktop1440x1000 inspected. Evidence /tmp/concert-independent-reqa-20261016/{probes.mjs,probe-results.json,browser.cjs,browser-results.json} and screenshots; fresh ignored qa/ outputs. Source/tests/dependencies unchanged during QA. No live provider calls or physical iOS/enjoyment proof. Coordinator inspected repaired mobile notes and withdrawal review; earlier personally played booking→professional relay→specific Lia response. Accepted for existing-project publication under user's ongoing authorization.
