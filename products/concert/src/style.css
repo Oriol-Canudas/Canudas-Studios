@@ -69,3 +69,6 @@
  .screen-dialogue .portrait-scene .portrait-frame{display:none}
  .screen-dialogue .portrait-scene .back-over{position:static;margin:12px 25px 0}
 }
+
+/* Unvoiced scene directions stay readable beside the opening's spoken lines. */
+.opening .cue{font-size:18px;font-style:normal;line-height:1.55;color:#f1e8f4;background:#211a26;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:12px 14px;margin:18px 0 0}
