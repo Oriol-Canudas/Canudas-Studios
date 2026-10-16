@@ -21,4 +21,6 @@ One worker, presentation-only main.jsx and scoped style.css, short PRODUCTION_LO
 
 ## Result
 
-Pending. Publish only after independent acceptance, together with accepted Task020+021.
+Independent QA PASS at c0ca9f3fae3f6847ce562099b056c7ee8f4d5aa9, clean before/after. Build and teaser, dialogue, authored-portrait, portrait, agreement-exit, encore and scenes passed. Independent archived-baseline comparison found identical prep/back/opened states and start payload, no premature POST and one guarded request. All five viewport renders, secondary guidance/notices, privacy/state and settled rotation pass. Desktop fresh and 390→1440→844→390 compact→1440 renders have one app/header/teaser/action/portrait; early screenshot artifact did not require runtime changes. Evidence /private/tmp/task022-independent-qa, durable outputs/perspectives/concert-emotional-teaser-20261016/independent-qa. No source edits or paid calls by QA; physical iPhone/Safari and human emotional response unverified.
+
+Accepted for combined publication with Task020+021. Public verification pending.

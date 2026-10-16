@@ -1,4 +1,4 @@
-# Oriol's creative philosophy
+# Oriol creative philosophy
 
 Standing creative direction, explicitly set by Oriol on 16 October 2026. Apply across the experiences, products and communication designed with him, with judgment appropriate to the subject, audience and moment. This governs creative choices; it does not replace product strategy, authored facts, consent or task scope.
 
