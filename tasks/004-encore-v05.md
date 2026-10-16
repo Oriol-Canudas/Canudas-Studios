@@ -1,7 +1,7 @@
 # 004 — Rebuild Concert around the encore
 
 ## DESIGN — implementation brief, 15 October 2026
-User asks to rebuild the app and define how to operate. Narrative source: ../perspectives/experience-design/concert-design-v05/SCRIPT_REVIEW.md plus subsequent explicit user corrections incorporated there. Do not use v03/v04 or the current live story as narrative authority.
+User asks to rebuild the app and define how to operate. Narrative source: tasks/reference/concert-v05/SCRIPT_REVIEW.md (versioned snapshot of the reviewed ../perspectives/experience-design/concert-design-v05/SCRIPT_REVIEW.md). It includes the user's latest role and encore corrections. Do not use v03/v04 or the current live story as narrative authority.
 
 Checkout: outputs/concert-build, branch codex/concert-immersion-english, HEAD f397b4a (unpublished hierarchy candidate). Stable published product is e2da375 / deployment dpl_BjuL3p4mZeaBy7c2uTgrtBwq6HRi, recorded by documentation commit dcdd0e8. Untracked task003 is coordinator-owned. Keep all existing work; pending hierarchy candidate requires QA as part of new final candidate, not an assumed PASS.
 
