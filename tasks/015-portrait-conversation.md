@@ -30,4 +30,10 @@ One worker may edit `products/concert/src/main.jsx`, `products/concert/src/style
 
 ## BUILD / QA / publication
 
-Pending.
+BUILD candidate `131a0418823370ed26ed27a9c675981d8299af1a`, clean. Baseline screenshot reproduced by running `qa/run-local.cjs keyboard` at `5b24f41` (runtime identical to `6cc57f5`) and retaining `qa/keyboard-ordinary-390x844.png`. Parent inspected baseline and candidate renders. Runtime change is limited to `main.jsx` and `style.css`; QA selectors/helpers reflect the new modes. No protected story/engine/server/recorder/audio/assets/dependencies/save changes.
+
+Independent non-editing QA: **PASS, all six criteria**. 81 Node tests, production build, eight suites (portrait, speech-input, keyboard, interrupted-send, agreement-exit, scenes, encore, resilience) and independently written focus/draft/suggestion/unsupported-recorder/long-reply/retry probes pass. 96px Talk normal, 48px compact; 227px/157px reading space at synthetic 430px/360px windows. Portrait/translucency, recording/review and long accepted replies inspected across four viewports. Independent source check confirms exact candidate and clean tree. Evidence: outer `outputs/perspectives/concert-publication-portrait-20261016/independent-qa/verdict.md` and adjacent results/screenshots.
+
+Parent separately replayed authored Nora preparation → Lia → AI entry → saved typed draft/notes → fixture offer → full history → Review → Nora confirmation → separate performance cue. PASS, no JS errors or overflow; inspected read/accepted portrait renders. Evidence in the same outer publication folder: `local-parent-journey.json` and screenshots. The first parent probe used a stale character-menu label and was corrected to select Lia's actual current contact; no product change was needed.
+
+Publication pending. Controlled fixtures do not establish physical iPhone/Safari or live transcription/model quality. No paid calls.
