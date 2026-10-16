@@ -24,4 +24,8 @@ During reveal, tapping/clicking the speech shows all remaining text immediately;
 
 ## BUILD / QA / release
 
-Pending.
+Candidate `3865f88f7e845213a3ca95159ec9116508a31975`; BUILD by reply_reveal_build and separate non-editing QA by goal_prompt_qa. All five criteria PASS at unchanged clean candidate. The baseline was independently archived/built and immediate complete text reproduced. Fresh authored replies and controlled Lia responses progress through exact whole graphemes; continuation paragraphs are sequential, and long replies complete in5817–5819ms. Final geometry remains stable at all four specified sizes. Tap, Enter and Space skip without state changes; selection, drag and real scroll-offset guards passed. Full accessibility utterance appears once and remains unchanged through six sampled visual ticks. Reload/history/reduced motion are immediate; overlays, editing, resize, explicit retry and return from review do not replay prior content. Existing state, agreements, consent, request identity and newer drafts are preserved.
+
+Build and reply-reveal, hierarchy, dialogue, portrait, speech-input and interrupted-send suites passed with existing assertions unchanged. Coordinator inspected the scoped diff and actual mobile authored/AI renders. Durable evidence: `../../perspectives/concert-reply-reveal-20261016/independent-qa/` (verdict, independent probe/results, accessibility snapshots, required suite results and screenshots); baseline evidence is in the sibling baseline directory. Controlled Chromium only, zero paid/provider calls. Physical iPhone/Safari, assistive-device listening and live-model semantics remain unverified. Full-portrait authored dialogue remains DRAFT ONLY.
+
+Publication pending coordinator verification.
