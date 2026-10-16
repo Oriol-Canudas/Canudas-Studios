@@ -1,3 +1,4 @@
+const {editReply}=require('./conversation-controls.cjs');
 // Actual browser paths; controlled generation fixtures, never a provider call.
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{
@@ -25,9 +26,9 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   const action=async id=>{const c=E.options((await read()).prep).find(c=>c[0]===id);assert(c,name+': '+id);await click(c[1]);};
   const start=async who=>{await click('Enter backstage');await click('Go backstage');await page.locator('.contacts .contact').filter({hasText:who==='nora'?'Nora, wait.':'Lia, tell me'}).click();};
   const contact=who=>page.locator('.contacts .contact').filter({hasText:who}).click();
-  const ai=async()=>{await click('Prepare an agreement with Lia');await click('Talk to Lia');await page.locator('#message').waitFor();};
-  const send=async text=>{const before=(await read()).negotiation.turns;await page.locator('#message').fill(text);await page.locator('#message').press('Enter');await page.waitForFunction(({SAVE,before})=>JSON.parse(localStorage.getItem(SAVE)).negotiation.turns===before+1,{SAVE,before});};
-  const review=async()=>{const n=(await read()).negotiation;await click(n.accepted!==null?'Continue — '+(n.proposal==='solo'?'final decision':'confirm with Nora'):'End conversation and review');};
+  const ai=async()=>{await click('Prepare an agreement with Lia');await click('Talk to Lia');await page.locator('.conversation-header').waitFor();};
+  const send=async text=>{const before=(await read()).negotiation.turns;await editReply(page);await page.locator('#message').fill(text);await page.locator('#message').press('Enter');await page.waitForFunction(({SAVE,before})=>JSON.parse(localStorage.getItem(SAVE)).negotiation.turns===before+1,{SAVE,before});};
+  const review=async()=>{const n=(await read()).negotiation;await click('Review & end');};
   const finish=async type=>{await click(type==='solo'?'Cue the encore without Nora':'Cue the encore together');assert.equal((await read()).ending,type);await click('See what changed');assert(await page.locator('.reveal').isVisible());};
   await fn({page,click,action,read,start,contact,ai,send,review,finish,calls});assert.deepEqual(errors,[]);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:`qa/encore-${name}.png`});results.push({name,passed:true,posts:calls.length,errors});await page.close();
  }

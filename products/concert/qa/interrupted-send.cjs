@@ -1,3 +1,4 @@
+const {editReply}=require('./conversation-controls.cjs');
 const {chromium}=require(process.env.QA_PLAYWRIGHT||'playwright');
 const fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{
@@ -23,9 +24,9 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
  await page.evaluate(({prep,BUILD})=>localStorage.setItem('perspectives-concert-encore-v05',JSON.stringify({build:BUILD,screen:'brief',prep})),{prep,BUILD});await page.reload();
  await page.getByRole('button',{name:'Talk to Lia',exact:true}).click();
  const original='Please keep this interrupted message.',draft=scenario.draft;
- await page.locator('#message').fill(original);await page.getByRole('button',{name:'Send message',exact:true}).click();
+ await editReply(page);await page.locator('#message').fill(original);await page.getByRole('button',{name:'Send message',exact:true}).click();
  await page.getByRole('status').waitFor();await page.waitForFunction(()=>JSON.parse(localStorage.getItem('perspectives-concert-encore-v05')).sendRequest?.requestId);
- await page.locator('#message').fill(draft);await page.waitForFunction(draft=>JSON.parse(localStorage.getItem('perspectives-concert-encore-v05')).draft===draft,draft);
+ await editReply(page);await page.locator('#message').fill(draft);await page.waitForFunction(draft=>JSON.parse(localStorage.getItem('perspectives-concert-encore-v05')).draft===draft,draft);
  const before=await read();assert.equal(posts.length,1);
  if(scenario.legacy)await page.evaluate(()=>{const key='perspectives-concert-encore-v05',save=JSON.parse(localStorage.getItem(key));delete save.sendRequest;localStorage.setItem(key,JSON.stringify(save));});
  await page.reload();await page.getByRole('button',{name:'Retry saved message',exact:true}).waitFor();
@@ -36,15 +37,15 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
  assert.deepEqual(recovered.sendRequest,before.sendRequest);assert.equal(posts.length,1);
  // A second reload is still passive and the late original reply cannot mutate the new page.
  await page.reload();await page.getByRole('button',{name:'Retry saved message',exact:true}).waitFor();release();
- assert.equal(posts.length,1);assert.equal((await read()).negotiation.turns,0);assert.equal(await page.locator('#message').inputValue(),draft);
+ assert.equal(posts.length,1);assert.equal((await read()).negotiation.turns,0);await editReply(page);assert.equal(await page.locator('#message').inputValue(),draft);
  await page.screenshot({path:`qa/interrupted-send-${scenario.name}-recovered.png`});
  await page.getByRole('button',{name:'Retry saved message',exact:true}).click();await page.getByText(reply,{exact:true}).waitFor();
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('perspectives-concert-encore-v05')).negotiation.turns===1);
  assert.equal(posts.length,2);for(const key of ['token','message','requestId'])assert.equal(posts[1][key],posts[0][key]);
- assert.equal(await page.locator('.chat-message.player').count(),1);assert.equal(await page.getByText(reply,{exact:true}).count(),1);
- assert.equal(await page.locator('#message').inputValue(),draft);
+ assert.equal((await read()).aiMessages.filter(m=>m.who==='player').length,1);assert.equal(await page.getByText(reply,{exact:true}).count(),1);
+ await editReply(page);assert.equal(await page.locator('#message').inputValue(),draft);
  const completed=await read();assert.equal(completed.sendRequest,null);assert.equal(completed.diagnostics.length,1);assert.deepEqual(completed.prep,before.prep);assert.equal(completed.confirmed,before.confirmed);assert.equal(completed.admitted,before.admitted);
- await page.reload();await page.locator('#message').waitFor();assert.equal(posts.length,2);assert.equal((await read()).negotiation.turns,1);assert.equal(await page.locator('.chat-message.player').count(),1);
+ await page.reload();await editReply(page);assert.equal(posts.length,2);assert.equal((await read()).negotiation.turns,1);assert.equal((await read()).aiMessages.filter(m=>m.who==='player').length,1);
  assert.deepEqual(errors,[]);await page.screenshot({path:`qa/interrupted-send-${scenario.name}-complete.png`});
  results.push({scenario:scenario.name,posts,before,recovered,completed,errors});await page.close();
  }
