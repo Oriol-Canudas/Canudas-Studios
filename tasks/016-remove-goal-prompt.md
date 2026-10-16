@@ -19,4 +19,6 @@ One worker may edit `products/concert/src/main.jsx` only to remove the briefing'
 
 ## Handoff / QA
 
-Pending.
+BUILD candidate `93aeb1399faea3fdcfca91eefb1b0eeae8cf390a`; clean. Removed only briefing goal label/input in main.jsx and appended production log. Existing stored goal/history preserved. Worker reproduced baseline and passed build, scenes, portrait and controlled fresh/legacy/error/reload probes.
+
+Independent non-editing QA **PASS — all four criteria**, exact clean candidate. Independently built/reproduced baseline at 390×844 and 390×480, checked fresh and old-goal/draft flows through briefing, error → Backstage → retry, AI history and reload. API remains action/build/events. Build/scenes/portrait PASS; screenshots inspected. Parent inspected actual diff and candidate short-mobile screenshot. Durable evidence: outer `outputs/perspectives/concert-goal-removal-20261016/independent-qa/`. No paid calls; physical iPhone and live model not evaluated. Publication pending coordinator verification.
