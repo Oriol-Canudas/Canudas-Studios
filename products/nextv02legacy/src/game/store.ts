@@ -60,6 +60,7 @@ interface GameState {
 
   goTo: (screen: ScreenName) => void
   setProfile: (p: SeniorProfile) => void
+  chooseLanguage: (language: SeniorProfile['language']) => void
   completeIntake: (p: SeniorProfile) => void
   loadPendingQuestion: () => Promise<void>
   startSession: (openingTopic: string, questionId?: string | null) => Promise<void>
@@ -75,7 +76,7 @@ const savedProfile = loadSavedProfile()
 const fallbackProfile: SeniorProfile = { preferredName: '', city: '', age: 0, language: 'ca' }
 
 export const useGameStore = create<GameState>((set, get) => ({
-  screen: savedProfile ? 'home' : 'intake',
+  screen: savedProfile ? 'home' : 'language',
   profile: savedProfile ?? fallbackProfile,
   pendingQuestion: null,
   activeQuestionId: null,
@@ -96,6 +97,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   goTo: (screen) => set({ screen }),
   setProfile: (p) => set({ profile: p }),
+  chooseLanguage: (language) => set({ profile: { ...get().profile, language }, screen: 'intake' }),
   completeIntake: (p) => {
     saveProfile(p)
     set({ profile: p, screen: 'home' })

@@ -46,7 +46,7 @@ export interface SeniorProfile {
   language: 'es' | 'ca' | 'en'
 }
 
-export type ScreenName = 'intake' | 'home' | 'conversation' | 'chapterConfirm' | 'sessionClose'
+export type ScreenName = 'language' | 'intake' | 'home' | 'conversation' | 'chapterConfirm' | 'sessionClose'
 
 export interface PendingQuestion {
   id: string

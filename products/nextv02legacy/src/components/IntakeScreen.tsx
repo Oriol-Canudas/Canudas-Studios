@@ -1,20 +1,38 @@
 import { useState } from 'react'
 import { useGameStore } from '../game/store'
-import type { SeniorProfile } from '../game/types'
 import DirectorAvatar from './DirectorAvatar'
 
-const LANGUAGES: { code: SeniorProfile['language']; label: string }[] = [
-  { code: 'ca', label: 'Català' },
-  { code: 'es', label: 'Castellano' },
-  { code: 'en', label: 'English' },
-]
+const STRINGS = {
+  ca: {
+    intro: "Abans de començar, digue'm una mica de tu",
+    name: 'Com et dius?',
+    age: 'Quants anys tens?',
+    city: 'On vius?',
+    submit: 'Comencem',
+  },
+  es: {
+    intro: 'Antes de empezar, cuéntame un poco sobre ti',
+    name: '¿Cómo te llamas?',
+    age: '¿Cuántos años tienes?',
+    city: '¿Dónde vives?',
+    submit: 'Empecemos',
+  },
+  en: {
+    intro: "Before we start, tell me a bit about yourself",
+    name: "What's your name?",
+    age: 'How old are you?',
+    city: 'Where do you live?',
+    submit: "Let's begin",
+  },
+} as const
 
 export default function IntakeScreen() {
-  const completeIntake = useGameStore((s) => s.completeIntake)
+  const { profile, completeIntake } = useGameStore()
+  const t = STRINGS[profile.language]
+
   const [name, setName] = useState('')
   const [age, setAge] = useState('')
   const [city, setCity] = useState('')
-  const [language, setLanguage] = useState<SeniorProfile['language']>('ca')
 
   const canSubmit = name.trim() && city.trim() && Number(age) > 0
 
@@ -23,12 +41,12 @@ export default function IntakeScreen() {
       <div className="w-full max-w-sm flex flex-col gap-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <DirectorAvatar size="hero" />
-          <p className="text-ink-soft text-base">Abans de començar, digue&apos;m una mica de tu</p>
+          <p className="text-ink-soft text-base">{t.intro}</p>
         </div>
 
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-ink-soft text-base block mb-1">Com et dius?</label>
+            <label className="text-ink-soft text-base block mb-1">{t.name}</label>
             <input
               className="w-full border border-ink/20 rounded-xl px-4 py-3 text-lg bg-surface"
               value={name}
@@ -36,7 +54,7 @@ export default function IntakeScreen() {
             />
           </div>
           <div>
-            <label className="text-ink-soft text-base block mb-1">Quants anys tens?</label>
+            <label className="text-ink-soft text-base block mb-1">{t.age}</label>
             <input
               type="number"
               inputMode="numeric"
@@ -46,41 +64,23 @@ export default function IntakeScreen() {
             />
           </div>
           <div>
-            <label className="text-ink-soft text-base block mb-1">On vius?</label>
+            <label className="text-ink-soft text-base block mb-1">{t.city}</label>
             <input
               className="w-full border border-ink/20 rounded-xl px-4 py-3 text-lg bg-surface"
               value={city}
               onChange={(e) => setCity(e.target.value)}
             />
           </div>
-          <div>
-            <label className="text-ink-soft text-base block mb-2">Idioma</label>
-            <div className="flex gap-2">
-              {LANGUAGES.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => setLanguage(l.code)}
-                  className={
-                    language === l.code
-                      ? 'flex-1 bg-terracotta text-surface rounded-xl py-3 text-base font-medium'
-                      : 'flex-1 bg-surface border border-ink/20 text-ink rounded-xl py-3 text-base'
-                  }
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         <button
           onClick={() =>
-            completeIntake({ preferredName: name.trim(), city: city.trim(), age: Number(age), language })
+            completeIntake({ ...profile, preferredName: name.trim(), city: city.trim(), age: Number(age) })
           }
           disabled={!canSubmit}
           className="bg-terracotta text-surface rounded-xl py-4 text-lg font-medium disabled:opacity-40"
         >
-          Comencem
+          {t.submit}
         </button>
       </div>
     </div>

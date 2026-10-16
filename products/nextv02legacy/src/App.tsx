@@ -1,4 +1,5 @@
 import { useGameStore } from './game/store'
+import LanguageScreen from './components/LanguageScreen'
 import IntakeScreen from './components/IntakeScreen'
 import HomeScreen from './components/HomeScreen'
 import ConversationScreen from './components/ConversationScreen'
@@ -18,7 +19,9 @@ export default function App() {
     case 'home':
       return <HomeScreen />
     case 'intake':
-    default:
       return <IntakeScreen />
+    case 'language':
+    default:
+      return <LanguageScreen />
   }
 }
