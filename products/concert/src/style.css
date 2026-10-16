@@ -72,3 +72,29 @@
 
 /* Unvoiced scene directions stay readable beside the opening's spoken lines. */
 .opening .cue{font-size:18px;font-style:normal;line-height:1.55;color:#f1e8f4;background:#211a26;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:12px 14px;margin:18px 0 0}
+
+/* Keep the AI screen inside the visible viewport, including Safari keyboard panning. */
+.chat-app{position:fixed;top:var(--app-top,0px);left:0;right:0;min-height:0}
+.chat-app .modal-backdrop{top:var(--app-top,0px);bottom:auto;height:var(--app-height)}
+.chat-log{overscroll-behavior:contain;overflow-anchor:none}
+.chat-log>*{flex-shrink:0}
+.chat-log .error{margin:0;font-size:13px}
+.chat-app.short-chat .chapter{display:none}
+.chat-app.short-chat .topbar{height:40px}
+.chat-app.short-chat .shell{height:calc(var(--app-height) - 40px)}
+.chat-app.short-chat .lia-presence .portrait-frame{height:60px}
+.chat-app.short-chat .presence-identity{min-height:34px;padding:5px 14px;gap:9px}
+.chat-app.short-chat .presence-identity h1{font-size:22px}
+.chat-app.short-chat .agreement-strip{padding:5px 14px;gap:2px}
+.chat-app.short-chat .chat-log{padding:10px 14px;gap:12px}
+.chat-app.short-chat .composer{padding:5px 12px 6px}
+.chat-app.short-chat .suggestions{margin:0 0 3px;gap:16px}
+.chat-app.short-chat .suggestions button{min-height:28px;padding:3px 0}
+.chat-app.short-chat .composer textarea{height:66px;min-height:66px;max-height:80px;padding:8px 12px}
+.chat-app.short-chat .composer-bottom{display:none}
+.chat-app.short-chat .continue-agreement.btn{min-height:38px;margin-top:5px;padding:7px 12px;font-size:13px}
+.chat-app.keyboard-open .topbar,.chat-app.keyboard-open .chapter,.chat-app.keyboard-open .lia-presence .portrait-frame{display:none}
+.chat-app.keyboard-open .shell{height:var(--app-height)}
+.chat-app.keyboard-open .composer{padding-bottom:6px}
+
+@media(max-width:900px){.chat-app.short-chat:not(.keyboard-open) .lia-presence .portrait-frame{display:flex}}
