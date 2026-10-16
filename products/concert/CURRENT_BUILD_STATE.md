@@ -16,6 +16,12 @@ Independent QA: PASS on all8 frozen criteria after fixing a Lia-first menu-prior
 
 Play local: http://127.0.0.1:8810/?v=dialogue-005 (static preview, no live AI). Use Start again for revised initial exchanges; older transcripts keep their original wording. Task/evidence: `../../tasks/005-authored-dialogue-engagement.md`; independent `/tmp/concert-dialogue-independent-reqa/independent-qa.json`; parent `/tmp/concert-dialogue-parent-play.json`. Full amended tree is in the03-CONCERT workspace `reviews/concert-v05-amended-dialogue-tree-2026-10-16.md`. Engagement is an editorial judgment pending fresh human play, not established by fixture PASS. The new choice-scene image is still a separate asset.
 
+## Local cover repair — task006
+
+Candidate `8d37bc3bf7988b4d4eac83873799c44f0c3f9539`, independently PASS. Desktop cover now shows one unified artwork/title instead of repeating the decorative aside beside the playable cover. Cover-only desktop CSS keeps copy/CTA readable; mobile and non-cover layouts unchanged. Build plus cover/browser/opening/dialogue suites pass; independent desktop906×1058/1440×1000 and mobile390×844/390×480 inspection, matching mobile geometry and four actual entry journeys pass. App/story/state/saves/assets/dependencies unchanged. See `../../tasks/006-single-desktop-cover.md`, `/tmp/concert-cover-independent-qa/independent-qa.json`.
+
+Play local: http://127.0.0.1:8810/?v=cover-006 . Refresh suffices for the cover fix; no reset needed. Public deployment remains the release listed above. No paid calls, push or deployment.
+
 ## Current product
 
 Main set complete → both artists backstage → Nora sees a phone booking confirmation excluding her from the next tour → refuses the customary shared encore. Lia fronts the band; Nora co-writes and co-sings substantial repertoire, a core creative member. One shared song, no competing solo premiere or broadcast deadline.
