@@ -1,9 +1,9 @@
 export const MAX_SECONDS=45,MAX_BYTES=2*1024*1024;
 export function recordingMime(Recorder){return ['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(type=>Recorder?.isTypeSupported?.(type))||null;}
 export function appendTranscript(draft,text){const joined=[draft.trimEnd(),text.trim()].filter(Boolean).join('\n');return joined.length>1400?null:joined;}
-const messages={NotAllowedError:'Microphone permission was denied. You can still type.',NotFoundError:'No microphone was found. You can still type.',NotReadableError:'The microphone is busy or unavailable. You can still type.',unsupported:'This browser cannot record audio. You can still type.',silent:'No speech was detected. Try again or type your reply.',too_large:'That recording is too large. Try a shorter clip.',session_expired:'This conversation can no longer accept recordings. You can still review your agreement.',turn_limit:'No conversation turns remain. Review your agreement.',empty_transcript:'No words were recognized. Try again or type your reply.',transcript_too_long:'That transcript is too long. Try a shorter recording.',transcription_timeout:'Transcription took too long. Your typed draft is safe; try again.',interrupted:'Recording was interrupted. Your typed draft is safe.',transcription_failed:'Could not transcribe that recording. Your typed draft is safe; try again.'};
+const messages={NotAllowedError:'Microphone permission was denied. You can still type.',NotFoundError:'No microphone was found. You can still type.',NotReadableError:'The microphone is busy or unavailable. You can still type.',startup_timeout:'Microphone setup took too long. You can still type or try recording again.',startup_failed:'Audio capture could not start. You can still type or try recording again.',unsupported:'This browser cannot record audio. You can still type.',silent:'No speech was detected. Try again or type your reply.',too_large:'That recording is too large. Try a shorter clip.',session_expired:'This conversation can no longer accept recordings. You can still review your agreement.',turn_limit:'No conversation turns remain. Review your agreement.',empty_transcript:'No words were recognized. Try again or type your reply.',transcript_too_long:'That transcript is too long. Try a shorter recording.',transcription_timeout:'Transcription took too long. Your typed draft is safe; try again.',interrupted:'Recording was interrupted. Your typed draft is safe.',transcription_failed:'Could not transcribe that recording. Your typed draft is safe; try again.'};
 const stopTracks=stream=>stream?.getTracks().forEach(track=>{track.onended=null;track.stop();});
-export function createSpeechRecorder({notify=()=>{},onTranscript=()=>{},setCaptureMuted=()=>{},getToken=()=>null,mediaDevices=globalThis.navigator?.mediaDevices,Recorder=globalThis.MediaRecorder,Audio=globalThis.AudioContext||globalThis.webkitAudioContext,fetcher=globalThis.fetch,clock=()=>Date.now(),maxSeconds=MAX_SECONDS,timeoutMs=25000}={}){
+export function createSpeechRecorder({notify=()=>{},onTranscript=()=>{},setCaptureMuted=()=>{},getToken=()=>null,mediaDevices=globalThis.navigator?.mediaDevices,Recorder=globalThis.MediaRecorder,Audio=globalThis.AudioContext||globalThis.webkitAudioContext,fetcher=globalThis.fetch,clock=()=>Date.now(),maxSeconds=MAX_SECONDS,timeoutMs=25000,startupTimeoutMs=10000}={}){
  let epoch=0,state='idle',stream,recorder,meterContext,meter,tick,abort,deadline,chunks=[],bytes=0,started=0,heard=false;
  const emit=(status,extra={})=>{state=status;notify({status,seconds:Math.min(maxSeconds,Math.floor((clock()-started)/1000)),...extra});};
  const release=()=>{clearInterval(tick);tick=null;stopTracks(stream);stream=null;if(meterContext){void meterContext.close().catch(()=>{});meterContext=null;}meter=null;setCaptureMuted(false);};
@@ -26,11 +26,20 @@ export function createSpeechRecorder({notify=()=>{},onTranscript=()=>{},setCaptu
  async function start(){
   if(['permission','recording','transcribing'].includes(state))return;
   const mime=recordingMime(Recorder);if(!mime||!mediaDevices?.getUserMedia||!Audio){emit('error',{error:messages.unsupported});return;}
-  const ticket=++epoch;started=clock();emit('permission');
+  const ticket=++epoch;started=clock();emit('permission');let startupTimer;
   try{
-   const acquired=await mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-   if(ticket!==epoch){stopTracks(acquired);return;}stream=acquired;
-   setCaptureMuted(true);meterContext=new Audio();await meterContext.resume();if(ticket!==epoch)return;
+   // Resume inside the Record gesture, before the asynchronous permission prompt.
+   const context=new Audio();meterContext=context;
+   const resumed=Promise.resolve(context.resume()).catch(()=>{throw Error('startup_failed');});
+   // Attach a handler immediately even if getUserMedia throws synchronously below.
+   void resumed.catch(()=>{});
+   const permission=Promise.resolve(mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false})).then(acquired=>{
+    if(ticket!==epoch){stopTracks(acquired);return;}stream=acquired;
+   });
+   await Promise.race([Promise.all([resumed,permission]),new Promise((_,reject)=>{startupTimer=setTimeout(()=>reject(Error('startup_timeout')),startupTimeoutMs);deadline=startupTimer;})]);
+   clearTimeout(startupTimer);if(ticket!==epoch)return;deadline=null;
+   if(context.state!=='running')throw Error('startup_failed');
+   setCaptureMuted(true);
    meter=meterContext.createAnalyser();meter.fftSize=1024;meterContext.createMediaStreamSource(stream).connect(meter);
    recorder=new Recorder(stream,{mimeType:mime,audioBitsPerSecond:64000});chunks=[];bytes=0;heard=false;started=clock();
    const samples=new Float32Array(meter.fftSize);
@@ -41,7 +50,7 @@ export function createSpeechRecorder({notify=()=>{},onTranscript=()=>{},setCaptu
    stream.getTracks().forEach(track=>{track.onended=()=>cancel('interrupted');});
    recorder.start(250);sample();emit('recording');
    tick=setInterval(()=>{sample();if((clock()-started)/1000>=maxSeconds)stop();else emit('recording');},100);
-  }catch(error){fail(ticket,error);}
+  }catch(error){clearTimeout(startupTimer);fail(ticket,error);}
  }
  function stop(){if(state!=='recording')return;clearInterval(tick);emit('transcribing');try{recorder.stop();}catch(error){fail(epoch,error);}release();}
  return {start,stop,cancel,status:()=>state};
