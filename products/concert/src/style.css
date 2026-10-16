@@ -43,3 +43,14 @@
 .delivery-receipt{padding:14px;background:#24212a;border-left:2px solid #d9bd86;margin:16px 0;font-size:15px;line-height:1.5}.delivery-receipt small{display:block;color:#d9bd86;margin-bottom:8px}
 
 .legacy-notice button{background:transparent;border:0;color:var(--gold,#ecc895);font:inherit;min-height:44px;padding:10px 0;cursor:pointer;line-height:1.4}.legacy-notice button:focus-visible{outline:2px solid #ecc895;outline-offset:3px;border-radius:4px}
+
+/* The desktop cover is one hero; later screens retain their companion artwork. */
+@media(min-width:901px){
+ .screen-cover{grid-template-columns:minmax(0,1fr);max-width:1100px}
+ .screen-cover .desktop-art{display:none}
+ .screen-cover .cover>img{object-position:50% 12%}
+ .screen-cover .cover-shade{background:linear-gradient(0deg,#100d13 0%,#100d13e8 24%,#100d1320 76%),linear-gradient(90deg,#100d13b8 0%,#100d1340 52%,transparent 85%)}
+ .screen-cover .cover-top{padding:32px 48px}
+ .screen-cover .cover-copy{max-width:520px;padding:32px 48px 38px}
+ .screen-cover .cover-copy h1{font-size:clamp(54px,5vw,68px)}
+}

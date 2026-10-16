@@ -2,7 +2,7 @@
 const {spawn}=require('node:child_process');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const suites=['browser','resilience','interrupted-send','agreement-exit','opening','hierarchy','encore','dialogue'];
+const suites=['browser','resilience','interrupted-send','agreement-exit','opening','hierarchy','encore','dialogue','cover'];
 const requested=process.argv.slice(2);
 if(requested.some(s=>!suites.includes(s)))throw Error('Unknown local QA suite');
 const env={...process.env,QA_URL:'http://127.0.0.1:8796'};
