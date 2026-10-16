@@ -42,7 +42,7 @@ function App(){
   document.addEventListener('visibilitychange',interrupt);window.addEventListener('pagehide',leave);
   return()=>{leave();document.removeEventListener('visibilitychange',interrupt);window.removeEventListener('pagehide',leave);};
  },[]);
- useEffect(()=>{if(g.screen!=='ai'||notes||reset||hidden){speechRecorder.current?.cancel();setTranscriptReview('');}},[g.screen,notes,reset,hidden]);
+ useEffect(()=>{if(g.screen!=='ai'||notes||reset||hidden)speechRecorder.current?.cancel();if(g.screen!=='ai')setTranscriptReview('');},[g.screen,notes,reset,hidden]);
  function addReviewedTranscript(){const draft=appendTranscript(g.draft,transcriptReview);if(draft===null)return;update({draft});setTranscriptReview('');setSpeech({status:'ready',added:true});}
  useEffect(()=>{try{localStorage.setItem(SAVE,JSON.stringify({...g,build:BUILD}));}catch{}},[g]);
  useEffect(()=>{fetch('/api/negotiate').then(r=>r.json()).then(d=>setAvailability(d.available===true)).catch(()=>setAvailability(false));},[]);
