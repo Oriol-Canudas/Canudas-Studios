@@ -5,6 +5,7 @@ import {BUILD,SAVE,LEGACY_SAVE,initialPrep,reducePrep,options,initialNegotiation
 import {setSound,setAudioScene,setVolume,getVolume,cueAudience,resetAudienceCues,subscribeIntroVoice,setIntroVoice,retryIntroVoice,stopIntroVoice,setCaptureMuted} from './audio.mjs';
 import {recoverSend} from './send-recovery.mjs';
 import {createSpeechRecorder,appendTranscript} from './speech-recording.mjs';
+import {ReplyReveal} from './reply-reveal.jsx';
 import './style.css';
 const SOUND_SAVE='perspectives-concert-sound-review';
 const fresh=()=>({screen:'cover',prep:initialPrep(),negotiation:initialNegotiation(),token:null,goal:'',draft:'',confirmed:null,admitted:false,closedReason:null,aiMessages:[],diagnostics:[],reviewLines:[],ending:null,sendRequest:null,revisionRequested:false,fallback:false,refusalAcknowledged:false});
@@ -20,6 +21,16 @@ function App(){
  const gameRef=useRef(g),draftRef=useRef(g.draft),speechRecorder=useRef(null);gameRef.current=g;draftRef.current=g.draft;
  const [introVoice,setIntroVoiceStatus]=useState({beat:null,state:'idle',error:null});
  const openingPointer=useRef(null),requestRef=useRef(null),epoch=useRef(0),composer=useRef(null),chatLog=useRef(null),content=useRef(null),lock=useRef(false);
+ const replySequence=useRef(0),activeReveal=useRef(null);
+ const [heardReplies]=useState(()=>new Set(Object.values(g.prep.history).flat().filter(m=>m.role!=='player').map(m=>`${m.role}:${m.text}`)));
+ function revealAuthored(prep){
+  const who=NODES[prep.node]?.who;if(!who||!prep.current){activeReveal.current=null;return;}
+  const text=[prep.current.line,prep.current.continuation].filter(Boolean).join('\n'),key=`${who}:${text}`;
+  const animate=!heardReplies.has(key);heardReplies.add(key);
+  activeReveal.current={kind:'authored',id:++replySequence.current,key,animate};
+ }
+ function consumeReveal(id){if(activeReveal.current&&activeReveal.current.id===id)activeReveal.current.animate=false;}
+ function revealAI(text,index){activeReveal.current={kind:'ai',id:++replySequence.current,text,index,animate:true};}
  const s=g.prep,n=g.negotiation,person=NODES[s.node]?.who;
  const mood=MOODS[n.mood]||MOODS.guarded;
  const lastCue=[...g.aiMessages].reverse().find(m=>m.who==='lia')?.cue;
@@ -83,7 +94,7 @@ function App(){
  useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),4500);return()=>clearTimeout(t);},[toast]);
  const act=id=>{
   try{
-   const next=reducePrep(s,id);const screen=next.node==='hub'?'hub':next.node==='brief'?'brief':'dialogue';update({prep:next,screen});
+   const next=reducePrep(s,id);const screen=next.node==='hub'?'hub':next.node==='brief'?'brief':'dialogue';revealAuthored(next);update({prep:next,screen});
    if(next.deliveries.length>s.deliveries.length)setToast('Message delivered to Lia.');
    if(id==='promise')setToast('You made Nora a promise. Lia has not agreed to it.');
    if(id==='repair')setToast('You withdrew the promise. Nora still needs a real offer from Lia.');
@@ -96,7 +107,7 @@ function App(){
   try{
    const r=await fetch('/api/negotiate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'start',build:BUILD,events:s.events}),signal:AbortSignal.timeout(15000)});const d=await r.json();if(!r.ok)throw Error(d.error);
    if(ticket!==epoch.current)return;
-   const opening=d.opening;
+   const opening=d.opening;revealAI(opening,0);
    update({screen:'ai',token:d.token,negotiation:d.negotiation,aiMessages:[{who:'lia',text:opening,cue:'She takes out one in-ear monitor. You have her attention.',source:'authored_opening'}]});setAvailability(true);
   }catch(e){setError(e.message==='ai_unavailable'?'The AI conversation is not connected yet. Keep exploring or try again.':e.message==='story_version_changed'?'This story version has changed. Reload the page; your earlier session is retained separately.':'We couldn’t open the conversation. Your game is still saved.');}
   finally{if(ticket===epoch.current){lock.current=false;setBusy(false);}}
@@ -117,6 +128,7 @@ function App(){
    const r=await fetch('/api/negotiate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(req),signal:AbortSignal.timeout(55000)});const d=await r.json();if(!r.ok)throw Error(d.error);
    if(ticket!==epoch.current)return;
    const messages=[...previousMessages,{who:'player',text:message,requestId:req.requestId},{who:'lia',text:d.reply.text,cue:d.reply.cue,source:'openai'}];
+   if(!d.closed&&d.negotiation.turns<6)revealAI(d.reply.text,messages.length-1);else activeReveal.current=null;
    if(d.negotiation.turns===4)messages.push({who:'bruno',text:'They’re still waiting. If we’re not doing the encore, I need to bring the house lights up. Give me the cue when you’ve settled it.',source:'event'});
    update(current=>({token:d.token,negotiation:d.negotiation,revisionRequested:false,confirmed:d.negotiation.version===current.negotiation.version?current.confirmed:null,sendRequest:null,aiMessages:messages,draft:current.draft,diagnostics:[...current.diagnostics,d.diagnostic],screen:d.closed||d.negotiation.turns>=6?'review':'ai',closedReason:d.closed?'player':d.negotiation.turns>=6?'limit':null}));
    requestRef.current=null;
@@ -149,13 +161,17 @@ function App(){
   if(busy||(!none&&(!canExecute(s,n,g.confirmed,g.admitted)||(n.privacyBreach&&(!g.admitted||!g.refusalAcknowledged)))))return;
   epoch.current++;update({screen:'ending',ending:none?'none':n.proposal});setEndBeat(0);setPaused(false);
  }
- function resetGame(){stopIntroVoice();resetAudienceCues();epoch.current++;requestRef.current=null;lock.current=false;setBusy(false);setG(fresh());setReset(false);setBeat(0);setError('');setPaused(false);setNotes(false);}
+ function resetGame(){heardReplies.clear();activeReveal.current=null;stopIntroVoice();resetAudienceCues();epoch.current++;requestRef.current=null;lock.current=false;setBusy(false);setG(fresh());setReset(false);setBeat(0);setError('');setPaused(false);setNotes(false);}
  function exportSession(){const blob=new Blob([JSON.stringify({...g,build:BUILD,token:undefined,sendRequest:g.sendRequest?{...g.sendRequest,token:undefined}:null},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='concert-session.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  const isAI=g.screen==='ai';
  const speechBusy=['permission','recording','transcribing'].includes(speech.status);
  const editingReply=!speechBusy&&(replyMode!=='talk'||!!transcriptReview);
  const lastLiaIndex=g.aiMessages.findLastIndex(m=>m.who==='lia');
  const visibleMessages=g.aiMessages.map((m,i)=>({m,i})).filter(({m,i})=>i>=lastLiaIndex||m.pending||m.unconfirmed||m.failed);
+ const aiReveal=activeReveal.current?.kind==='ai'?activeReveal.current:null;
+ const authoredLines=[s.current?.line||NODES[s.node]?.line,s.current?.continuation].filter(Boolean);
+ const authoredReveal=activeReveal.current?.kind==='authored'&&activeReveal.current.key===`${person}:${authoredLines.join('\n')}`?activeReveal.current:null;
+ const finishReply=notes||reset||hidden||!!aiPanel;
  const liaAgreed=!!n.proposal&&n.accepted===n.version;
  const suggestedReply=n.proposal==='solo'?'Do the encore with the band without Nora. Credit her, without explaining her absence for her.':'You can acknowledge the tour decision without asking her to forgive you. What could you offer her before the encore?';
  const suggestionDraft=[g.draft,suggestedReply].filter(Boolean).join('\n');
@@ -183,7 +199,7 @@ function App(){
     {g.screen==='dialogue'&&person&&<><div className="portrait-scene"><button className="back-over backstage-nav" onClick={()=>act('leave')}><Icon name="back"/>Backstage</button><Portrait name={person==='nora'&&s.facts.offer&&!s.promise&&!s.repaired?'nora-listening':CAST[person].image} alt={CAST[person].name}/><div className="portrait-title"><h1>{CAST[person].name}</h1><p>{CAST[person].role}</p></div></div><div className="pad dialogue-pad">
     <div className="authored-last" key={`${person}:${s.events.length}`}>
     {s.current?.player&&<div className="player-intervention"><span className="conversation-label">You said</span><p className="your-line">{s.current.player}</p></div>}
-    <section className="character-speech" aria-label={`${CAST[person].name} says`}><span className="conversation-label">{CAST[person].name}</span>{s.current?.cue&&<p className="cue">{s.current.cue}</p>}<p className="spoken">{s.current?.line||NODES[s.node].line}</p>{s.current?.continuation&&<p className="spoken">{s.current.continuation}</p>}</section></div>
+    <section className="character-speech" aria-label={`${CAST[person].name} says`}><ReplyReveal heading={<span className="conversation-label">{CAST[person].name}</span>} cue={s.current?.cue&&<p className="cue">{s.current.cue}</p>} key={authoredReveal?.id||'resumed'} lines={authoredLines} animate={authoredReveal?.animate} onShown={()=>consumeReveal(authoredReveal?.id)} completeNow={finishReply} paragraphClass="spoken"/></section></div>
     <div className="response-options"><div className="choice-label"><span>What do you say?</span></div><div className="choices">{options(s).map(c=><Btn key={c[0]} onClick={()=>act(c[0])}><span>{c[1]}</span><Icon name="arrow"/></Btn>)}</div></div>
     {options(s).length===0&&<p className="sub">You’ve heard this position. A new proposal could move the conversation forward.</p>}
     <button className="backstage-nav" onClick={()=>act('leave')}><Icon name="back"/>Return backstage</button>
@@ -191,7 +207,7 @@ function App(){
     </div></>}
     {g.screen==='brief'&&<><div className="portrait-scene short"><button className="back-over backstage-nav" disabled={busy} onClick={()=>act('leave')}><Icon name="back"/>Backstage</button><Portrait name="lia-guarded" alt="Lia, backstage"/><div className="portrait-title"><p>NOW, YOU AND LIA</p><h1>The encore is waiting.</h1></div></div><div className="pad"><p className="lead">The crowd is calling the band back for the song Lia and Nora always sing together. Work out an offer Lia can stand behind.</p><p className="sub">Speak in your own words here. You have up to six turns; reading and thinking won’t use them up.</p><div className="context-card"><span className="eyebrow">WHAT CAN CHANGE</span><p>Who returns for the encore, what Lia acknowledges to Nora, and what they tell the audience.</p><p className="sub">Nora still decides whether she joins her. You cannot undo the confirmed tour or promise a relationship for either woman.</p></div>{s.relay&&<p className="received"><Icon name="check"/> Lia has already received Nora’s professional offer.</p>}{s.promise&&<p className="notice">Nora expects the place on the tour you promised her. Lia has not agreed.</p>}{error&&<p role="alert" className="error">{error}</p>}{availability===false&&!error&&<p className="notice">The AI connection is not available yet. Your story and choices are saved.</p>}<Btn kind="primary" disabled={busy} onClick={enterAI}>{busy?'Opening the conversation…':'Talk to Lia'} <Icon name="arrow"/></Btn><p className="fine">AI conversation. Nothing goes onstage until you give the cue.</p></div></>}
     {isAI&&<div className="chat-log" ref={chatLog} aria-live="polite" aria-label="Current conversation">
-      <div className="latest-exchange">{visibleMessages.map(({m,i})=><div key={i} className={`chat-message ${m.who} ${i===lastLiaIndex?'latest-lia':''}`}><span className="message-who">{m.who==='player'?'YOU':CAST[m.who]?.name}{i===lastLiaIndex&&<span className="sr-only"> · latest reply</span>}</span>{m.cue&&<p className="cue"><span className="sr-only">Stage direction: </span>{m.cue}</p>}<p className="message-speech">{m.text}</p>{m.pending&&<small className="send-state">Sending…</small>}{m.unconfirmed&&<><small className="send-state">Delivery unconfirmed · no reply applied</small>{g.sendRequest?.requestId===m.requestId&&<button className="retry-message" disabled={busy} onClick={()=>send(g.sendRequest)}>Retry saved message</button>}</>}{m.failed&&<button className="retry-message" disabled={busy} onClick={()=>suggest(m.text)}>Not sent · edit and retry</button>}</div>)}
+      <div className="latest-exchange">{visibleMessages.map(({m,i})=><div key={i} className={`chat-message ${m.who} ${i===lastLiaIndex?'latest-lia':''}`}>{m.who==='lia'?<ReplyReveal heading={<span className="message-who">Lia{i===lastLiaIndex&&<span className="sr-only"> · latest reply</span>}</span>} cue={m.cue&&<p className="cue"><span className="sr-only">Stage direction: </span>{m.cue}</p>} key={aiReveal?.index===i?aiReveal.id:'resumed'} lines={[m.text]} animate={aiReveal?.index===i&&aiReveal.text===m.text&&aiReveal.animate} onShown={()=>consumeReveal(aiReveal?.id)} completeNow={finishReply||speechBusy||editingReply||busy} paragraphClass="message-speech"/>:<><span className="message-who">{m.who==='player'?'YOU':CAST[m.who]?.name}</span>{m.cue&&<p className="cue"><span className="sr-only">Stage direction: </span>{m.cue}</p>}<p className="message-speech">{m.text}</p></>}{m.pending&&<small className="send-state">Sending…</small>}{m.unconfirmed&&<><small className="send-state">Delivery unconfirmed · no reply applied</small>{g.sendRequest?.requestId===m.requestId&&<button className="retry-message" disabled={busy} onClick={()=>send(g.sendRequest)}>Retry saved message</button>}</>}{m.failed&&<button className="retry-message" disabled={busy} onClick={()=>suggest(m.text)}>Not sent · edit and retry</button>}</div>)}
       {error&&<p className="error" role="alert">{error}</p>}{speech.status==='error'&&<p className="error" role="alert">{speech.error}</p>}
       {speech.status==='ready'&&speech.added&&!transcriptReview&&editingReply&&<p className="speech-notice" role="status">Transcript added to your draft. Review it before sending.</p>}
       {transcriptReview&&<section className="transcript-review"><p>Your draft and transcript exceed 1,400 characters. Nothing was replaced. Shorten either text, then add the transcript.</p><label htmlFor="recorded-text">Recorded words</label><textarea id="recorded-text" value={transcriptReview} onChange={e=>setTranscriptReview(e.target.value)}/><button className="text-link" disabled={!transcriptReview.trim()||appendTranscript(g.draft,transcriptReview)===null} onClick={addReviewedTranscript}>Add to draft</button><button className="text-link" onClick={()=>{setTranscriptReview('');setSpeech({status:'idle'});}}>Discard recording</button></section>}

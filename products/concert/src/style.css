@@ -266,3 +266,13 @@
 
 /* Authored character speech has a cooler surface than the player's plum choices. */
 .screen-dialogue .character-speech{background:#233039;border-color:#536774}
+
+/* Task019: uncover an aria-hidden visual copy without reflowing the full reply. */
+.reply-reveal{position:relative}
+.reply-paragraph{position:relative;white-space:pre-wrap}
+.reply-reveal[data-revealing="true"] .reply-accessible{opacity:0}
+.reply-visual{position:absolute;inset:0;pointer-events:none;clip-path:inset(0 100% 100% 0)}
+.reply-visual::before{content:attr(data-text)}
+.reply-heading{position:relative;padding-right:106px}
+.reply-skip{position:absolute;right:0;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--gold);font-size:12px;min-height:44px;padding:0 4px;text-decoration:underline;text-underline-offset:4px}
+@media(prefers-reduced-motion:reduce){.reply-reveal .reply-accessible{opacity:1!important}.reply-visual{display:none}}
