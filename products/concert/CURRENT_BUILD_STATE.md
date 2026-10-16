@@ -1,12 +1,20 @@
 # Concert prototype — delivery state
 
-Updated:16 October2026. Encore v05 independently verified and published.
+Updated:16 October2026. Encore v05 remains published; task005 dialogue amendments independently verified locally, not yet published.
 
 Live: https://gamex-concert.vercel.app/?v=encore-v05-20261016
 Vercel: ocanudas-7641/gamex-concert (`prj_pmy012EZyymfl5MvxHQrIRhzYz3R`).
 Deployment: `dpl_4znFVPoxbv2DcTfWS8fsaDhNmX2Y` — Production READY.
 Immutable URL: https://gamex-concert-gvueggl2s-ocanudas-7641.vercel.app
 Deployed commit: `70c855e`; product code matches independently tested `24f2f22b19b83bbd237a7e8c3b8cf918e9006810`. Branch `codex/concert-encore-v05`; app `products/concert`. No merge or other-product change. Git auto-deploy remains unconfigured.
+
+## Local dialogue amendments — task005
+
+Local candidate: `4b9e2850a39c2b54b69b75f9a879a0be9ed49bbc`; public deployment metadata above remains unchanged.27 of44 initial authored question/answer pairs tightened, with privacy-aware confession responses, explicit Lia admission before relay, complete visible offer terms, contextual returns and exact chronology intervention. All15 nodes and45 action IDs remain; protected privacy responses take precedence over pending acknowledgment, while genuine older event lists retain a guarded replay path. Existing stored transcript text is preserved.
+
+Independent QA: PASS on all8 frozen criteria after fixing a Lia-first menu-priority defect found by the separate QA agent.55 Node tests, build,8 controlled browser suites (11 dialogue and11 encore journeys), plus separate source/state/legacy and3viewport probes PASS. Parent inspected diff, replayed all45 baseline actions and personally played the corrected authored chain through negotiation briefing, with all API calls intercepted. No paid generation, push or deployment. Story facts, opening, AI context/prompt, negotiation/consent logic, four outcomes, recovery, saves, media, styles and dependencies remain unchanged.
+
+Play local: http://127.0.0.1:8810/?v=dialogue-005 (static preview, no live AI). Use Start again for revised initial exchanges; older transcripts keep their original wording. Task/evidence: `../../tasks/005-authored-dialogue-engagement.md`; independent `/tmp/concert-dialogue-independent-reqa/independent-qa.json`; parent `/tmp/concert-dialogue-parent-play.json`. Full amended tree is in the03-CONCERT workspace `reviews/concert-v05-amended-dialogue-tree-2026-10-16.md`. Engagement is an editorial judgment pending fresh human play, not established by fixture PASS. The new choice-scene image is still a separate asset.
 
 ## Current product
 

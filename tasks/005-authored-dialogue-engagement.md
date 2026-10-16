@@ -42,7 +42,7 @@ BUILD round 1 candidate: `073b2bba04709f06e2df5f1708895bcb67dd6dfd`. Worker chan
 
 ## Independent QA verdict
 
-Pending. Use `.agents/skills/gamex-qa/SKILL.md`; no product-code/test edits by QA. Independently inspect and run the actual candidate; play the relevant authored paths and check state/knowledge/privacy/consent, not just selected strings or worker claims. No paid inference. Return PASS / FAIL / BLOCKED with criterion evidence and source-unchanged proof. More engaging means an editorial improvement, not proven enjoyment.
+**Final verdict: PASS at `4b9e2850a39c2b54b69b75f9a879a0be9ed49bbc` (independent round 2).** Use `.agents/skills/gamex-qa/SKILL.md`; no product-code/test edits by QA. Independently inspect and run the actual candidate; play the relevant authored paths and check state/knowledge/privacy/consent, not just selected strings or worker claims. No paid inference. Return PASS / FAIL / BLOCKED with criterion evidence and source-unchanged proof. More engaging means an editorial improvement, not proven enjoyment.
 
 
 ### Independent QA round 1 — FAIL
@@ -52,3 +52,22 @@ QA agent `concert_qa` independently inspected candidate `073b2bba`, ran npm ci, 
 Report: `/tmp/concert-dialogue-independent-qa/independent-qa.json`; reproduction state: `reordered-confession.json`; mobile390×844/390×480 and desktop screenshots in the same folder. Baseline automatic rehearsal continuation independently reproduced; all 45 old action witnesses replayed. Source proof: `state-invariants.json`.
 
 Returned to the same worker for a bounded menu-priority fix. Preserve all three immediate confidentiality responses; defer rather than erase acknowledgment relay, keeping it available after the protected response. Preserve knowledge, consent, action IDs and existing regressions. Add the exact Lia-first pending-ack browser/state case, then hand off a new commit for independent re-QA. Acceptance unchanged.
+
+
+### BUILD round 2 and independent re-QA — PASS
+
+Worker fix candidate: `4b9e2850a39c2b54b69b75f9a879a0be9ed49bbc`. Protected confidentiality choices take priority over pending cross-character acknowledgment. The acknowledgment fact/source/undelivered state remains, and all three responses expose it again afterwards. A narrowly guarded explicit historical `love → relay_ack` action remains replayable without appearing in the new immediate menu; missing/wrong-source/already-delivered/missing-visit and duplicate actions are rejected. No automatic delivery or save/transcript rewrite.
+
+The different QA agent independently reran installation, tests (55/55), build and all eight offline browser suites (eleven dialogue journeys and eleven encore journeys), all exit 0. It separately reproduced the previously failing Lia-first case, checked all three privacy branches and Nora-first control at390×844/390×480/1440×1000, and inspected settled renders. It verified the exact old sequence state against the preceding candidate, replayed all45 original witnesses and tested invalid legacy guard cases. All eight frozen criteria PASS. No tracked QA edits; tested SHA and clean tree confirmed.
+
+Independent report: `/tmp/concert-dialogue-independent-reqa/independent-qa.json`; browser states: `reordered-confession.json`; legacy guards: `legacy-results.json`; mobile and desktop renders in the same directory. Round1 FAIL evidence remains the historical record; this re-QA supersedes its verdict for the final candidate.
+
+Parent separately inspected the actual diff, replayed all45 original witnesses and nine contextual paths, and verified the engine suffix from liaContext onward identical to baseline. Parent personally played the actual local UI: Lia chronology → Nora earlier conversation/distance/love → protected practical response → acknowledgment relay → Nora conditions → delivered offer → Lia receipt → AI briefing. Pending acknowledgment preserved; no professional account manufactured by love/practical response, zero negotiation turns/consent created. All API requests blocked by fixtures; no generation POST. Evidence `/tmp/concert-dialogue-parent-play.json`, `/tmp/concert-dialogue-parent-{confidence,options}.png`.
+
+27 of44 static question/answer pairs amended; all15 nodes and45 actions retained. Core musical/chronology details, optional discovery and necessary bridges remain. Dynamic privacy responses, received-message reactions and return prompts align with current state. New wording removes unsupported admission/relay claims and avoids implying permanent tour exclusion. These are editorial improvements; human enjoyment is not measured by fixtures.
+
+Final full tree and exact candidate source snapshot: `/Users/oriol.canudas/Library/CloudStorage/GoogleDrive-ocanudas@gmail.com/La meva unitat/Els meus/01. PERSPECTIVES/03 - CONCERT/reviews/concert-v05-amended-dialogue-tree-2026-10-16.md` and sibling `amended-dialogue-tree-source.json`. Original scored review preserved alongside it.
+
+Local static preview restored at http://127.0.0.1:8810/?v=dialogue-005 after its former server stopped. It serves rebuilt candidate dist with no live API middleware. Start again to hear revised initial exchanges; historical saved transcripts are retained. Current public production remains the prior task004 publication. No push, deploy, paid calls, image integration or other-product change in task005. The subsequent record commit changes this task and current-state documentation only; tested product bytes remain identical to4b9e285.
+
+Limits: controlled Chromium and bounded reorderings; no physical iOS/live-model semantic validation or measured engagement. Prior valid event sequences replay; stored historical wording is deliberately not rewritten. The chosen image remains a separate asset. Fresh human play is the acceptance step for engagement.
