@@ -11,12 +11,12 @@ const {chromium}=require(process.env.QA_PLAYWRIGHT||'playwright'),assert=require
   const click=name=>page.getByRole('button',{name,exact:true}).click(),read=()=>page.evaluate(key=>JSON.parse(localStorage.getItem(key)),E.SAVE);
   const check=async(screen,label=screen)=>{
    await page.locator(`.screen-${screen}`).waitFor();assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-   if(size.width>900){const conversation=screen==='dialogue';assert.equal(await page.locator('.desktop-art').isVisible(),conversation);assert.equal(await page.locator('.desktop-art h2:visible').count(),0);
-    if(conversation)assert.equal(await page.locator('.desktop-art>img:visible,.stage .portrait-frame>img:visible').count(),1);
-    if(screen==='dialogue'){assert.equal(await page.locator('.portrait-title h1').textContent(),'Nora');assert.match(await page.locator('.portrait-title p').textContent(),/Songwriter/);const back=await page.locator('.portrait-scene .back-over').boundingBox(),title=await page.locator('.portrait-title').boundingBox();assert(back.y+back.height<=title.y);}
+   if(size.width>900){const conversation=screen==='dialogue';assert.equal(await page.locator('.desktop-art').isVisible(),false);assert.equal(await page.locator('.desktop-art h2:visible').count(),0);
+    if(conversation)assert.equal(await page.locator('.authored-portrait>img:visible').count(),1);
+    if(screen==='dialogue'){assert.equal(await page.locator('.portrait-title h1').textContent(),'Nora');assert.match(await page.locator('.portrait-title p').textContent(),/Songwriter/);const back=await page.locator('.portrait-scene .back-over').boundingBox(),title=await page.locator('.portrait-title').boundingBox();assert(back.x+back.width<=title.x);}
 
     const g=await page.evaluate(()=>{const shell=document.querySelector('.shell'),stage=document.querySelector('.stage');return {shell:shell.getBoundingClientRect().width,stage:stage.getBoundingClientRect().width,columns:getComputedStyle(shell).gridTemplateColumns.split(' ').length};});
-    assert.equal(g.columns,conversation?2:1);if(!conversation){assert.equal(g.stage,g.shell);if(screen==='opening')assert.equal(g.shell,size.width);else assert(g.shell<=(['ending','cover'].includes(screen)?1100:760));}
+    assert.equal(g.columns,1);if(conversation){assert.equal(g.stage,g.shell);assert.equal(g.shell,size.width);}else{assert.equal(g.stage,g.shell);if(screen==='opening')assert.equal(g.shell,size.width);else assert(g.shell<=(['ending','cover'].includes(screen)?1100:760));}
    }else assert(!await page.locator('.desktop-art').isVisible());
    await page.evaluate(()=>Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))));await page.screenshot({path:`qa/scenes-${size.width}x${size.height}-${label}.png`});screens.push(label);
   };
@@ -28,7 +28,7 @@ const {chromium}=require(process.env.QA_PLAYWRIGHT||'playwright'),assert=require
    if(size.width>900){const caption=await page.locator('.opening-caption').boundingBox();assert(caption.width<=680);assert(caption.y>=0&&caption.y+caption.height<=size.height);}
   }
   await click('Previous');await page.getByText(OPENING.at(-2).text,{exact:true}).waitFor();await click('Go backstage');await check('hub');
-  await page.locator('.contact').filter({hasText:'Nora, wait.'}).click();await check('dialogue');assert((await page.locator('.desktop-art>img').getAttribute('src')).includes('nora'));
+  await page.locator('.contact').filter({hasText:'Nora, wait.'}).click();await check('dialogue');assert((await page.locator('.authored-portrait>img').getAttribute('src')).includes('nora'));
   await click(E.options((await read()).prep).find(c=>c[0]==='meaning')[1]);await click('Return backstage');await click('Prepare an agreement with Lia');await check('brief');
   await click('Talk to Lia');await page.locator('.conversation-header').waitFor();await check('ai');assert((await page.locator('.conversation-portrait>img').getAttribute('src')).includes('lia'));
   // The offer below is seeded, not inferred: exercise the real confirmation/cue/reveal controls.

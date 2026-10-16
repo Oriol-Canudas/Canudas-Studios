@@ -276,3 +276,50 @@
 .reply-heading{position:relative;padding-right:106px}
 .reply-skip{position:absolute;right:0;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--gold);font-size:12px;min-height:44px;padding:0 4px;text-decoration:underline;text-underline-offset:4px}
 @media(prefers-reduced-motion:reduce){.reply-reveal .reply-accessible{opacity:1!important}.reply-visual{display:none}}
+
+/* Task021: authored dialogue stays with one stable full-screen character. */
+.authored-app{min-height:0;isolation:isolate}
+.authored-app .ambient{display:none}
+.authored-portrait{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.authored-portrait>img{width:100%;height:100%;object-fit:cover;object-position:50% 0%}
+.authored-portrait:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#100d136b 0%,#100d1308 27%,#100d132e 65%,#100d1366 100%)}
+.authored-app .topbar{position:absolute;inset:0 0 auto;z-index:4;height:calc(56px + env(safe-area-inset-top));max-width:none;padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));border:0;background:linear-gradient(#100d1380,#100d1300)}
+.authored-app .brand{min-height:44px;min-width:44px;font-size:30px;gap:9px}
+.authored-app .brand span{font-size:11px}
+.authored-app .top-actions{gap:0}.authored-app .top-actions .iconbtn{font-size:11px}
+.authored-app .top-actions .desktop-only{display:none}
+.authored-app .audio-level summary,.authored-app .audio-level input{min-width:44px;min-height:44px}
+.authored-app .shell{height:100%;width:100%;max-width:none;display:grid;grid-template-columns:minmax(0,1fr);padding-top:calc(60px + env(safe-area-inset-top))}
+.authored-app .stage{height:100%;background:none;border:0}
+.authored-app .chapter{display:none}
+.authored-app .portrait-scene.authored-identity{display:flex;align-items:flex-start;gap:14px;flex-shrink:0;min-height:80px;height:auto;padding:4px max(20px,env(safe-area-inset-right)) 12px max(20px,env(safe-area-inset-left));background:none;isolation:auto}
+.authored-app .authored-identity .back-over{position:static;margin:0;flex-shrink:0;min-height:44px;padding:10px 12px;background:#33251acc;font-size:13px}
+.authored-app .portrait-title{padding:0;background:none;border:0;text-shadow:0 1px 4px #0a050c,0 2px 10px #0a050c}
+.authored-app .portrait-title h1{font-size:30px;line-height:1.15}
+.authored-app .portrait-title p{font-size:13px;line-height:1.4;color:#f4eaf3;margin:4px 0 0;max-width:28em}
+.authored-app .content{background:none;scrollbar-color:#c9b2c6 #160f1b30;overflow-anchor:none;scroll-padding:16px;touch-action:pan-y}
+.authored-app .dialogue-pad{width:100%;max-width:580px;margin:0 auto;padding:clamp(140px,19vh,210px) max(20px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));text-shadow:0 1px 4px #0a050cc9}
+.authored-app .authored-last{animation:none}
+.authored-app .character-speech{background:rgb(22 38 48 / .74);border-color:#98b6ca77;box-shadow:0 6px 30px #08050b16;padding:18px 18px 19px}
+.authored-app .character-speech .spoken{color:#fff8fb;font-size:18px;line-height:1.6}
+.authored-app .conversation-label{color:#f6d2a0;font-size:11px}
+.authored-app .character-speech .cue{color:#f2e6f0;font-size:15px;line-height:1.5}
+.authored-app .player-intervention{padding:13px 16px;margin:0 0 14px;border-left:2px solid #e8c89a;background:rgb(55 37 37 / .70);border-radius:3px 10px 10px 3px}
+.authored-app .player-intervention .conversation-label{color:#f0d9c7}
+.authored-app .your-line{font-size:16px;line-height:1.5;color:#fff0df;background:none;margin:0;padding:0}
+.authored-app .dialogue-pad:has(.reply-reveal[data-revealing="true"]) .response-options{visibility:hidden}
+.authored-app .response-options{border-top-color:#e1c9dd55;margin-top:20px;padding-top:16px}
+.authored-app .choice-label{color:#fff3fb;text-shadow:0 1px 4px #0a050c,0 2px 8px #0a050c}
+.authored-app .choice-label span{font-size:14px}
+.authored-app .choices .btn{background:rgb(43 28 47 / .76);border-color:#b196b08c;color:#fff5fc;font-size:18px;line-height:1.45;padding:15px 17px;min-height:52px;text-shadow:0 1px 3px #0a050c}
+.authored-app .choices .btn:hover{background:rgb(58 39 62 / .86);border-color:#d8b9d0}
+.authored-app .dialogue-pad>.backstage-nav{background:#33251acc}
+.authored-app .transcript{background:rgb(22 15 27 / .76);border:1px solid #c9b2c655;border-radius:10px;padding:4px 15px 12px;color:#f1e4ee}
+.authored-app .transcript summary{font-size:14px;min-height:44px}
+.authored-app .transcript p{font-size:16px!important;color:#f8eff6}
+.authored-app .sub{font-size:16px;color:#f6eaf4;background:rgb(22 15 27 / .7);padding:12px;border-radius:8px}
+.authored-app .audio-error{position:absolute;z-index:5;top:calc(56px + env(safe-area-inset-top));left:16px;right:16px}
+@media(min-width:901px){.authored-portrait>img{object-position:50% 18%}.authored-app .authored-identity,.authored-app .dialogue-pad{width:540px;max-width:calc(100% - 48px);margin-left:auto;margin-right:clamp(24px,4vw,80px)}.authored-app .dialogue-pad{padding-top:22px}.authored-app .portrait-scene.authored-identity{padding-inline:20px;min-height:94px}.authored-app .character-speech .spoken{font-size:20px}.authored-app .topbar{padding-inline:32px}}
+@media(max-height:650px){.authored-app .topbar{height:calc(50px + env(safe-area-inset-top))}.authored-app .shell{padding-top:calc(52px + env(safe-area-inset-top))}.authored-app .portrait-scene.authored-identity{min-height:74px;padding-bottom:8px}.authored-app .portrait-title h1{font-size:26px}.authored-app .portrait-title p{font-size:12px}.authored-app .dialogue-pad{padding-top:28px}.authored-app .character-speech .spoken,.authored-app .choices .btn{font-size:16px}.authored-app .character-speech{padding:16px}.authored-app .authored-identity .back-over{padding:8px 10px}}
+@media(max-width:350px){.authored-app .brand span{display:none}.authored-app .portrait-scene.authored-identity{padding-inline:14px;gap:10px}.authored-app .dialogue-pad{padding-inline:14px}.authored-app .character-speech{padding:15px}.authored-app .choices .btn{padding:13px 14px}.authored-app .portrait-title p{font-size:12px}}
+@media(min-width:601px) and (max-width:900px) and (max-height:650px){.authored-portrait>img{object-position:50% 20%}.authored-app .authored-identity,.authored-app .dialogue-pad{width:52%;margin-left:auto;margin-right:16px}.authored-app .portrait-scene.authored-identity{padding-inline:14px}.authored-app .dialogue-pad{padding:10px 14px 20px}}
