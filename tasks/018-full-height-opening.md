@@ -27,3 +27,9 @@ Enlarge opening speaker artwork substantially: target at least104×120px on norm
 ## BUILD / QA / release
 
 Pending.
+
+## User amendment — distinguish authored speech from response choices
+
+While BUILD was starting, Oriol supplied an authored Lia dialogue screenshot and asked for a slight tint to distinguish the character's answer from the next player questions. Include this small presentation change in the same release: scope `.screen-dialogue .character-speech` to a subtle cool blue-grey fill/border while retaining the current selectable plum response buttons, gold speaker label, readable text, arrows and layout. No changes to prior-player echo, story/choice semantics or AI translucent dialogue. This is an explicit exception to the original non-opening UI protection, limited to authored character-speech colour.
+
+Acceptance6: inspect Lia and Nora baseline/candidate panels on mobile and desktop; character speech and selectable responses have perceptibly distinct fills, body text remains at least4.5:1 contrast, focus/controls are unchanged. Existing hierarchy suite passes. Do not add new tests merely mirroring colour constants. Include the bounded CSS change in the worker diff and independent QA.
