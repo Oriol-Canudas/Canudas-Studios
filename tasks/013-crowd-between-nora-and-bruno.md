@@ -16,3 +16,8 @@ products/concert/src/intro-voice.mjs and src/audio.mjs; src/main.jsx only if min
 
 ## BUILD / QA / release
 Pending.
+
+## User steering — Backstage visibility, same bounded release
+User additionally requests that the important Backstage button stand out more. Apply consistent high-contrast warm/gold navigation styling with an opaque background, clear border, larger readable label and at least44px tap height to existing Backstage controls in character dialogue and negotiation briefing, plus Return backstage below authored choices. Keep the arrow and existing labels/actions; visually distinguish navigation from dialogue choices. Do not change the story-opening skip control, game state, routing or AI agreement exit. main.jsx class/icon additions and style.css are now allowed for these controls only.
+
+Acceptance5: actual Backstage/Return backstage buttons are clearly identifiable at390x844,390x480 and1440x1000, with visible keyboard focus, >=44px target and readable contrast; no overlap with face/name/role or clipped/overflowing text. Actual clicks from Lia, Nora and briefing return to the same hub and preserve discoveries/history/agreement/draft. Inspect before/after screenshots. This low-impact visual addition needs a focused browser inspection/click probe, not new mirrored unit tests. QA independently verifies it alongside audio criteria. No unrelated typography/layout redesign.
