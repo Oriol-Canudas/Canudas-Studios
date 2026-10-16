@@ -12,4 +12,4 @@ Separate non-editing QA follows repo skill: inspect exact CSS diff and baseline/
 
 ## Result
 
-Pending.
+Candidate289b172d8975483b8ec38ee30e6808b7eb2ba963 independently PASS. Exact one-rule CSS change; build/opening-layout and independent3-size rendered/click/focus checks pass. Mobile footprint unchanged, desktop within0.672px, >=44px targets. Other authored Backstage retains gold styling. Durable evidence ../../perspectives/concert-quiet-backstage-20261016/. No paid calls; physical iOS unverified. Awaiting combined publication with newly authorized task021 full-portrait authored dialogue.
