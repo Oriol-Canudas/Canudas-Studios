@@ -20,12 +20,20 @@ export default function ConversationScreen() {
     retryLastTurn,
     finalizeChapter,
     isFinalizing,
+    reset,
   } = useGameStore()
   const strings = getStrings(profile.language).conversation
 
   // The closing offer is a mood shift — a different full-screen image
   // marks it, instead of the same portrait sitting behind every turn.
   const backgroundImage = offeringClose ? '/landing-memory.jpg' : '/director.jpg'
+
+  // Once she's actually said something, "switch topic" saves it as a
+  // chapter first (same pipeline as "Prou per avui") rather than
+  // silently discarding what she just shared. Before that, there's
+  // nothing to save, so it's a plain reset back to Home.
+  const hasSeniorReply = turns.some((turn) => turn.role === 'senior')
+  const handleSwitchTopic = hasSeniorReply ? finalizeChapter : reset
 
   return (
     <div className="min-h-screen flex flex-col relative">
@@ -135,6 +143,16 @@ export default function ConversationScreen() {
                   {strings.send}
                 </button>
               </div>
+            )}
+
+            {!offeringClose && (
+              <button
+                onClick={handleSwitchTopic}
+                disabled={isFinalizing}
+                className="text-ink-soft text-sm underline disabled:opacity-50"
+              >
+                {isFinalizing ? strings.preparing : strings.switchTopic}
+              </button>
             )}
           </div>
         </div>

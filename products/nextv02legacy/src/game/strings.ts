@@ -37,6 +37,7 @@ export const UI_STRINGS = {
       preferToWrite: 'Prefereixo escriure-ho',
       placeholder: 'Escriu la teva resposta…',
       send: 'Envia',
+      switchTopic: 'Acabar i canviar de tema',
     },
     chapterConfirm: {
       preparing: 'Preparant el capítol…',
@@ -99,6 +100,7 @@ export const UI_STRINGS = {
       preferToWrite: 'Prefiero escribirlo',
       placeholder: 'Escribe tu respuesta…',
       send: 'Enviar',
+      switchTopic: 'Terminar y cambiar de tema',
     },
     chapterConfirm: {
       preparing: 'Preparando el capítulo…',
@@ -161,6 +163,7 @@ export const UI_STRINGS = {
       preferToWrite: "I'd rather type it",
       placeholder: 'Type your reply…',
       send: 'Send',
+      switchTopic: 'End and switch topic',
     },
     chapterConfirm: {
       preparing: 'Preparing the chapter…',

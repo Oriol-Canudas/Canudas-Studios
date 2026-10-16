@@ -3,21 +3,36 @@
 //
 // Turns one already-confirmed chapter into a short slideshow: 3 slides
 // (a generated illustration + a short warm caption drawn only from what
-// she actually said) plus an AI-generated instrumental track, played back
+// she actually said) plus one of a small pool of pre-generated warm
+// instrumental tracks (see pickSharedMusicPath below for why it's a
+// shared pool rather than a live per-chapter music call), played back
 // client-side by ClipPlayer.tsx — there's no real video-encoding step
 // here, by design (see the conversation this was scoped in: a Vercel
 // function can't reliably render video, and building a whole separate
 // rendering service wasn't worth it yet for a proof-of-concept-scale
 // product). The result is cached as a manifest.json in the chapter-clips
 // storage bucket, keyed by chapter id, so re-opening a clip is instant
-// and never re-spends image/music generation credits.
+// and never re-spends image generation credits.
 
 import { createClient } from '@supabase/supabase-js'
 
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5.5'
 const CLIP_BUCKET = 'chapter-clips'
 const SLIDE_COUNT = 3
-const SLIDE_MUSIC_MS = 24000
+
+// A small pool of warm, nostalgic instrumental tracks generated once
+// up front (not per-chapter — the ElevenLabs key here is scoped to
+// Text-to-Speech only, not Music, so a live per-chapter generation call
+// isn't available) and shared across every clip. Picked deterministically
+// per chapter so the same chapter always gets the same track.
+const SHARED_MUSIC_COUNT = 3
+
+function pickSharedMusicPath(chapterId: string): string {
+  let hash = 0
+  for (const char of chapterId) hash = (hash * 31 + char.charCodeAt(0)) % 997
+  const index = (hash % SHARED_MUSIC_COUNT) + 1
+  return `_shared/music-${index}.mp3`
+}
 
 interface ClipSlide {
   imageUrl: string
@@ -35,10 +50,6 @@ function dbAvailable(): boolean {
 
 function aiAvailable(): boolean {
   return Boolean(process.env.OPENAI_API_KEY) && process.env.AI_CHAPTER_CLIP_DISABLED !== '1'
-}
-
-function musicAvailable(): boolean {
-  return Boolean(process.env.ELEVENLABS_API_KEY) && process.env.MUSIC_DISABLED !== '1'
 }
 
 function logDiagnostic(data: Record<string, unknown>) {
@@ -169,41 +180,6 @@ async function generateImageBase64(prompt: string): Promise<string | null> {
   }
 }
 
-// Best-effort — a missing track just means the clip plays without music;
-// it never blocks the slides themselves from coming back.
-async function generateMusicBuffer(prompt: string, lengthMs: number): Promise<Buffer | null> {
-  if (!musicAvailable()) return null
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30000)
-  try {
-    const response = await fetch('https://api.elevenlabs.io/v1/music', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'xi-api-key': process.env.ELEVENLABS_API_KEY!,
-      },
-      body: JSON.stringify({
-        prompt,
-        music_length_ms: lengthMs,
-        model_id: 'music_v2_5',
-        output_format: 'mp3_44100_128',
-        force_instrumental: true,
-      }),
-      signal: controller.signal,
-    })
-    if (!response.ok) {
-      logDiagnostic({ outcome: 'music_non_2xx', status: response.status })
-      return null
-    }
-    return Buffer.from(await response.arrayBuffer())
-  } catch (err) {
-    logDiagnostic({ outcome: 'music_error', message: err instanceof Error ? err.message : 'unknown' })
-    return null
-  } finally {
-    clearTimeout(timeout)
-  }
-}
-
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -258,23 +234,11 @@ export default async function handler(req: any, res: any) {
 
   // Sequential, not Promise.all — firing all 3 image calls at once tripped
   // the OpenAI account's per-minute image-generation rate limit (a fresh,
-  // low-credit account sits on a low concurrency tier). Music runs
-  // alongside since it's a different provider with its own limits.
-  const imageResultsPromise = (async () => {
-    const results: (string | null)[] = []
-    for (const slide of plan) {
-      results.push(await generateImageBase64(slide.imagePrompt))
-    }
-    return results
-  })()
-
-  const [imageResults, musicBuffer] = await Promise.all([
-    imageResultsPromise,
-    generateMusicBuffer(
-      'Warm, gentle, nostalgic instrumental for a cherished family memory — soft piano and strings, slow tempo, tender and hopeful, no vocals.',
-      SLIDE_MUSIC_MS,
-    ),
-  ])
+  // low-credit account sits on a low concurrency tier).
+  const imageResults: (string | null)[] = []
+  for (const slide of plan) {
+    imageResults.push(await generateImageBase64(slide.imagePrompt))
+  }
 
   const slides: ClipSlide[] = []
   for (let i = 0; i < plan.length; i++) {
@@ -297,19 +261,8 @@ export default async function handler(req: any, res: any) {
     return res.status(502).json({ error: 'illustration_failed' })
   }
 
-  let musicUrl: string | null = null
-  if (musicBuffer) {
-    const musicPath = `${chapterId}/music.mp3`
-    const { error: musicUploadError } = await supabase.storage
-      .from(CLIP_BUCKET)
-      .upload(musicPath, musicBuffer, { contentType: 'audio/mpeg', upsert: true })
-    if (!musicUploadError) {
-      const { data: pub } = supabase.storage.from(CLIP_BUCKET).getPublicUrl(musicPath)
-      musicUrl = pub.publicUrl
-    } else {
-      logDiagnostic({ outcome: 'music_upload_failed', message: musicUploadError.message, chapterId })
-    }
-  }
+  const { data: musicPub } = supabase.storage.from(CLIP_BUCKET).getPublicUrl(pickSharedMusicPath(chapterId))
+  const musicUrl = musicPub.publicUrl
 
   const manifest: ClipManifest = { slides, musicUrl }
 
