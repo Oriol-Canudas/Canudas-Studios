@@ -1,17 +1,8 @@
-import {createHmac,timingSafeEqual,randomUUID} from 'node:crypto';
+import {createHmac,randomUUID} from 'node:crypto';
 import {initialNegotiation,replayPrep,negotiationOpening,BUILD} from '../src/engine.mjs';
 import {generateTurn} from '../server/lia.mjs';
+import {key,sign,verify} from '../server/session.mjs';
 const sessions=new Map(),rate=new Map();
-// Accept the secret name configured by Oriol without needing to reveal or recreate it.
-const key=()=>process.env.OPENAI_API_KEY||process.env.PerspectivesConcert;
-const signature=data=>createHmac('sha256',key()).update('concert-v1:'+data).digest('base64url');
-function sign(payload){const data=Buffer.from(JSON.stringify(payload)).toString('base64url');return data+'.'+signature(data);}
-function verify(token){
- if(typeof token!=='string'||token.length>45000)throw Error('session');
- const [data,sig]=token.split('.');const expected=signature(data||'');
- if(!sig||sig.length!==expected.length||!timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))throw Error('session');
- const parsed=JSON.parse(Buffer.from(data,'base64url').toString());if(parsed.expires<Date.now())throw Error('expired');if(parsed.build!==BUILD)throw Error('session');return parsed;
-}
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method==='GET')return res.status(200).json({available:Boolean(key()),model:process.env.OPENAI_MODEL||'gpt-4.1',build:BUILD});
