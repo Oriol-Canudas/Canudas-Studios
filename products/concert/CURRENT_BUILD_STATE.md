@@ -1,6 +1,10 @@
 # Concert prototype — delivery state
 
-## Current release — portrait conversation, 16 October 2026
+## Current release — simpler Lia briefing, 16 October 2026
+
+Live: https://gamex-concert.vercel.app/?v=goal-removed-20261016. Removed the optional personal-goal input before Lia; existing saved goals remain in history and drafts are preserved. No other runtime change. Candidate93aeb13 independently passed all task016 criteria, build/scenes/portrait and fresh/legacy error/retry/reload probes. Deployed e5e2c28 as dpl_A11JPjfftvUb37ZkJ1v6SPjy3bjt, READY; immutable https://gamex-concert-f6xgqatm2-ocanudas-7641.vercel.app. Public asset identity and independent public briefing probe PASS with controlled fixtures; no paid calls. Evidence: ../../../perspectives/concert-goal-removal-20261016/. Physical iOS/live AI remain unverified. Task017 agreement/payoff flow is a proposal only.
+
+## Previous release — portrait conversation, 16 October 2026
 
 Live: https://gamex-concert.vercel.app/?v=portrait-conversation-20261016
 
