@@ -16,7 +16,7 @@ const {chromium}=require(process.env.QA_PLAYWRIGHT||'playwright'),assert=require
     if(screen==='dialogue'){assert.equal(await page.locator('.portrait-title h1').textContent(),'Nora');assert.match(await page.locator('.portrait-title p').textContent(),/Songwriter/);const back=await page.locator('.portrait-scene .back-over').boundingBox(),title=await page.locator('.portrait-title').boundingBox();assert(back.x+back.width<=title.x);}
 
     const g=await page.evaluate(()=>{const shell=document.querySelector('.shell'),stage=document.querySelector('.stage');return {shell:shell.getBoundingClientRect().width,stage:stage.getBoundingClientRect().width,columns:getComputedStyle(shell).gridTemplateColumns.split(' ').length};});
-    assert.equal(g.columns,1);if(conversation){assert.equal(g.stage,g.shell);assert.equal(g.shell,size.width);}else{assert.equal(g.stage,g.shell);if(screen==='opening')assert.equal(g.shell,size.width);else assert(g.shell<=(['ending','cover'].includes(screen)?1100:760));}
+    assert.equal(g.columns,1);if(conversation){assert.equal(g.stage,g.shell);assert.equal(g.shell,size.width);}else{assert.equal(g.stage,g.shell);if(['opening','brief'].includes(screen))assert.equal(g.shell,size.width);else assert(g.shell<=(['ending','cover'].includes(screen)?1100:760));}
    }else assert(!await page.locator('.desktop-art').isVisible());
    await page.evaluate(()=>Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))));await page.screenshot({path:`qa/scenes-${size.width}x${size.height}-${label}.png`});screens.push(label);
   };
@@ -29,7 +29,7 @@ const {chromium}=require(process.env.QA_PLAYWRIGHT||'playwright'),assert=require
   }
   await click('Previous');await page.getByText(OPENING.at(-2).text,{exact:true}).waitFor();await click('Go backstage');await check('hub');
   await page.locator('.contact').filter({hasText:'Nora, wait.'}).click();await check('dialogue');assert((await page.locator('.authored-portrait>img').getAttribute('src')).includes('nora'));
-  await click(E.options((await read()).prep).find(c=>c[0]==='meaning')[1]);await click('Return backstage');await click('Prepare an agreement with Lia');await check('brief');
+  await click(E.options((await read()).prep).find(c=>c[0]==='meaning')[1]);await click('Return backstage');await click('Step into the conversation');await check('brief');
   await click('Talk to Lia');await page.locator('.conversation-header').waitFor();await check('ai');assert((await page.locator('.conversation-portrait>img').getAttribute('src')).includes('lia'));
   // The offer below is seeded, not inferred: exercise the real confirmation/cue/reveal controls.
   const saved=await read(),n={...E.initialNegotiation(saved.prep),proposal:'public',version:1,accepted:1,willingness:'agree',turns:1,mood:'receptive',terms:Object.fromEntries(E.requiredTerms('public').map(t=>[t,'controlled accepted agreement fixture']))};

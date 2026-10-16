@@ -323,3 +323,39 @@
 @media(max-height:650px){.authored-app .topbar{height:calc(50px + env(safe-area-inset-top))}.authored-app .shell{padding-top:calc(52px + env(safe-area-inset-top))}.authored-app .portrait-scene.authored-identity{min-height:74px;padding-bottom:8px}.authored-app .portrait-title h1{font-size:26px}.authored-app .portrait-title p{font-size:12px}.authored-app .dialogue-pad{padding-top:28px}.authored-app .character-speech .spoken,.authored-app .choices .btn{font-size:16px}.authored-app .character-speech{padding:16px}.authored-app .authored-identity .back-over{padding:8px 10px}}
 @media(max-width:350px){.authored-app .brand span{display:none}.authored-app .portrait-scene.authored-identity{padding-inline:14px;gap:10px}.authored-app .dialogue-pad{padding-inline:14px}.authored-app .character-speech{padding:15px}.authored-app .choices .btn{padding:13px 14px}.authored-app .portrait-title p{font-size:12px}}
 @media(min-width:601px) and (max-width:900px) and (max-height:650px){.authored-portrait>img{object-position:50% 20%}.authored-app .authored-identity,.authored-app .dialogue-pad{width:52%;margin-left:auto;margin-right:16px}.authored-app .portrait-scene.authored-identity{padding-inline:14px}.authored-app .dialogue-pad{padding:10px 14px 20px}}
+
+/* Task022: a human invitation into Lia's final conversation. */
+.brief-app{min-height:0;isolation:isolate}
+.brief-app .ambient{display:none}
+.brief-portrait{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.brief-portrait>img{width:100%;height:100%;object-fit:cover;object-position:50% 0%}
+.brief-portrait:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#100d1366 0%,#100d1300 20%,#100d1340 36%,#100d13d9 64%,#100d13f2 100%)}
+.brief-app .topbar{position:absolute;inset:0 0 auto;z-index:4;height:calc(56px + env(safe-area-inset-top));max-width:none;padding:env(safe-area-inset-top) 16px 0;border:0;background:linear-gradient(#100d1366,#100d1300)}
+.brief-app .brand{min-height:44px;min-width:44px;font-size:30px;gap:9px}
+.brief-app .top-actions{gap:0}.brief-app .top-actions .iconbtn{font-size:11px}.brief-app .top-actions .desktop-only{display:none}
+.brief-app .audio-level summary,.brief-app .audio-level input{min-width:44px;min-height:44px}
+.brief-app .shell{height:100%;width:100%;max-width:none;display:grid;grid-template-columns:minmax(0,1fr);padding-top:calc(60px + env(safe-area-inset-top))}
+.brief-app .stage{height:100%;background:none;border:0}
+.brief-app .chapter{display:none}
+.brief-nav{padding:4px max(20px,env(safe-area-inset-right)) 8px max(20px,env(safe-area-inset-left));min-height:56px;flex-shrink:0}
+.brief-nav .backstage-nav{margin:0;min-height:44px;padding:10px 13px;background:#241c24b3;font-size:13px}
+.brief-app .content{background:none;scrollbar-color:#bca9bd transparent;scroll-padding:20px;touch-action:pan-y}
+.brief-teaser{padding:clamp(175px,22vh,230px) max(24px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));max-width:600px;margin:0 auto;text-shadow:0 1px 6px #08050c}
+.teaser-kicker{font-size:11px;letter-spacing:.12em;margin:0 0 14px;color:#f2cc98}
+.brief-teaser h1{font-size:46px;line-height:1.04;letter-spacing:-.025em;color:#fff7f2;margin:0 0 22px}
+.teaser-stakes{font-size:18px;line-height:1.55;color:#fff3f4;margin:0 0 18px}
+.teaser-invitation{font-size:17px;line-height:1.55;color:#f4d6c0;margin:0 0 22px}
+.teaser-action .btn.primary{font-size:18px;min-height:56px;padding:16px 19px;margin:0 0 17px;box-shadow:0 4px 24px #edc58d26;text-shadow:none}
+.teaser-guidance{font-size:15px;line-height:1.55;color:#ded0df;margin:0 0 12px}
+.brief-teaser .fine{font-size:13px;line-height:1.5;color:#d1c2d4;margin:0}
+.teaser-details{margin-top:26px;border-top:1px solid #d1b8cf4d;padding-top:22px}
+.teaser-details .context-card{background:none;border:0;padding:0;margin:0}
+.teaser-details .eyebrow{font-size:11px;margin-bottom:12px;display:block}
+.teaser-details .context-card p{font-size:16px;line-height:1.6;color:#efe4ef}
+.teaser-details .context-card .sub{font-size:15px;color:#d7c8da}
+.brief-teaser .received,.brief-teaser .notice,.brief-teaser .error{font-size:15px;line-height:1.5;text-shadow:none;background:#201722e8;padding:13px 15px;border-radius:8px}
+.brief-app .audio-error{position:absolute;z-index:5;top:56px;left:16px;right:16px}
+@media(min-width:901px){.brief-portrait>img{object-position:50% 18%}.brief-portrait:after{background:linear-gradient(90deg,#100d1333 0%,#100d1326 35%,#100d13b8 64%,#100d13ed 100%)}.brief-nav,.brief-teaser{width:540px;max-width:calc(100% - 48px);margin-left:auto;margin-right:clamp(24px,4vw,80px)}.brief-teaser{padding-top:44px}.brief-teaser h1{font-size:58px}.brief-app .topbar{padding-inline:32px}}
+@media(max-height:650px){.brief-app .topbar{height:calc(50px + env(safe-area-inset-top))}.brief-app .shell{padding-top:calc(52px + env(safe-area-inset-top))}.brief-teaser{padding-top:88px}.brief-teaser h1{font-size:40px}.brief-nav{min-height:56px}}
+@media(max-width:350px){.brief-app .brand span{display:none}.brief-nav{padding-inline:14px}.brief-teaser{padding-inline:18px}.brief-teaser h1{font-size:40px}}
+@media(min-width:601px) and (max-width:900px) and (max-height:650px){.brief-portrait>img{object-position:50% 20%}.brief-portrait:after{background:linear-gradient(90deg,#100d1326,#100d13b3 65%,#100d13e6)}.brief-nav,.brief-teaser{width:52%;margin-left:auto;margin-right:16px}.brief-teaser{padding-top:18px}}
