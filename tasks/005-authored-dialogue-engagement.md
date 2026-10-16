@@ -38,8 +38,17 @@ Allowed files only:
 
 Worker must not edit task/current-state/reference docs, src/main.jsx/style.css, audio/media, signed API, server model prompts, dependencies, other products or unrelated files. Handoff candidate commit, actual checks, paths and limits. If genuinely blocked by allowed scope, report before broadening it. Root owns this task, current-state record and final amended-tree review.
 
-BUILD pending.
+BUILD round 1 candidate: `073b2bba04709f06e2df5f1708895bcb67dd6dfd`. Worker changed nine permitted files; reports 53 Node tests, eight offline browser suites and ten focused dialogue journeys PASS. Parent independently replayed all 45 original action witnesses and verified the engine AI/negotiation/consent suffix unchanged. Worker stopped before independent QA.
 
 ## Independent QA verdict
 
 Pending. Use `.agents/skills/gamex-qa/SKILL.md`; no product-code/test edits by QA. Independently inspect and run the actual candidate; play the relevant authored paths and check state/knowledge/privacy/consent, not just selected strings or worker claims. No paid inference. Return PASS / FAIL / BLOCKED with criterion evidence and source-unchanged proof. More engaging means an editorial improvement, not proven enjoyment.
+
+
+### Independent QA round 1 — FAIL
+
+QA agent `concert_qa` independently inspected candidate `073b2bba`, ran npm ci, 53 tests, build and eight offline browser suites (all exit 0), then added an actual-browser ordering probe. Criterion 2 FAIL: Lia-first `visit:lia → chronology → leave → visit:nora → sheet → changed → love` has a pending acknowledgment; options prepends relay_ack and the three-choice cap displaces tonight_nora. The immediate confidence response therefore lacks the promised privacy-protecting practical exit. Criteria 1 and 3–8 otherwise pass within editorial/source/controlled-fixture scope. No tracked edits; candidate/tree unchanged during QA.
+
+Report: `/tmp/concert-dialogue-independent-qa/independent-qa.json`; reproduction state: `reordered-confession.json`; mobile390×844/390×480 and desktop screenshots in the same folder. Baseline automatic rehearsal continuation independently reproduced; all 45 old action witnesses replayed. Source proof: `state-invariants.json`.
+
+Returned to the same worker for a bounded menu-priority fix. Preserve all three immediate confidentiality responses; defer rather than erase acknowledgment relay, keeping it available after the protected response. Preserve knowledge, consent, action IDs and existing regressions. Add the exact Lia-first pending-ack browser/state case, then hand off a new commit for independent re-QA. Acceptance unchanged.
