@@ -58,3 +58,21 @@ h1, h2, h3 {
     width: 100%;
   }
 }
+
+/* The family-gift card's glow — slow and gentle on purpose. This marks
+   the single most special thing on the Home screen, so it has to read
+   as a reward, never as an alert: no red, no fast pulse, nothing that
+   could feel like a demand for attention. */
+@keyframes gift-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(201, 164, 100, 0.35), 0 8px 30px -8px rgba(201, 164, 100, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(201, 164, 100, 0.5), 0 10px 40px -6px rgba(201, 164, 100, 0.8);
+  }
+}
+
+.gift-glow {
+  animation: gift-glow 4s ease-in-out infinite;
+}

@@ -3,10 +3,9 @@ import type { SeniorProfile } from './types'
 export const UI_STRINGS = {
   ca: {
     home: {
+      warmLine: 'Quin gust tornar-te a veure',
       greeting: (name: string) => `Bon dia, ${name}`,
-      fromCity: (city: string) => `Des de ${city}`,
-      welcome: 'Benvinguda',
-      familyAsks: 'La família et pregunta',
+      familyGift: 'Un regal de la família',
       somethingOnMindTitle: 'Tens alguna cosa al cap',
       somethingOnMindSubtitle: 'Parlem del que vulguis, ara',
       sparkTitle: "Una espurna d'avui",
@@ -78,10 +77,9 @@ export const UI_STRINGS = {
   },
   es: {
     home: {
+      warmLine: 'Qué alegría volver a verte',
       greeting: (name: string) => `Buenos días, ${name}`,
-      fromCity: (city: string) => `Desde ${city}`,
-      welcome: 'Bienvenida',
-      familyAsks: 'La familia te pregunta',
+      familyGift: 'Un regalo de la familia',
       somethingOnMindTitle: 'Tienes algo en mente',
       somethingOnMindSubtitle: 'Hablemos de lo que quieras, ahora',
       sparkTitle: 'Una chispa de hoy',
@@ -153,10 +151,9 @@ export const UI_STRINGS = {
   },
   en: {
     home: {
+      warmLine: 'How lovely to see you again',
       greeting: (name: string) => `Good morning, ${name}`,
-      fromCity: (city: string) => `From ${city}`,
-      welcome: 'Welcome',
-      familyAsks: 'Your family is asking',
+      familyGift: 'A gift from your family',
       somethingOnMindTitle: 'Something on your mind',
       somethingOnMindSubtitle: "Let's talk about whatever you'd like, now",
       sparkTitle: "Today's spark",
