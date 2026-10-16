@@ -8,7 +8,7 @@ Use one continuous aspect-preserving existing character portrait covering the av
 
 ## Bounded BUILD
 
-One implementation worker. Allowed presentation-only src/main.jsx, scoped src/style.css, src/reply-reveal.jsx only if genuinely needed for the user sequencing amendment, one focused authored portrait browser suite plus runner registration, necessary existing presentation-selector/geometry assertions in QA, and short PRODUCTION_LOG note. No story/copy, engine, save/version, request/recovery, negotiation/consent, audio/recorder, dependencies, new assets or other-product changes. Preserve existing typewriter reveal and skip, all choices, prior-player echo, notes, history and Backstage actions. User approved full-portrait authored layout here; agreement/payoff/mood-transition proposals remain out of scope. No paid calls, push/deploy by worker or user8810/storage changes. Coordinator owns the explicit user design-rule addition to repo AGENTS.md and this brief.
+One implementation worker. Allowed presentation-only src/main.jsx, scoped src/style.css, src/reply-reveal.jsx only if genuinely needed for the user sequencing amendment, one focused authored portrait browser suite plus runner registration, necessary existing presentation-selector/geometry assertions in QA, and short PRODUCTION_LOG note. No story/copy, engine, save/version, request/recovery, negotiation/consent, audio/recorder, dependencies, new assets or other-product changes. Preserve existing typewriter reveal and skip, all choices, prior-player echo, notes, history and Backstage actions. User approved full-portrait authored layout here; agreement/payoff/mood-transition proposals remain out of scope. No paid calls, push/deploy by worker or user 8810/storage changes. Coordinator owns the explicit user design-rule addition to repo AGENTS.md and this brief.
 
 ## Acceptance
 
@@ -28,4 +28,9 @@ Acceptance6: during a fresh normal-motion authored reply, follow-up choices are 
 
 Independent QA PASS at bce3fd8749588c74311eab41efad35beb4e31423. Build and authored-portrait, hierarchy, dialogue, reply-reveal, scenes and portrait suites passed. Actual Nora confession/permission/history, all cast/five sizes, state/privacy/draft/reload, natural completion/skip and explicit prior-reply deadline probe passed. No defects or source edits during QA. Evidence: /private/tmp/task021-independent-qa and durable outputs/perspectives/concert-authored-portraits-20261016/independent-qa. Physical iPhone/Safari and human emotional impact remain unverified.
 
-Accepted locally. User added Task022 emotional gateway; coordinator will publish accepted020+021+022 together after022 independent QA.
+Accepted locally. Task022 also passed independent QA; combined publication is blocked as recorded below.
+
+
+## Publication attempt
+
+Combined020+021+022 accepted runtime c0ca9f3, release attempt ccf39c5 on 16 October 2026. Vercel refused publication with api-deployments-free-per-day (more than 100; try again in 24 hours), no new deployment ID. Public assets independently verified unchanged from the previous release. Accepted code is pushed; local static UI preview 8822 is available, no live AI. Public verification remains pending after a successful future deployment; no automatic retry scheduled. See CURRENT_BUILD_STATE.md and outputs/perspectives/concert-authored-portraits-20261016/deployment-blocked.json.

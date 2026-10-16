@@ -10,7 +10,7 @@ Keep functional guidance secondary but readable: own words, up to six turns, rea
 
 ## Bounded BUILD
 
-One worker, presentation-only main.jsx and scoped style.css, short PRODUCTION_LOG, one focused teaser browser probe/runner registration and only old presentation assertions explicitly superseded by this CTA/layout. Preserve all action/state assertions. No engine/story/model/API/token/saves/drafts/audio/media/dependency changes. No paid calls, push, deployment or user preview8810/storage changes. Coordinator owns canon/task/docs. Do not alter Task021 authored portraits/sequencing or Task020 quiet opening shortcut.
+One worker, presentation-only main.jsx and scoped style.css, short PRODUCTION_LOG, one focused teaser browser probe/runner registration and only old presentation assertions explicitly superseded by this CTA/layout. Preserve all action/state assertions. No engine/story/model/API/token/saves/drafts/audio/media/dependency changes. No paid calls, push, deployment or user preview 8810/storage changes. Coordinator owns canon/task/docs. Do not alter Task021 authored portraits/sequencing or Task020 quiet opening shortcut.
 
 ## Acceptance
 
@@ -24,3 +24,8 @@ One worker, presentation-only main.jsx and scoped style.css, short PRODUCTION_LO
 Independent QA PASS at c0ca9f3fae3f6847ce562099b056c7ee8f4d5aa9, clean before/after. Build and teaser, dialogue, authored-portrait, portrait, agreement-exit, encore and scenes passed. Independent archived-baseline comparison found identical prep/back/opened states and start payload, no premature POST and one guarded request. All five viewport renders, secondary guidance/notices, privacy/state and settled rotation pass. Desktop fresh and 390→1440→844→390 compact→1440 renders have one app/header/teaser/action/portrait; early screenshot artifact did not require runtime changes. Evidence /private/tmp/task022-independent-qa, durable outputs/perspectives/concert-emotional-teaser-20261016/independent-qa. No source edits or paid calls by QA; physical iPhone/Safari and human emotional response unverified.
 
 Accepted for combined publication with Task020+021. Public verification pending.
+
+
+## Publication attempt
+
+Combined020+021+022 accepted runtime c0ca9f3, release attempt ccf39c5 on 16 October 2026. Vercel refused publication with api-deployments-free-per-day (more than 100; try again in 24 hours), no new deployment ID. Public assets independently verified unchanged from the previous release. Accepted code is pushed; local static UI preview 8822 is available, no live AI. Public verification remains pending after a successful future deployment; no automatic retry scheduled. See CURRENT_BUILD_STATE.md and outputs/perspectives/concert-authored-portraits-20261016/deployment-blocked.json.
