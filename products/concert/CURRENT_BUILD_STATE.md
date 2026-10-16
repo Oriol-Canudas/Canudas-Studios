@@ -1,12 +1,16 @@
 # Concert prototype — delivery state
 
-Updated:16 October2026. Encore v05 remains published; task005 dialogue, task007 presentation and task008 full-cast intro independently verified locally, not yet published.
+Updated: 16 October 2026. Encore v05 with task005 dialogue, task006/007 presentation and task008 full-cast intro voices is now published to Production after explicit user authorization.
 
-Live: https://gamex-concert.vercel.app/?v=encore-v05-20261016
+Live: https://gamex-concert.vercel.app/?v=voices-20261016
 Vercel: ocanudas-7641/gamex-concert (`prj_pmy012EZyymfl5MvxHQrIRhzYz3R`).
-Deployment: `dpl_4znFVPoxbv2DcTfWS8fsaDhNmX2Y` — Production READY.
-Immutable URL: https://gamex-concert-gvueggl2s-ocanudas-7641.vercel.app
-Deployed commit: `70c855e`; product code matches independently tested `24f2f22b19b83bbd237a7e8c3b8cf918e9006810`. Branch `codex/concert-encore-v05`; app `products/concert`. No merge or other-product change. Git auto-deploy remains unconfigured.
+Deployment: `dpl_9bivHTBy9BqvjqxZLcjwSC5BdFU2` — Production READY.
+Immutable URL: https://gamex-concert-3gx7o7o79-ocanudas-7641.vercel.app
+Deployed commit: `4ace2eeee2765c8918b15341ef9121e8e6dc51c6`; product code matches independently tested `b9175958f4f0d70a76791660fdf550c1a842eb9d`. Branch `codex/concert-encore-v05`; app `products/concert`. No merge or other-product change. Git auto-deploy remains unconfigured. Previous immutable production: https://gamex-concert-gvueggl2s-ocanudas-7641.vercel.app.
+
+Publication evidence: `../../../perspectives/concert-publication-voices-20261016/`. Anonymous public access200; both client asset hashes match the local build; all11 public voice files match approved hashes. Actual API metadata reports AI configured and a signed session start succeeds without inference. Public controlled intro-voice/scenes/dialogue/recovery checks are recorded in task009. The first instrumented voice run timed out; an uninstrumented public probe played successfully with no console/network errors, and the unchanged voice suite passed on one repeat. Cause of the initial timeout is not established. No product changes or paid calls during publication. Physical iOS and live-model semantics remain unverified.
+
+For mobile play: open the live link, Enter backstage, then Sound on. Existing encore saves are preserved. Start again restarts that device's game if the player wants the full revised introduction. Only the introduction has recorded character voices. The implementation/QA records below describe each task's original local acceptance; their previous "not published" statements are superseded by this release.
 
 ## Local dialogue amendments — task005
 
