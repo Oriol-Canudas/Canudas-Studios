@@ -1,6 +1,14 @@
 # Concert prototype — delivery state
 
-## Current release — full-height opening and dialogue tint, 16 October 2026
+## Current release — paced character replies, 16 October 2026
+
+Live: https://gamex-concert.vercel.app/?v=character-replies-20261016. New authored character answers and new Lia AI replies reveal progressively, with sequential paragraphs and stable final text space. Tap the speech or choose Show full reply to read immediately. Choices and navigation remain available. Reduced motion, loaded saves and earlier messages show complete text; notes, typing, review and reload do not replay old replies. No animation progress is saved. Existing story, voices, images, agreements, consent, drafts, full-height opening and portrait AI layout are unchanged. Full-portrait translucent authored dialogue remains a draft.
+
+Candidate3865f88f7e845213a3ca95159ec9116508a31975 independently PASS all five task019 criteria: build plus six controlled browser suites, four viewport sizes, whole Unicode graphemes, sequential paragraphs, <=5.82s completion, stable geometry and protected state. Independent accessibility snapshots contain the complete utterance once and no per-tick text mutations. Published9715da57f13451d2df435b35d9d663937455dd13 as deploymentdpl_GVHCxTyJmsdhsBT4wFwifpFy89KN, Production READY in existing gamex-concert. Immutable: https://gamex-concert-7ntzm1803-ocanudas-7641.vercel.app.
+
+Public verification PASS: anonymous200, JS/CSS hashes equal independently tested build, microphone policy unchanged and non-inferential metadata available. Actual public authored and controlled Lia reply reveal/skip/reload/state preservation passed. Coordinator inspected the public image-backed conversation after waiting for portrait/font decoding; first screenshots had been captured before the assets finished loading, without a product change. Durable evidence: ../../../perspectives/concert-reply-reveal-20261016/. No paid calls or other-product changes. Physical iPhone/Safari, assistive-device listening and real-model quality remain unverified.
+
+## Previous release — full-height opening and dialogue tint, 16 October 2026
 
 Live: https://gamex-concert.vercel.app/?v=full-screen-opening-20261016. Opening artwork fills the available viewport behind compact overlaid menus, with larger speaker portraits (112×132 mobile,128×150 desktop,80×94 compact), readable captions and prominent Backstage navigation. Compact captions scroll independently. Existing authored character speech is subtly blue-grey; player replies remain plum. Story, voices/crowd timing, saves, drafts, agreement/consent and the portrait AI layout are unchanged. The optional goal field remains removed.
 
