@@ -1,15 +1,15 @@
 import manifest from '../public/audio/intro-v1/manifest.json' with {type:'json'};
 export const INTRO_CLIPS=manifest.clips;
 // One source at a time; each beat owns its loader, clock and completion timer.
-export function createIntroVoice(ctx,output,{duck=()=>{},notify=()=>{},fetcher=fetch,timeoutMs=8000}={}){
- let beat=null,version=0,buffer=null,source=null,abort=null,timer=null,playing=false,offset=0,elapsed=0,clock=null,sourceAt=0,state='idle',error=null;
+export function createIntroVoice(ctx,output,{duck=()=>{},notify=()=>{},fetcher=fetch,timeoutMs=8000,interlude=()=>null}={}){
+ let beat=null,version=0,buffer=null,source=null,abort=null,timer=null,playing=false,offset=0,elapsed=0,clock=null,sourceAt=0,state='idle',error=null,phase='voice',interludeSpec=null,envelope=null;
  const cache=new Map();
  const position=()=>Math.min(buffer?.duration||Infinity,offset+(source?Math.max(0,ctx.currentTime-sourceAt):0));
  const reading=()=>elapsed+(clock===null?0:Math.max(0,ctx.currentTime-clock));
  let readSeconds=0;
- const status=()=>({beat,state,error,position:position(),duration:buffer?.duration||0,elapsed:reading(),playing,activeSources:source?1:0});
+ const status=()=>({beat,state,error,phase,position:position(),duration:buffer?.duration||0,elapsed:reading(),playing,activeSources:source?1:0});
  const emit=()=>notify(status());
- function stop(){if(source){offset=position();source.onended=null;source.stop();source.disconnect();source=null;}duck(false);}
+ function stop(){if(source){offset=position();source.onended=null;try{source.stop();}catch{}source.disconnect();source=null;}envelope?.disconnect();envelope=null;duck(false);}
  function freeze(){if(clock!==null){elapsed=reading();clock=null;}clearTimeout(timer);timer=null;stop();}
  function completeLater(){
   clearTimeout(timer);timer=null;if(!playing||!['ended','error'].includes(state))return;
@@ -17,12 +17,33 @@ export function createIntroVoice(ctx,output,{duck=()=>{},notify=()=>{},fetcher=f
   if(remaining>.01){timer=setTimeout(completeLater,remaining*1000);return;}
   state='complete';emit();
  }
+ function ended(){state='ended';emit();completeLater();}
  function start(){
   if(!playing||!buffer||source||['ended','complete'].includes(state))return;
-  if(offset>=buffer.duration){state='ended';emit();completeLater();return;}
-  const current=version,node=ctx.createBufferSource();node.buffer=buffer;node.connect(output);source=node;sourceAt=ctx.currentTime;state='playing';duck(true);
-  node.onended=()=>{if(current!==version||source!==node)return;offset=buffer.duration;source=null;node.disconnect();duck(false);state='ended';emit();completeLater();};
-  node.start(0,offset);emit();
+  if(offset>=buffer.duration){duck(false);ended();return;}
+  const current=version,node=ctx.createBufferSource();node.buffer=buffer;source=node;sourceAt=ctx.currentTime;state='playing';
+  try{
+   if(phase==='crowd'){
+    envelope=ctx.createGain();node.connect(envelope);envelope.connect(interludeSpec.output||output);
+    interludeSpec.envelope(ctx,envelope,offset,buffer.duration);
+   }else node.connect(output);
+   duck(true);
+   node.onended=()=>{
+    if(current!==version||source!==node)return;
+    offset=buffer.duration;source=null;node.disconnect();envelope?.disconnect();envelope=null;
+    if(phase==='voice'){
+     // The optional interlude belongs to this playback, not the next story beat.
+     try{interludeSpec=interlude(beat);}catch{interludeSpec=null;}
+     if(interludeSpec?.buffer){phase='crowd';buffer=interludeSpec.buffer;offset=0;start();return;}
+    }
+    duck(false);ended();
+   };
+   node.start(0,offset);emit();
+  }catch(e){
+   stop();if(phase!=='crowd')throw e;
+   // A missing/failed optional audience cue must never block the captions.
+   ended();
+  }
  }
  function setPlaying(value){
   if(playing===value)return;playing=value;
@@ -40,7 +61,7 @@ export function createIntroVoice(ctx,output,{duck=()=>{},notify=()=>{},fetcher=f
  }
  function line(index,readingMs,force=false){
   if(index===beat&&!force)return;
-  version++;abort?.abort();abort=null;freeze();beat=index;buffer=null;offset=0;elapsed=0;clock=playing?ctx.currentTime:null;error=null;readSeconds=readingMs/1000;
+  version++;abort?.abort();abort=null;freeze();beat=index;buffer=null;offset=0;elapsed=0;clock=playing?ctx.currentTime:null;error=null;phase='voice';interludeSpec=null;readSeconds=readingMs/1000;
   state=index===null?'idle':'loading';emit();if(index!==null)void load(version,index);
  }
  return {line,setPlaying,status,retry(){if(beat!==null)line(beat,readSeconds*1000,true);},cancel(){setPlaying(false);line(null,0);}};

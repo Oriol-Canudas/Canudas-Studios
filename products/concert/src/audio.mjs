@@ -30,7 +30,7 @@ function initialize(){
  const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;if(!Audio)throw Error('Audio is not supported by this browser.');
  ctx=new Audio();master=ctx.createGain();master.gain.value=0;musicBus=ctx.createGain();musicBus.connect(master);analyser=ctx.createAnalyser();analyser.fftSize=2048;
  master.connect(analyser);analyser.connect(ctx.destination);voiceBus=ctx.createGain();voiceBus.connect(master);
- voice=createIntroVoice(ctx,voiceBus,{duck:value=>{voiceActive=value;mix();},notify:value=>voiceListeners.forEach(fn=>fn(value))});
+ voice=createIntroVoice(ctx,voiceBus,{duck:value=>{voiceActive=value;mix();},notify:value=>voiceListeners.forEach(fn=>fn(value)),interlude:index=>index===5&&crowdBuffer?{buffer:crowdBuffer,output:master,envelope:audienceEnvelope}:null});
 }
 export async function setSound(on){
  if(!on)voice?.cancel();
@@ -39,7 +39,7 @@ export async function setSound(on){
   // Resume directly on the click, before waiting for the file: required by mobile browsers.
   await ctx.resume();if(ctx.state!=='running')throw Error('Tap Sound on to allow audio in this browser.');
   if(!buffer){
-   if(!loading)loading=(async()=>{const decode=async url=>{const r=await fetch(url);if(!r.ok)throw Error('The concert soundtrack could not load. Tap Sound on to retry.');return ctx.decodeAudioData(await r.arrayBuffer());};[buffer,crowdBuffer]=await Promise.all([decode(ASSET),decode(CROWD)]);})().catch(e=>{loading=null;buffer=null;throw e;});
+   if(!loading)loading=(async()=>{const decode=async url=>{const r=await fetch(url);if(!r.ok)throw Error('The concert soundtrack could not load. Tap Sound on to retry.');return ctx.decodeAudioData(await r.arrayBuffer());};[buffer,crowdBuffer]=await Promise.all([decode(ASSET),decode(CROWD).catch(()=>null)]);})().catch(e=>{loading=null;buffer=null;throw e;});
    await loading;
   }
   if(!timer){schedule();timer=setInterval(schedule,200);}
@@ -52,12 +52,20 @@ export function audioStatus(){
  return {state:ctx.state,enabled,rms:Math.sqrt(samples.reduce((n,v)=>n+v*v,0)/samples.length),asset:ASSET,duration:buffer?.duration||0,crowdAsset:CROWD,crowdDuration:crowdBuffer?.duration||0,audienceCues:[...audiencePlayed],lastCue,musicGain:musicBus.gain.value,voice:voice?.status(),voiceGain:voiceBus?.gain.value,volume,scene,hidden,captureMuted,scheduled};
 }
 
+// Preserve the same crowd envelope when an opening interlude resumes mid-clip.
+function audienceEnvelope(context,gain,offset,duration){
+ const now=context.currentTime,points=[[0,0],[.6,.65],[duration-1.5,.65],[duration,0]];
+ const next=points.findIndex(([time])=>time>offset);
+ const [from,value]=points[Math.max(0,next-1)], [to,target]=points[next<0?points.length-1:next];
+ gain.gain.setValueAtTime(to===from?target:value+(target-value)*(offset-from)/(to-from),now);
+ for(const [time,level] of points)if(time>offset)gain.gain.linearRampToValueAtTime(level,now+time-offset);
+}
 export function cueAudience(id){
  if(!enabled||hidden||!crowdBuffer||ctx.state!=='running'||audiencePlayed.has(id)||ctx.currentTime-lastAudienceAt<20)return false;
  audiencePlayed.add(id);lastAudienceAt=ctx.currentTime;lastCue=id;
  const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=crowdBuffer;source.connect(gain);gain.connect(master);
  const start=ctx.currentTime,end=start+crowdBuffer.duration;
- gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(.65,start+.6);gain.gain.setValueAtTime(.65,end-1.5);gain.gain.linearRampToValueAtTime(0,end);
+ audienceEnvelope(ctx,gain,0,crowdBuffer.duration);
  cheerSource=source;cheerUntil=end;mix();source.start();
  source.onended=()=>{source.disconnect();gain.disconnect();if(cheerSource===source){cheerSource=null;cheerUntil=0;mix();}};return true;
 }

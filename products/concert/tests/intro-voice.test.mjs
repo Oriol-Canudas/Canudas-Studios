@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {createHash} from 'node:crypto';
 import {createIntroVoice,INTRO_CLIPS} from '../src/intro-voice.mjs';import {OPENING} from '../src/story.mjs';
 const turn=()=>new Promise(r=>setTimeout(r,0));
-const fixture=fetcher=>{const nodes=[],states=[];const ctx={currentTime:0,decodeAudioData:async()=>({duration:5}),createBufferSource(){const n={connect(){},disconnect(){},start(...args){this.args=args;},stop(){this.stopped=true;},onended:null};nodes.push(n);return n;}};const voice=createIntroVoice(ctx,{}, {fetcher:fetcher||(async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(4)})),notify:s=>states.push(s),timeoutMs:30});return {ctx,voice,nodes,states};};
+const fixture=(fetcher,options={})=>{const nodes=[],states=[];const ctx={currentTime:0,decodeAudioData:async()=>({duration:5}),createGain(){return {connect(){},disconnect(){}};},createBufferSource(){const n={connect(){},disconnect(){},start(...args){this.args=args;},stop(){this.stopped=true;},onended:null};nodes.push(n);return n;}};const voice=createIntroVoice(ctx,{}, {fetcher:fetcher||(async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(4)})),notify:s=>states.push(s),timeoutMs:30,...options});return {ctx,voice,nodes,states};};
 test('eleven unchanged approved MP3 hashes and authored text/cast map locally',async()=>{assert.equal(INTRO_CLIPS.length,OPENING.length);const voices={narrator:918,nora:795,lia:1208,bruno:294};for(const [i,c] of INTRO_CLIPS.entries()){assert.equal(c.beat,i);assert.equal(c.voiceId,voices[OPENING[i].who||'narrator']);assert.equal(c.text.replace(/^\[[^\]]+\]\s*/,''),OPENING[i].text);const b=await readFile(new URL('../public/audio/intro-v1/'+c.filename,import.meta.url));assert.equal(b.length,c.bytes);assert.equal(createHash('sha256').update(b).digest('hex'),c.sha256);}});
 test('pause retains real source offset and caption time, with one resumed source',async()=>{const {ctx,voice,nodes}=fixture();voice.line(0,12000);voice.setPlaying(true);await turn();ctx.currentTime=2;voice.setPlaying(false);assert.equal(voice.status().position,2);assert.equal(voice.status().elapsed,2);assert(nodes[0].stopped);ctx.currentTime=20;voice.setPlaying(true);assert.equal(nodes[1].args[1],2);assert.equal(voice.status().activeSources,1);voice.cancel();assert(nodes[1].stopped);assert.equal(voice.status().beat,null);});
 test('late loads cannot start an obsolete beat or escape cancel',async()=>{const releases=[];const {voice,nodes}=fixture(()=>new Promise(r=>releases.push(()=>r({ok:true,arrayBuffer:async()=>new ArrayBuffer(4)}))));voice.line(0,12000);voice.setPlaying(true);voice.line(1,12000);releases[0]();await turn();assert.equal(nodes.length,0);releases[1]();await turn();assert.equal(nodes.length,1);voice.cancel();assert(nodes[0].stopped);assert.equal(voice.status().activeSources,0);});
@@ -10,3 +10,23 @@ test('missing loader deadline falls back without a permanent loading state',asyn
 
 test('a completed short clip still waits for full caption reading time',async()=>{const {ctx,voice,nodes}=fixture();voice.line(0,12000);voice.setPlaying(true);await turn();ctx.currentTime=5;nodes[0].onended();assert.equal(voice.status().state,'ended');assert.equal(voice.status().elapsed,5);assert.equal(voice.status().activeSources,0);voice.cancel();});
 test('corrupt decoding fails safely without an audible source',async()=>{const f=fixture();f.ctx.decodeAudioData=async()=>{throw Error('corrupt');};f.voice.line(0,12000);f.voice.setPlaying(true);await turn();assert.equal(f.voice.status().state,'error');assert.equal(f.nodes.length,0);f.voice.cancel();});
+
+test('Nora ends before crowd, crowd pauses at its offset, and Bruno waits for caption time',async()=>{
+ const offsets=[],crowd={duration:8};const f=fixture(null,{interlude:i=>i===5?{buffer:crowd,envelope:(ctx,gain,offset)=>offsets.push(offset)}:null});
+ f.voice.line(5,12000);f.voice.setPlaying(true);await turn();f.ctx.currentTime=5;f.nodes[0].onended();
+ assert.equal(f.voice.status().phase,'crowd');assert.equal(f.nodes.length,2);assert.equal(f.nodes[1].buffer,crowd);assert.equal(f.voice.status().elapsed,5);
+ f.ctx.currentTime=6;f.voice.setPlaying(false);assert(f.nodes[1].stopped);assert.equal(f.voice.status().position,1);
+ f.ctx.currentTime=20;f.voice.setPlaying(true);assert.equal(f.nodes[2].args[1],1);assert.deepEqual(offsets,[0,1]);
+ f.ctx.currentTime=27;f.nodes[2].onended();assert.equal(f.voice.status().state,'complete');assert.equal(f.voice.status().elapsed,13);
+ f.voice.line(6,12000);await turn();assert.equal(f.voice.status().phase,'voice');assert.equal(f.nodes.length,4);f.voice.cancel();
+});
+test('cancel or new beat invalidates delayed voice completion and an active crowd',async()=>{
+ const f=fixture(null,{interlude:i=>i===5?{buffer:{duration:8},envelope(){}}:null});
+ f.voice.line(5,12000);f.voice.setPlaying(true);await turn();const stale=f.nodes[0].onended;f.voice.line(6,12000);stale();await turn();assert.equal(f.nodes.length,2);assert.equal(f.voice.status().phase,'voice');
+ f.voice.line(5,12000);await turn();f.ctx.currentTime=5;f.nodes[2].onended();assert.equal(f.voice.status().phase,'crowd');const obsolete=f.nodes[3].onended;f.voice.cancel();obsolete();assert(f.nodes[3].stopped);assert.equal(f.voice.status().beat,null);assert.equal(f.voice.status().activeSources,0);
+});
+test('missing or failed optional crowd never traps the beat',async()=>{
+ for(const interlude of [()=>null,()=>{throw Error('missing');},()=>({buffer:{duration:8},envelope(){throw Error('failed');}})]){
+  const f=fixture(null,{interlude});f.voice.line(5,12000);f.voice.setPlaying(true);await turn();f.ctx.currentTime=13;f.nodes[0].onended();assert.equal(f.voice.status().state,'complete');assert.equal(f.voice.status().activeSources,0);f.voice.cancel();
+ }
+});
