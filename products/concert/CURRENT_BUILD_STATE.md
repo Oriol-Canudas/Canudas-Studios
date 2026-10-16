@@ -46,6 +46,10 @@ Parent checked actual diff, inspected short-mobile normal/failure screenshots an
 
 Play local: http://127.0.0.1:8810/?v=voices-008 . Refresh to load the new client. From an existing game, Start again restarts that session; then Enter backstage and turn Sound on. Existing user8810 save was preserved. This static local preview has no live AI backend; regression negotiation was controlled fixtures. Public deployment remains unchanged as recorded above; no push/deployment. Limits: metadata/hash/audio-signal checks are not a full spoken-word listening review, physical iOS autoplay/background behavior is unverified, and no live-model semantics retested.
 
+## Readable scene directions and cast order — task010
+
+Candidate b3c0c0991876571df7c7f0913d8c6fa8c4760b15 accepted by separate QA: all5 criteria PASS,62 Node tests, build and opening/scenes/intro-voice suites. Unvoiced opening directions now18px normal/high-contrast on an opaque dark block with gold edge. Menu order Lia,Nora,then eligible Bruno. All15 cue/viewport combinations and actual contact-state navigation pass at390x844,390x480,1440x1000. No story, timing, voice, eligibility, state, API or save changes. Publication pending; release metadata above still describes prior production. Evidence: task010 and ../../../perspectives/concert-publication-cues-20261016/. Physical iOS and subjective readability remain human checks.
+
 ## Current product
 
 Main set complete → both artists backstage → Nora sees a phone booking confirmation excluding her from the next tour → refuses the customary shared encore. Lia fronts the band; Nora co-writes and co-sings substantial repertoire, a core creative member. One shared song, no competing solo premiere or broadcast deadline.

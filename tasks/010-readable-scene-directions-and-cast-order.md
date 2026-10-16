@@ -15,5 +15,13 @@ products/concert/src/style.css; products/concert/src/main.jsx (contact ordering,
 4. Both initial and returning hub display Lia, Nora, then Bruno when already eligible. No automatic character selection or change to eligibility, notification, click actions, contact copy or state effects. Clicking each visible character reaches that same character; returning retains the order.
 5. Existing Node tests and production build pass; focused opening/scenes/intro-voice checks and actual Lia/Nora/Bruno navigation preserve state. Browser negotiation calls must be blocked/intercepted; no paid inference. Independent QA compares candidate diff to protected baseline and records PASS/FAIL and limitations, not merely worker claims.
 
-## BUILD / QA / publication
-Pending.
+## BUILD handoff
+Candidate b3c0c0991876571df7c7f0913d8c6fa8c4760b15. Three scoped files: opening-only18px normal/high-contrast cue block in style.css; Lia,Nora,eligible Bruno ordering in main.jsx; PRODUCTION_LOG.md. No other product changes. Worker reports62/62 Node tests, build and existing opening/scenes/intro-voice suites PASS; temporary probe covers all5 cue-bearing beats and actual character selection/return at390x844,390x480,1440x1000, with no API POSTs, page errors, overlaps or horizontal overflow. Parent inspected exact diff and short-mobile booked-tour render. Evidence: /tmp/concert-task010-probe.json and /tmp/concert-task010-*.png; ignored qa results. Worker stopped editing with a clean tree. These remain worker claims until the independent verdict below.
+
+## Independent QA
+PASS on all5 frozen criteria for b3c0c0991876571df7c7f0913d8c6fa8c4760b15. Separate QA independently ran62 Node tests, production build, opening/scenes/intro-voice suites and a focused probe. All15 cue/viewport combinations pass at390x844,390x480,1440x1000; measured14.18:1 contrast. All11 beats/voice mappings/durations preserved. Exact character clicks/returns/state transitions and Nora-first choice remain valid. Source unchanged throughout QA. Parent visually inspected long cue, booked-tour and hub screenshots.
+
+Evidence copied to ../../perspectives/concert-publication-cues-20261016/concert-task010-independent-verdict.json and concert-task010-independent-results.json; temporary screenshots in /tmp. No paid inference. Controlled Chromium evidence does not establish physical iOS behavior or subjective comfort.
+
+## Publication
+Authorized production publication follows this QA acceptance. Result pending.
