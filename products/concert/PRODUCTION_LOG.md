@@ -196,3 +196,16 @@ Production build and existing scenes/portrait browser suites PASS. A temporary i
 ## 2026-10-16 — task016 published
 
 Independent QA PASS all four criteria at93aeb13; build/scenes/portrait plus separate baseline/fresh/legacy/error/retry probes. Deployed e5e2c28 as dpl_A11JPjfftvUb37ZkJ1v6SPjy3bjt, Production READY. Parent verified identical public JS/CSS and reran the controlled briefing→history/draft/reload paths publicly. Goal field removed; older notes and saved state retained. No paid calls. Evidence: ../../../perspectives/concert-goal-removal-20261016/.
+
+
+## 2026-10-16 — task018, full-height opening and distinct authored speech (local candidate)
+
+Baseline runtime93aeb13 at frozen task540f9ce. Reproduced the supplied mobile geometry before edits:60px topbar plus44px chapter displaced the opening image below104px; speaker portraits measured70×82px. Decoded narrator/Nora and authored Lia/Nora baseline screenshots are in `/private/tmp/task018-baseline/` with geometry.json.
+
+The opening now fills the measured usable browser viewport with one aspect-preserving cover image. Existing menus float over the artwork, phase/progress is compact, and the footer keeps44px navigation plus a prominent48px mobile Go backstage action. The image remains visible down to the controls. Caption-only scrolling handles short windows while keeping navigation fixed; normal tall mobile fits all11 beats without caption scrolling. Existing images are112×132px on tall mobile,128×150px desktop,80×94px on compact/landscape; speech stays at least24px and unvoiced cues18px. Safe-area padding uses the existing viewport measurement. Only opening markup/classes and scoped CSS changed; text, interaction handlers, audio/voice timings and crowd cue remain untouched.
+
+The explicit user amendment adds only a cool blue-grey fill/border to authored `.screen-dialogue .character-speech`. The existing plum player-choice buttons, gold speaker label, prior-player echo and all layouts are unchanged. Body contrast11.89:1 and gold label8.35:1. Lia/Nora mobile and desktop renders inspected. No full-portrait authored-dialogue redesign implemented; that remains a separate draft request.
+
+Build PASS. Existing opening, scenes, intro-voice and hierarchy suites PASS, including all11 real decoded voice clips, Nora→crowd→Bruno order, pause/modal/visibility/mute interruptions, skip/retry/failure recovery and unchanged state. New reusable opening-layout suite PASS: all11 beats at390×844,430×932,320×568,390×480,844×390 and1440×1000; artwork matches usable viewport within1px, all targets>=44px, no horizontal overflow, exact text/speaker/cues, size/reading constraints, scrolling without beat advance, menus and dynamic height/rotation without state change. Registered the suite with the existing static QA runner. Evidence: ignored `qa/opening-layout-results.json`, `qa/opening-layout-*.png` and existing suite results. Narrator, booking notification, longest/cued speakers, all six viewport forms and Lia/Nora tint visually reviewed.
+
+No story, engine, API, save keys, negotiation/consent/draft, audio controller/assets, dependencies or other-product changes; no paid calls, push or deployment. Own static preview port8797 only; user port8810/storage untouched. Chromium emulation does not prove physical iPhone/Safari. Independent non-editing QA is the next gate.

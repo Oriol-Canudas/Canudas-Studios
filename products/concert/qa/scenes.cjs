@@ -16,7 +16,7 @@ const {chromium}=require(process.env.QA_PLAYWRIGHT||'playwright'),assert=require
     if(screen==='dialogue'){assert.equal(await page.locator('.portrait-title h1').textContent(),'Nora');assert.match(await page.locator('.portrait-title p').textContent(),/Songwriter/);const back=await page.locator('.portrait-scene .back-over').boundingBox(),title=await page.locator('.portrait-title').boundingBox();assert(back.y+back.height<=title.y);}
 
     const g=await page.evaluate(()=>{const shell=document.querySelector('.shell'),stage=document.querySelector('.stage');return {shell:shell.getBoundingClientRect().width,stage:stage.getBoundingClientRect().width,columns:getComputedStyle(shell).gridTemplateColumns.split(' ').length};});
-    assert.equal(g.columns,conversation?2:1);if(!conversation){assert.equal(g.stage,g.shell);assert(g.shell<=(['opening','ending','cover'].includes(screen)?1100:760));}
+    assert.equal(g.columns,conversation?2:1);if(!conversation){assert.equal(g.stage,g.shell);if(screen==='opening')assert.equal(g.shell,size.width);else assert(g.shell<=(['ending','cover'].includes(screen)?1100:760));}
    }else assert(!await page.locator('.desktop-art').isVisible());
    await page.evaluate(()=>Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))));await page.screenshot({path:`qa/scenes-${size.width}x${size.height}-${label}.png`});screens.push(label);
   };
