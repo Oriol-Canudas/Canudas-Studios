@@ -1,17 +1,29 @@
 import { create } from 'zustand'
-import type { ConversationTurn, ContextItem, SeniorProfile, DirectorFunction } from './types'
-import { requestDirectorTurn } from './directorClient'
+import type {
+  ConversationTurn,
+  ContextItem,
+  SeniorProfile,
+  DirectorFunction,
+  ScreenName,
+  PendingQuestion,
+  ChapterDraft,
+} from './types'
+import { requestDirectorTurn, requestPendingQuestion, requestChapterFinalize } from './directorClient'
 
 function makeId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }
 
 interface GameState {
+  screen: ScreenName
   profile: SeniorProfile
+  pendingQuestion: PendingQuestion | null
+  activeQuestionId: string | null
+
   turns: ConversationTurn[]
   confirmedContext: ContextItem[]
-  // Dev-only visibility for this text harness — the real product never
-  // renders researched-unconfirmed notes to any user, ever.
+  // Dev-only visibility, surfaced nowhere in the real screens — kept on
+  // the store for now since TextHarness.tsx still reads it.
   researchedUnconfirmed: ContextItem[]
   pendingOfferedContext: ContextItem[]
   activeFunction: DirectorFunction | null
@@ -20,17 +32,30 @@ interface GameState {
   failedDraft: string | null
   lastError: string | null
 
+  chapterDraft: ChapterDraft | null
+  isFinalizing: boolean
+  isConfirming: boolean
+
+  goTo: (screen: ScreenName) => void
   setProfile: (p: SeniorProfile) => void
-  startSession: (openingTopic: string) => Promise<void>
+  loadPendingQuestion: () => Promise<void>
+  startSession: (openingTopic: string, questionId?: string | null) => Promise<void>
   sendSeniorReply: (text: string) => Promise<void>
   retryLastTurn: () => Promise<void>
+  finalizeChapter: () => Promise<void>
+  confirmChapter: () => Promise<void>
+  requestCorrection: (note: string) => Promise<void>
   reset: () => void
 }
 
 const initialProfile: SeniorProfile = { preferredName: 'Montserrat', language: 'ca' }
 
 export const useGameStore = create<GameState>((set, get) => ({
+  screen: 'home',
   profile: initialProfile,
+  pendingQuestion: null,
+  activeQuestionId: null,
+
   turns: [],
   confirmedContext: [],
   researchedUnconfirmed: [],
@@ -41,10 +66,20 @@ export const useGameStore = create<GameState>((set, get) => ({
   failedDraft: null,
   lastError: null,
 
+  chapterDraft: null,
+  isFinalizing: false,
+  isConfirming: false,
+
+  goTo: (screen) => set({ screen }),
   setProfile: (p) => set({ profile: p }),
 
-  startSession: async (openingTopic) => {
-    set({ isThinking: true, lastError: null })
+  loadPendingQuestion: async () => {
+    const question = await requestPendingQuestion()
+    set({ pendingQuestion: question })
+  },
+
+  startSession: async (openingTopic, questionId = null) => {
+    set({ isThinking: true, lastError: null, activeQuestionId: questionId, screen: 'conversation' })
     try {
       const result = await requestDirectorTurn({
         profile: get().profile,
@@ -132,8 +167,63 @@ export const useGameStore = create<GameState>((set, get) => ({
     await get().sendSeniorReply(draft)
   },
 
+  finalizeChapter: async () => {
+    set({ isFinalizing: true, lastError: null })
+    try {
+      const { profile, turns, confirmedContext, activeQuestionId } = get()
+      const draft = await requestChapterFinalize({
+        profile,
+        history: turns,
+        confirmedContext,
+        questionId: activeQuestionId,
+      })
+      set({ chapterDraft: draft, isFinalizing: false, screen: 'chapterConfirm' })
+    } catch (e) {
+      set({ isFinalizing: false, lastError: e instanceof Error ? e.message : 'unknown_error' })
+    }
+  },
+
+  confirmChapter: async () => {
+    const draft = get().chapterDraft
+    if (!draft) return
+    set({ isConfirming: true, lastError: null })
+    try {
+      const res = await fetch('/api/chapter-finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chapterId: draft.id, confirm: true }),
+      })
+      if (!res.ok) throw new Error(`confirm_failed_${res.status}`)
+      set({ isConfirming: false, screen: 'sessionClose' })
+    } catch (e) {
+      set({ isConfirming: false, lastError: e instanceof Error ? e.message : 'unknown_error' })
+    }
+  },
+
+  requestCorrection: async (note) => {
+    set({ isFinalizing: true, lastError: null })
+    try {
+      const { profile, turns, confirmedContext, activeQuestionId } = get()
+      const correctedHistory: ConversationTurn[] = [
+        ...turns,
+        { id: makeId(), role: 'senior', content: `Correction: ${note}`, createdAt: new Date().toISOString() },
+      ]
+      const draft = await requestChapterFinalize({
+        profile,
+        history: correctedHistory,
+        confirmedContext,
+        questionId: activeQuestionId,
+      })
+      set({ chapterDraft: draft, isFinalizing: false })
+    } catch (e) {
+      set({ isFinalizing: false, lastError: e instanceof Error ? e.message : 'unknown_error' })
+    }
+  },
+
   reset: () =>
     set({
+      screen: 'home',
+      activeQuestionId: null,
       turns: [],
       confirmedContext: [],
       researchedUnconfirmed: [],
@@ -143,5 +233,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       isThinking: false,
       failedDraft: null,
       lastError: null,
+      chapterDraft: null,
+      isFinalizing: false,
+      isConfirming: false,
     }),
 }))

@@ -43,3 +43,16 @@ export interface SeniorProfile {
   preferredName: string
   language: 'es' | 'ca'
 }
+
+export type ScreenName = 'home' | 'conversation' | 'chapterConfirm' | 'sessionClose'
+
+export interface PendingQuestion {
+  id: string
+  text: string
+}
+
+export interface ChapterDraft {
+  id: string
+  title: string
+  testimonyText: string
+}

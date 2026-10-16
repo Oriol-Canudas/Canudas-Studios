@@ -1,14 +1,37 @@
 @import "tailwindcss";
 
+/* Palette and type reused from the earlier Soundtrack-of-Your-Life
+   prototype (see product doc, Technical Requirements) — the tokens carry
+   over, the scale doesn't: this audience is 70s, big fonts/buttons is a
+   hard requirement, not a nice-to-have. */
+@theme {
+  --color-cream: #F6EFE4;
+  --color-cream-deep: #EFE4D2;
+  --color-ink: #3A2E26;
+  --color-ink-soft: #6E5F52;
+  --color-terracotta: #C9713F;
+  --color-terracotta-deep: #A85A2F;
+  --color-gold: #C9A464;
+  --color-surface: #FFFDF8;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Karla', system-ui, sans-serif;
+}
+
 :root {
   color-scheme: light;
-  background-color: #F6EFE4;
 }
 
 body {
   margin: 0;
-  background-color: #F6EFE4;
-  color: #3A2E26;
-  font-family: 'Karla', system-ui, sans-serif;
+  background-color: var(--color-cream-deep);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.5;
   overscroll-behavior-y: none;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
 }
