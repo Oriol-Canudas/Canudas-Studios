@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useGameStore } from '../game/store'
+import DirectorAvatar from './DirectorAvatar'
+import TypewriterText from './TypewriterText'
 
 export default function ChapterConfirmScreen() {
   const [correctionDraft, setCorrectionDraft] = useState('')
@@ -18,11 +20,22 @@ export default function ChapterConfirmScreen() {
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center px-6 py-10">
       <div className="w-full max-w-md flex flex-col gap-6">
-        <p className="text-center text-ink-soft text-base">Això és el que hem fet amb el que m'has explicat</p>
+        <div className="flex flex-col items-center gap-3">
+          <DirectorAvatar size="hero" />
+          <p className="text-center text-ink-soft text-base">Això és el que hem fet amb el que m'has explicat</p>
+        </div>
 
         <div className="bg-surface rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-          <h1 className="font-display text-2xl text-ink leading-snug">{chapterDraft.title}</h1>
-          <p className="text-lg text-ink leading-relaxed whitespace-pre-wrap">{chapterDraft.testimonyText}</p>
+          <TypewriterText
+            key={`${chapterDraft.id}-title`}
+            text={chapterDraft.title}
+            className="font-display text-2xl text-ink leading-snug"
+          />
+          <TypewriterText
+            key={`${chapterDraft.id}-body`}
+            text={chapterDraft.testimonyText}
+            className="text-lg text-ink leading-relaxed"
+          />
         </div>
 
         {lastError && <p className="text-red-800 text-base">No he pogut desar-ho ({lastError}).</p>}

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useGameStore } from '../game/store'
+import DirectorAvatar from './DirectorAvatar'
+import TypewriterText from './TypewriterText'
 
 export default function ConversationScreen() {
   const [draft, setDraft] = useState('')
@@ -20,10 +22,20 @@ export default function ConversationScreen() {
     <div className="min-h-screen bg-cream-deep flex flex-col">
       <div className="flex-1 overflow-y-auto px-5 py-8">
         <div className="max-w-md mx-auto flex flex-col gap-4">
+          <div className="flex justify-center mb-2">
+            <DirectorAvatar size="hero" />
+          </div>
           {turns.map((t) =>
             t.role === 'director' ? (
-              <div key={t.id} className="self-start max-w-[90%] bg-surface rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm">
-                <p className="font-display text-lg text-ink leading-relaxed whitespace-pre-wrap">{t.content}</p>
+              <div
+                key={t.id}
+                className="self-start max-w-[90%] flex items-start gap-3 bg-surface rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm"
+              >
+                <DirectorAvatar size="small" />
+                <TypewriterText
+                  text={t.content}
+                  className="font-display text-lg text-ink leading-relaxed"
+                />
               </div>
             ) : (
               <div

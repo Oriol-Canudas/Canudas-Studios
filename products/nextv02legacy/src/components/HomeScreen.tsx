@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useGameStore } from '../game/store'
+import DirectorAvatar from './DirectorAvatar'
 
 const SOMETHING_ON_YOUR_MIND_PROMPT =
   "Explica'm alguna cosa que tinguis al cap avui — el que sigui."
@@ -16,9 +17,12 @@ export default function HomeScreen() {
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center px-6 py-10">
       <div className="w-full max-w-md flex flex-col gap-6">
-        <header className="text-center">
-          <p className="text-ink-soft text-base mb-1">Bon dia</p>
-          <h1 className="font-display text-3xl text-ink">{profile.preferredName}</h1>
+        <header className="text-center flex flex-col items-center gap-4">
+          <DirectorAvatar size="hero" />
+          <div>
+            <p className="text-ink-soft text-base mb-1">Bon dia</p>
+            <h1 className="font-display text-3xl text-ink">{profile.preferredName}</h1>
+          </div>
         </header>
 
         <div className="flex flex-col gap-4">
