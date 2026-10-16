@@ -1,9 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {createSpeechRecorder,recordingMime,appendTranscript,MAX_BYTES} from '../src/speech-recording.mjs';
 const settle=()=>new Promise(r=>setTimeout(r,0));
-function fixture({permission,fetcher,silent=false,throwRecorder=false,blobSize=84,timeoutMs=20,startupTimeoutMs=20,resume,staySuspended=false}={}){
+function fixture({permission,fetcher,silent=false,throwRecorder=false,blobSize=84,timeoutMs=20,startupTimeoutMs=20,resume,staySuspended=false,amplitude=()=>silent?0:.1}={}){
  let now=0,calls=0,uploads=0,stops=0,resumes=0,closed=0;const order=[];const muted=[],states=[],texts=[],track={stop(){stops++;},onended:null};const stream={getTracks:()=>[track]};
  class Recorder{static isTypeSupported=t=>t.startsWith('audio/webm');constructor(_,opts){if(throwRecorder)throw Error('failed');this.mimeType=opts.mimeType;this.state='inactive';}start(){this.state='recording';}stop(){this.state='inactive';queueMicrotask(()=>{this.ondataavailable?.({data:new Blob([new Uint8Array([0x1a,0x45,0xdf,0xa3,...Array(blobSize-4).fill(1)])])});this.onstop?.();});}}
- class Audio{state='suspended';resume(){resumes++;order.push('resume');if(!staySuspended)this.state='running';return resume?resume():Promise.resolve();}async close(){closed++;this.state='closed';}createAnalyser(){return{fftSize:1024,getFloatTimeDomainData(values){values.fill(silent?0:.1);}};}createMediaStreamSource(){return{connect(){}};}}
+ class Audio{state='suspended';resume(){resumes++;order.push('resume');if(!staySuspended)this.state='running';return resume?resume():Promise.resolve();}async close(){closed++;this.state='closed';}createAnalyser(){return{fftSize:1024,getFloatTimeDomainData(values){values.fill(amplitude());}};}createMediaStreamSource(){return{connect(){}};}}
  const api=createSpeechRecorder({Recorder,Audio,mediaDevices:{getUserMedia(){calls++;order.push('permission');return permission?permission:Promise.resolve(stream);}},fetcher:async(...args)=>{uploads++;return fetcher?fetcher(...args):{ok:true,json:async()=>({text:'Recognized words.'})};},notify:s=>states.push(s),onTranscript:t=>texts.push(t),setCaptureMuted:v=>muted.push(v),getToken:()=> 'fixture-token',clock:()=>now,timeoutMs,startupTimeoutMs});
  return{api,states,texts,muted,stream,track,order,resumes:()=>resumes,closed:()=>closed,advance:t=>now=t,calls:()=>calls,uploads:()=>uploads,stops:()=>stops};
 }
@@ -36,4 +36,11 @@ test('rejected resume fails immediately while late permission is released withou
 test('permission timeout and a still-suspended meter fail safely; late grant is released',async()=>{
  let allow;const delayed=fixture({permission:new Promise(r=>allow=r)});await delayed.api.start();assert.equal(delayed.api.status(),'error');allow(delayed.stream);await settle();assert.equal(delayed.stops(),1);assert.equal(delayed.closed(),1);
  const suspended=fixture({staySuspended:true});await suspended.api.start();assert.equal(suspended.api.status(),'error');assert.equal(suspended.stops(),1);assert.equal(suspended.closed(),1);assert.equal(suspended.uploads(),0);
+});
+
+test('transient microphone level follows measured amplitude and clears outside capture',async()=>{
+ let amplitude=0;const f=fixture({amplitude:()=>amplitude});await f.api.start();assert.equal(f.states.at(-1).level,0);
+ amplitude=.05;await new Promise(r=>setTimeout(r,120));assert(Math.abs(f.states.at(-1).level-.4)<.001);
+ amplitude=.25;await new Promise(r=>setTimeout(r,120));assert.equal(f.states.at(-1).level,1);
+ amplitude=0;await new Promise(r=>setTimeout(r,120));assert.equal(f.states.at(-1).level,0);f.api.cancel();assert.equal(f.states.at(-1).level,0);assert.equal(f.uploads(),0);
 });
