@@ -1,6 +1,6 @@
 # Concert prototype — delivery state
 
-Updated:16 October2026. Encore v05 remains published; task005 dialogue amendments independently verified locally, not yet published.
+Updated:16 October2026. Encore v05 remains published; task005 dialogue and task007 presentation amendments independently verified locally, not yet published.
 
 Live: https://gamex-concert.vercel.app/?v=encore-v05-20261016
 Vercel: ocanudas-7641/gamex-concert (`prj_pmy012EZyymfl5MvxHQrIRhzYz3R`).
@@ -18,9 +18,17 @@ Play local: http://127.0.0.1:8810/?v=dialogue-005 (static preview, no live AI). 
 
 ## Local cover repair — task006
 
-Candidate `8d37bc3bf7988b4d4eac83873799c44f0c3f9539`, independently PASS. Desktop cover now shows one unified artwork/title instead of repeating the decorative aside beside the playable cover. Cover-only desktop CSS keeps copy/CTA readable; mobile and non-cover layouts unchanged. Build plus cover/browser/opening/dialogue suites pass; independent desktop906×1058/1440×1000 and mobile390×844/390×480 inspection, matching mobile geometry and four actual entry journeys pass. App/story/state/saves/assets/dependencies unchanged. See `../../tasks/006-single-desktop-cover.md`, `/tmp/concert-cover-independent-qa/independent-qa.json`.
+Candidate `8d37bc3bf7988b4d4eac83873799c44f0c3f9539`, independently PASS. Desktop cover now shows one unified artwork/title instead of repeating the decorative aside beside the playable cover. Cover-only desktop CSS keeps copy/CTA readable; task006 left mobile and non-cover layouts unchanged; task007 below subsequently corrects the story-screen presentation. Build plus cover/browser/opening/dialogue suites pass; independent desktop906×1058/1440×1000 and mobile390×844/390×480 inspection, matching mobile geometry and four actual entry journeys pass. App/story/state/saves/assets/dependencies unchanged. See `../../tasks/006-single-desktop-cover.md`, `/tmp/concert-cover-independent-qa/independent-qa.json`.
 
 Play local: http://127.0.0.1:8810/?v=cover-006 . Refresh suffices for the cover fix; no reset needed. Public deployment remains the release listed above. No paid calls, push or deployment.
+
+## Local story presentation correction — task007
+
+Latest local product candidate `3d75602dbe0bc68626fab19b78bd908d331b5259`, independent QA PASS. Task006 fixed only the cover; user follow-up correctly showed the promotional cover/title sidebar still competing with the intro. It is now removed from opening/hub/brief/review/ending/reveal. These screens use one coherent stage with bounded reading/caption/control widths. Desktop dialogue and AI retain one functional companion portrait; repeated in-stage dialogue portrait removed, Backstage/name/role kept separate. Mobile/cover and all story/state/consent/save/media/backend code remain unchanged.
+
+Build and six focused cover/scenes/opening/dialogue/agreement/encore suites independently PASS;19 scene states per viewport, all11 intro beats across970×1067/1440×1000/390×844/390×480. Actual fixture-backed Nora confirmation→performance→reveal and one-character portrait/readability checks pass. Parent replayed and inspected the exact intro screenshot moment, now with no sidebar. Evidence/task: `../../tasks/007-remove-story-marketing-sidebar.md`, `/tmp/concert-scenes-independent-qa/independent-qa.json`, `/tmp/concert-intro-single-scene.{json,png}`.
+
+Refresh local http://127.0.0.1:8810/?v=scenes-007 ; no reset needed. Public production remains as listed above; no paid calls/push/deployment. Controlled Chromium evidence, not physical iOS or real-model validation.
 
 ## Current product
 
