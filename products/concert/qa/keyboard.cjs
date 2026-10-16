@@ -7,6 +7,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const results=[],errors=[];
  const line='I want Nora to know exactly what I am agreeing to. We wrote this song together. I will acknowledge the decision about the tour, but I cannot promise that we will go back to how things were.';
  const fixture={build:BUILD,screen:'ai',prep:initialPrep(),negotiation:initialNegotiation(),token:'fixture-token',draft:'',aiMessages:Array.from({length:9},(_,i)=>({who:i%2?'player':'lia',text:`${i+1}. ${line}`,cue:i%2?undefined:'She looks toward the stage.'}))};
+ const settleLayout=page=>page.evaluate(async()=>{await document.fonts.ready;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));});
  const read=page=>page.evaluate(SAVE=>JSON.parse(localStorage.getItem(SAVE)),SAVE);
  const geometry=page=>page.evaluate(()=>{
   const box=s=>{const e=document.querySelector(s),r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,left:r.left,right:r.right,client:e.clientHeight,scroll:e.scrollHeight};};
@@ -27,7 +28,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
   if(fail)return route.fulfill({status:503,json:{error:'fixture_unavailable'}});
   return route.fulfill({json:{token:'fixture-next',negotiation:{...initialNegotiation(),turns:1},reply:{text:'I heard the offer. Let me think about what it asks of Nora.',cue:'She pauses.'},diagnostic:{source:'fixture'}}});
  });
- await page.goto(process.env.QA_URL||'http://127.0.0.1:8796');await page.evaluate(({SAVE,fixture})=>localStorage.setItem(SAVE,JSON.stringify(fixture)),{SAVE,fixture});await page.reload();await page.locator('#message').waitFor();
+ await page.goto(process.env.QA_URL||'http://127.0.0.1:8796');await page.evaluate(({SAVE,fixture})=>localStorage.setItem(SAVE,JSON.stringify(fixture)),{SAVE,fixture});await page.reload();await page.locator('#message').waitFor();await settleLayout(page);
  const before=await read(page);await page.locator('#message').focus();await page.locator('#message').fill('Keep the shared credit.');
  for(const config of [[430,170,'resize',120],[430,250,'scroll',120],[360,250,'resize',90]]){
   await page.evaluate(([height,top,event])=>setVisual(height,top,event),config);await page.waitForTimeout(90);const g=await geometry(page);check(g,config[3]);assert(g.keyboard);assert.equal(g.portrait,'none');assert(g.atEnd<=2,'latest response stays in view');await page.screenshot({path:`qa/keyboard-${config[0]}-${config[1]}.png`});results.push({name:`viewport-${config[0]}-${config[1]}`,geometry:g});
@@ -48,7 +49,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  await page.getByRole('button',{name:'End conversation and review',exact:true}).click();await page.locator('.review-head').waitFor();
  // Ordinary short/tall windows and no-visualViewport fallback preserve state and a visible portrait.
  for(const size of [{width:390,height:844},{width:390,height:480},{width:1440,height:1000}]){
-  const other=await browser.newPage({viewport:size,reducedMotion:'reduce'});other.on('pageerror',e=>errors.push(e.message));await other.addInitScript(()=>Object.defineProperty(window,'visualViewport',{configurable:true,value:undefined}));await other.route('**/api/negotiate',r=>r.fulfill({json:{available:false}}));await other.goto(process.env.QA_URL||'http://127.0.0.1:8796');await other.evaluate(({SAVE,fixture})=>localStorage.setItem(SAVE,JSON.stringify(fixture)),{SAVE,fixture});await other.reload();await other.locator('#message').waitFor();let g=await geometry(other);check(g,size.height===480?90:120);assert(!g.keyboard);assert.notEqual(g.portrait,'none');await other.screenshot({path:`qa/keyboard-ordinary-${size.width}x${size.height}.png`});
+  const other=await browser.newPage({viewport:size,reducedMotion:'reduce'});other.on('pageerror',e=>errors.push(e.message));await other.addInitScript(()=>Object.defineProperty(window,'visualViewport',{configurable:true,value:undefined}));await other.route('**/api/negotiate',r=>r.fulfill({json:{available:false}}));await other.goto(process.env.QA_URL||'http://127.0.0.1:8796');await other.evaluate(({SAVE,fixture})=>localStorage.setItem(SAVE,JSON.stringify(fixture)),{SAVE,fixture});await other.reload();await other.locator('#message').waitFor();await settleLayout(other);let g=await geometry(other);check(g,size.height===480?90:120);assert(!g.keyboard);assert.notEqual(g.portrait,'none');await other.screenshot({path:`qa/keyboard-ordinary-${size.width}x${size.height}.png`});
   const saved=await read(other);await other.locator('#message').focus();if(size.width>900){await other.waitForTimeout(100);assert(!(await geometry(other)).keyboard);assert.notEqual((await geometry(other)).portrait,'none');}
   await other.setViewportSize({width:size.height,height:size.width});await other.waitForTimeout(100);assert.deepEqual(await read(other),saved);results.push({name:`fallback-${size.width}x${size.height}`,geometry:g});await other.close();
  }
