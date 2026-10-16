@@ -5,6 +5,7 @@ import { getStrings } from '../game/strings'
 export default function HomeScreen() {
   const { profile, pendingQuestion, loadPendingQuestion, startSession, goTo } = useGameStore()
   const t = getStrings(profile.language).home
+  const familyTreeStrings = getStrings(profile.language).familyTree
 
   useEffect(() => {
     loadPendingQuestion()
@@ -67,12 +68,20 @@ export default function HomeScreen() {
               </div>
             </button>
 
-            <button
-              onClick={() => goTo('library')}
-              className="text-left bg-gold/20 backdrop-blur-sm border border-gold/40 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform"
-            >
-              <p className="font-display text-xl text-ink leading-snug">{t.libraryButton}</p>
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={() => goTo('library')}
+                className="flex-1 text-left bg-gold/20 backdrop-blur-sm border border-gold/40 rounded-2xl p-5 shadow-sm active:scale-[0.98] transition-transform"
+              >
+                <p className="font-display text-lg text-ink leading-snug">{t.libraryButton}</p>
+              </button>
+              <button
+                onClick={() => goTo('familyTree')}
+                className="flex-1 text-left bg-gold/20 backdrop-blur-sm border border-gold/40 rounded-2xl p-5 shadow-sm active:scale-[0.98] transition-transform"
+              >
+                <p className="font-display text-lg text-ink leading-snug">{familyTreeStrings.button}</p>
+              </button>
+            </div>
           </div>
         </div>
       </div>

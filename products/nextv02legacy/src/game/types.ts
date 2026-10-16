@@ -55,6 +55,7 @@ export type ScreenName =
   | 'chapterConfirm'
   | 'sessionClose'
   | 'library'
+  | 'familyTree'
 
 export interface PendingQuestion {
   id: string
@@ -83,4 +84,12 @@ export interface ClipSlide {
 export interface ChapterClip {
   slides: ClipSlide[]
   musicUrl: string | null
+}
+
+export interface FamilyMember {
+  id: string
+  name: string
+  relationship: string
+  note: string
+  createdAt: string
 }

@@ -23,7 +23,7 @@ export default function TopicPickerScreen() {
             return (
               <button
                 key={template.id}
-                onClick={() => startSession(text.openingPrompt)}
+                onClick={() => startSession(text.openingPrompt, null, template.id)}
                 className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform"
               >
                 <img src={template.image} alt="" className="absolute inset-0 w-full h-full object-cover" />

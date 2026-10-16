@@ -41,6 +41,11 @@ interface GameState {
   profile: SeniorProfile
   pendingQuestion: PendingQuestion | null
   activeQuestionId: string | null
+  // Set when a session starts from a TopicPickerScreen template — read back
+  // at chapter-confirm time so the backend knows whether to also run
+  // family-member extraction (only for the 'family-tree' template, to
+  // avoid an extra AI call on every single confirmed chapter).
+  activeTemplateId: string | null
 
   turns: ConversationTurn[]
   confirmedContext: ContextItem[]
@@ -63,7 +68,7 @@ interface GameState {
   chooseLanguage: (language: SeniorProfile['language']) => void
   completeIntake: (p: SeniorProfile) => void
   loadPendingQuestion: () => Promise<void>
-  startSession: (openingTopic: string, questionId?: string | null) => Promise<void>
+  startSession: (openingTopic: string, questionId?: string | null, templateId?: string | null) => Promise<void>
   sendSeniorReply: (text: string) => Promise<void>
   retryLastTurn: () => Promise<void>
   finalizeChapter: () => Promise<void>
@@ -80,6 +85,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   profile: savedProfile ?? fallbackProfile,
   pendingQuestion: null,
   activeQuestionId: null,
+  activeTemplateId: null,
 
   turns: [],
   confirmedContext: [],
@@ -108,8 +114,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ pendingQuestion: question })
   },
 
-  startSession: async (openingTopic, questionId = null) => {
-    set({ isThinking: true, lastError: null, activeQuestionId: questionId, screen: 'conversation' })
+  startSession: async (openingTopic, questionId = null, templateId = null) => {
+    set({
+      isThinking: true,
+      lastError: null,
+      activeQuestionId: questionId,
+      activeTemplateId: templateId,
+      screen: 'conversation',
+    })
     try {
       const result = await requestDirectorTurn({
         profile: get().profile,
@@ -221,7 +233,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const res = await fetch('/api/chapter-finalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chapterId: draft.id, confirm: true }),
+        body: JSON.stringify({ chapterId: draft.id, confirm: true, templateId: get().activeTemplateId }),
       })
       if (!res.ok) throw new Error(`confirm_failed_${res.status}`)
       set({ isConfirming: false, screen: 'sessionClose' })
@@ -254,6 +266,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       screen: 'home',
       activeQuestionId: null,
+      activeTemplateId: null,
       turns: [],
       confirmedContext: [],
       researchedUnconfirmed: [],

@@ -21,6 +21,12 @@ export const UI_STRINGS = {
       freeformTitle: 'Alguna cosa diferent',
       freeformSubtitle: 'El que tinguis al cap, ara',
     },
+    familyTree: {
+      title: "L'arbre familiar",
+      back: "Tornar a l'inici",
+      empty: 'Encara no hi ha ningú aquí. Prova "Fem l\'arbre familiar" a la pantalla anterior.',
+      button: "Arbre familiar",
+    },
     library: {
       title: 'Biblioteca de records',
       empty: 'Encara no hi ha cap record guardat. Torna aquí després de la primera conversa.',
@@ -90,6 +96,12 @@ export const UI_STRINGS = {
       freeformTitle: 'Algo diferente',
       freeformSubtitle: 'Lo que tengas en mente, ahora',
     },
+    familyTree: {
+      title: 'El árbol familiar',
+      back: 'Volver al inicio',
+      empty: 'Todavía no hay nadie aquí. Prueba "Hagamos el árbol familiar" en la pantalla anterior.',
+      button: 'Árbol familiar',
+    },
     library: {
       title: 'Biblioteca de recuerdos',
       empty: 'Todavía no hay ningún recuerdo guardado. Vuelve aquí después de la primera conversación.',
@@ -158,6 +170,12 @@ export const UI_STRINGS = {
       back: 'Back to home',
       freeformTitle: 'Something else',
       freeformSubtitle: "Whatever's on your mind, right now",
+    },
+    familyTree: {
+      title: 'The family tree',
+      back: 'Back to home',
+      empty: 'No one here yet. Try "Let\'s build the family tree" on the previous screen.',
+      button: 'Family tree',
     },
     library: {
       title: 'Library of memories',

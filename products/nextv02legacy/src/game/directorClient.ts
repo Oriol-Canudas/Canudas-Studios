@@ -7,6 +7,7 @@ import type {
   ChapterDraft,
   MemoryChapter,
   ChapterClip,
+  FamilyMember,
 } from './types'
 
 export interface DirectorRequestBody {
@@ -82,4 +83,11 @@ export async function requestChapterClip(chapterId: string): Promise<ChapterClip
   }
 
   return (await res.json()) as ChapterClip
+}
+
+export async function requestFamilyTree(): Promise<FamilyMember[]> {
+  const res = await fetch('/api/family-tree')
+  if (!res.ok) return []
+  const data = await res.json()
+  return Array.isArray(data?.members) ? data.members : []
 }

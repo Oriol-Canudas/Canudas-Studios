@@ -7,6 +7,7 @@ import ChapterConfirmScreen from './components/ChapterConfirmScreen'
 import SessionCloseScreen from './components/SessionCloseScreen'
 import LibraryScreen from './components/LibraryScreen'
 import TopicPickerScreen from './components/TopicPickerScreen'
+import FamilyTreeScreen from './components/FamilyTreeScreen'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
@@ -22,6 +23,8 @@ export default function App() {
       return <LibraryScreen />
     case 'topicPicker':
       return <TopicPickerScreen />
+    case 'familyTree':
+      return <FamilyTreeScreen />
     case 'home':
       return <HomeScreen />
     case 'intake':

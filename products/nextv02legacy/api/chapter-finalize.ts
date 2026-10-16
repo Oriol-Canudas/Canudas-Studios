@@ -125,6 +125,103 @@ function buildIllustrationPrompt(title: string, testimonyText: string): string {
   return `${ILLUSTRATION_STYLE}\n\nScene to paint, drawn from this chapter of someone's life story — "${title}": ${excerpt}`
 }
 
+interface ExtractedFamilyMember {
+  name: string
+  relationship: string
+  note: string
+}
+
+interface FamilyMember extends ExtractedFamilyMember {
+  id: string
+  createdAt: string
+}
+
+function buildFamilyExtractionInstructions(language: SeniorProfile['language']): string {
+  const langLine =
+    language === 'ca'
+      ? 'Escriu els camps en català, tal com ella ho diria.'
+      : language === 'en'
+        ? "Write the fields in English, in her own words' spirit."
+        : 'Escribe los campos en español, tal como ella lo diría.'
+
+  return [
+    'You are extracting a structured list of family members mentioned in the chapter text below, for a family tree.',
+    langLine,
+    '',
+    'HONESTY, ABSOLUTE RULE: only include people she actually named or clearly described as family. Never invent a person, a name, or a relationship.',
+    '',
+    'Respond with ONLY a single JSON object as your final answer text, no other prose before or after it, matching exactly this shape:',
+    '{"members": [{"name": string, "relationship": string, "note": string}]}',
+    'name: her name for them, exactly as she said it.',
+    'relationship: a short relationship label (e.g. "mother", "husband", "eldest son") in her own words.',
+    'note: one short line — a memory or detail she gave about this person. Empty string if she gave none.',
+  ].join('\n')
+}
+
+// Best-effort, same spirit as the illustration call below — a failed
+// extraction never blocks confirming the chapter itself.
+async function extractFamilyMembers(
+  language: SeniorProfile['language'],
+  testimonyText: string,
+): Promise<ExtractedFamilyMember[]> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 20000)
+  try {
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        instructions: buildFamilyExtractionInstructions(language),
+        input: [{ role: 'user', content: `CHAPTER TEXT:\n${testimonyText}` }],
+      }),
+      signal: controller.signal,
+    })
+    if (!response.ok) return []
+    const data: any = await response.json()
+    const rawText = extractMessageText(data?.output ?? [])
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/)
+    const parsed = jsonMatch ? safeJsonParse<{ members: ExtractedFamilyMember[] }>(jsonMatch[0]) : null
+    if (!parsed || !Array.isArray(parsed.members)) return []
+    return parsed.members
+      .filter((m) => m?.name)
+      .map((m) => ({
+        name: sanitizeText(m.name),
+        relationship: sanitizeText(m.relationship),
+        note: sanitizeText(m.note),
+      }))
+  } catch {
+    return []
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function normalizeKey(name: string, relationship: string): string {
+  return `${name.trim().toLowerCase()}|${relationship.trim().toLowerCase()}`
+}
+
+// Simple append-with-dedup merge — fine at this proof-of-concept scale
+// (a handful of family members, not a dataset needing real conflict
+// resolution). A repeat mention just fills in a note if the earlier
+// entry didn't have one yet, rather than creating a duplicate person.
+function mergeFamilyMembers(existing: FamilyMember[], incoming: ExtractedFamilyMember[]): FamilyMember[] {
+  const byKey = new Map(existing.map((m) => [normalizeKey(m.name, m.relationship), m]))
+  for (const member of incoming) {
+    const key = normalizeKey(member.name, member.relationship)
+    const current = byKey.get(key)
+    if (current) {
+      if (!current.note && member.note) current.note = member.note
+    } else {
+      byKey.set(key, { ...member, id: crypto.randomUUID(), createdAt: new Date().toISOString() })
+    }
+  }
+  return Array.from(byKey.values())
+}
+
 // Best-effort — a failed illustration never blocks confirming the chapter
 // itself, since the Library can show the text alone if this comes back null.
 async function generateIllustrationBase64(prompt: string): Promise<string | null> {
@@ -171,7 +268,7 @@ export default async function handler(req: any, res: any) {
 
     const { data: chapter, error: fetchError } = await supabase
       .from('chapters')
-      .select('id, title, testimony_text, question_id')
+      .select('id, title, testimony_text, question_id, senior_id, seniors(language)')
       .eq('id', chapterId)
       .maybeSingle()
 
@@ -211,6 +308,34 @@ export default async function handler(req: any, res: any) {
         }
       } else {
         logDiagnostic({ outcome: 'illustration_generation_failed', chapterId })
+      }
+
+      if (sanitizeText(body?.templateId) === 'family-tree') {
+        const language: SeniorProfile['language'] = ['es', 'en'].includes((chapter as any)?.seniors?.language)
+          ? (chapter as any).seniors.language
+          : 'ca'
+        const extracted = await extractFamilyMembers(language, chapter.testimony_text)
+        if (extracted.length > 0) {
+          const familyPath = `${chapter.senior_id}/members.json`
+          const { data: existingFile } = await supabase.storage.from('family-tree').download(familyPath)
+          const existing = existingFile
+            ? (safeJsonParse<{ members: FamilyMember[] }>(await existingFile.text())?.members ?? [])
+            : []
+          const merged = mergeFamilyMembers(existing, extracted)
+          const { error: writeError } = await supabase.storage
+            .from('family-tree')
+            .upload(familyPath, JSON.stringify({ members: merged }), {
+              contentType: 'application/json',
+              upsert: true,
+            })
+          if (writeError) {
+            logDiagnostic({ outcome: 'family_tree_write_failed', message: writeError.message, chapterId })
+          } else {
+            logDiagnostic({ outcome: 'family_tree_updated', chapterId, memberCount: merged.length })
+          }
+        } else {
+          logDiagnostic({ outcome: 'family_tree_extraction_empty', chapterId })
+        }
       }
     }
 
