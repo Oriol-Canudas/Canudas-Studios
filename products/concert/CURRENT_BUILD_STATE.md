@@ -1,6 +1,6 @@
 # Concert prototype — delivery state
 
-Updated:16 October2026. Encore v05 remains published; task005 dialogue and task007 presentation amendments independently verified locally, not yet published.
+Updated:16 October2026. Encore v05 remains published; task005 dialogue, task007 presentation and task008 full-cast intro independently verified locally, not yet published.
 
 Live: https://gamex-concert.vercel.app/?v=encore-v05-20261016
 Vercel: ocanudas-7641/gamex-concert (`prj_pmy012EZyymfl5MvxHQrIRhzYz3R`).
@@ -24,11 +24,23 @@ Play local: http://127.0.0.1:8810/?v=cover-006 . Refresh suffices for the cover 
 
 ## Local story presentation correction — task007
 
-Latest local product candidate `3d75602dbe0bc68626fab19b78bd908d331b5259`, independent QA PASS. Task006 fixed only the cover; user follow-up correctly showed the promotional cover/title sidebar still competing with the intro. It is now removed from opening/hub/brief/review/ending/reveal. These screens use one coherent stage with bounded reading/caption/control widths. Desktop dialogue and AI retain one functional companion portrait; repeated in-stage dialogue portrait removed, Backstage/name/role kept separate. Mobile/cover and all story/state/consent/save/media/backend code remain unchanged.
+Task007 product candidate `3d75602dbe0bc68626fab19b78bd908d331b5259`, independent QA PASS. Task006 fixed only the cover; user follow-up correctly showed the promotional cover/title sidebar still competing with the intro. It is now removed from opening/hub/brief/review/ending/reveal. These screens use one coherent stage with bounded reading/caption/control widths. Desktop dialogue and AI retain one functional companion portrait; repeated in-stage dialogue portrait removed, Backstage/name/role kept separate. Mobile/cover and all story/state/consent/save/media/backend code remain unchanged.
 
 Build and six focused cover/scenes/opening/dialogue/agreement/encore suites independently PASS;19 scene states per viewport, all11 intro beats across970×1067/1440×1000/390×844/390×480. Actual fixture-backed Nora confirmation→performance→reveal and one-character portrait/readability checks pass. Parent replayed and inspected the exact intro screenshot moment, now with no sidebar. Evidence/task: `../../tasks/007-remove-story-marketing-sidebar.md`, `/tmp/concert-scenes-independent-qa/independent-qa.json`, `/tmp/concert-intro-single-scene.{json,png}`.
 
 Refresh local http://127.0.0.1:8810/?v=scenes-007 ; no reset needed. Public production remains as listed above; no paid calls/push/deployment. Controlled Chromium evidence, not physical iOS or real-model validation.
+
+## Local full-cast intro — task008
+
+Candidate `b9175958f4f0d70a76791660fdf550c1a842eb9d`, independently QA PASS on all7 technical criteria. Eleven local approved MP3s give Nora, Lia and Bruno distinct voices plus a narrator for context/booking. Existing sound controls remain opt-in; shared music/voice volume, rapid score duck, offset-preserving pause/notes/restart-overlay/hidden interruption, cancellation on navigation/mute/exit and recoverable missing/corrupt/timeout audio. Captions, original silent pacing, authored facts, knowledge, agreements, consent and saves/drafts are preserved. Runtime playback uses no paid service.
+
+The user approved52 sample credits, liked the four samples, then explicitly approved116 more credits and local integration. All11 completed once; total168 reported Magnific credits, no regeneration. Approved samples0/3/6/8 reused verbatim. Source archive/provenance/hash/level checks: user workspace assets/intro-voices-v1.
+
+Independent62/62 Node tests, production build and7 offline browser suites PASS: intro-voice, opening, interrupted-send, dialogue, agreement-exit, encore, scenes. Additional separate probes completed the entire voiced intro in144.6s with11 naturally ended nonoverlapping sources, and silent intro in144.4s with zero audio requests/contexts. Actual voice RMS, retained0.416s pause offset, score duck near0.12, volume-zero gain below0.001, overlays/simulated visibility, late-load-after-exit cancellation, automatic404 caption fallback and retry recovery PASS. Rendered1440×1000/970×1067/390×844/390×480 and short-mobile failure inspected. Product source unchanged throughout QA; coordinator then recorded docs only.
+
+Parent checked actual diff, inspected short-mobile normal/failure screenshots and independently verified the8810 client bundle plus all11 served asset hashes against approved originals without touching user storage or requesting the API. Task: ../../tasks/008-full-cast-intro-voices.md. Independent report: /tmp/concert-voices-independent-qa/independent-qa.json; durable copied evidence in user workspace reviews/concert-voices-qa-2026-10-16. Parent served-preview-validation.json is in the source archive.
+
+Play local: http://127.0.0.1:8810/?v=voices-008 . Refresh to load the new client. From an existing game, Start again restarts that session; then Enter backstage and turn Sound on. Existing user8810 save was preserved. This static local preview has no live AI backend; regression negotiation was controlled fixtures. Public deployment remains unchanged as recorded above; no push/deployment. Limits: metadata/hash/audio-signal checks are not a full spoken-word listening review, physical iOS autoplay/background behavior is unverified, and no live-model semantics retested.
 
 ## Current product
 
