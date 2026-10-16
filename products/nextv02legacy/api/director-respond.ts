@@ -12,7 +12,12 @@
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5.5'
 const REQUEST_TIMEOUT_MS = 25000
 const MAX_FIELD_CHARS = 4000
-const MAX_HISTORY_TURNS = 40
+// Trimmed from 40 — every turn resends the whole history, so this was
+// the single biggest driver of per-turn token cost in a long session.
+// confirmedContext already carries forward anything substantive from
+// earlier in the conversation, so the raw transcript only needs enough
+// recent turns for natural back-and-forth, not the full session.
+const MAX_HISTORY_TURNS = 12
 
 type TurnRole = 'director' | 'senior'
 
@@ -98,6 +103,8 @@ function buildInstructions(profile: SeniorProfile, pendingOfferedContext: Contex
     '- Contrast: offer a piece of real researched context AS A QUESTION, never a stated fact. At most ONE Contrast moment in a typical session.',
     '- Deepen: move from what happened to what it meant ("you lived it as an opportunity then — do you still see it that way?"). Rare, open, never leading.',
     '- Connect: link this story to other things she has told you, or to people/relatives.',
+    '',
+    'WEB SEARCH IS EXPENSIVE AND RARE — default to NOT calling it. Most turns (Evoke, Deepen, Connect) must use no search at all. Only call web_search when this turn is genuinely doing Research or Contrast, which should happen at most once or twice in a typical session, never speculatively "just in case."',
     '',
     'CONVERSATION-QUALITY RULES:',
     '1. Sets the stage with one true, specific, evocative detail before any question — never a cold question.',
@@ -199,6 +206,9 @@ export default async function handler(req: any, res: any) {
     }
 
     const data: any = await response.json()
+    const searchCallCount = (data?.output ?? []).filter((item: any) =>
+      String(item?.type ?? '').includes('search'),
+    ).length
     const rawText = extractMessageText(data?.output ?? [])
     const jsonMatch = rawText.match(/\{[\s\S]*\}/)
     const parsed = jsonMatch ? safeJsonParse<DirectorTurnResult>(jsonMatch[0]) : null
@@ -228,6 +238,7 @@ export default async function handler(req: any, res: any) {
       latencyMs: Date.now() - startedAt,
       usage: data?.usage,
       activeFunction: result.activeFunction,
+      searchCallCount,
     })
 
     return res.status(200).json(result)
