@@ -15,7 +15,7 @@ const {chromium}=require(process.env.QA_PLAYWRIGHT||'playwright'),assert=require
   if(size.width===390&&size.height===844){assert.equal(geometry.cover.x,1);assert.equal(geometry.cover.width,388);assert.equal(geometry.cover.height,784);}
   await page.screenshot({path:`qa/cover-${size.width}x${size.height}.png`});
   const enter=page.getByRole('button',{name:'Enter backstage',exact:true});await enter.scrollIntoViewIfNeeded();const b=await enter.boundingBox();assert(b.y>=0&&b.y+b.height<=size.height+1);await page.screenshot({path:`qa/cover-${size.width}x${size.height}-cta.png`});await enter.click();await page.locator('.opening').waitFor();
-  if(size.width>900){assert(await page.locator('.desktop-art').isVisible());const columns=await page.locator('.shell').evaluate(el=>getComputedStyle(el).gridTemplateColumns);assert.equal(columns.split(' ').length,2);}
+  if(size.width>900){assert(!await page.locator('.desktop-art').isVisible());const columns=await page.locator('.shell').evaluate(el=>getComputedStyle(el).gridTemplateColumns);assert.equal(columns.split(' ').length,1);}
   await page.getByRole('button',{name:'Go backstage',exact:true}).click();await page.locator('.contacts .contact').filter({hasText:'Nora, wait.'}).click();assert(await page.getByRole('region',{name:'Nora says'}).isVisible());
   if(size.width>900)assert(await page.locator('.desktop-art').isVisible());
   assert.deepEqual(posts,[]);assert.deepEqual(errors,[]);results.push({size,pass:true,geometry,journey:'Enter→opening→hub→Nora',posts:posts.length,errors});await page.close();

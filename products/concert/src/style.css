@@ -54,3 +54,18 @@
  .screen-cover .cover-copy{max-width:520px;padding:32px 48px 38px}
  .screen-cover .cover-copy h1{font-size:clamp(54px,5vw,68px)}
 }
+
+/* Story scenes have one stage; companion portraits belong to conversations. */
+@media(min-width:901px){
+ :is(.screen-opening,.screen-hub,.screen-brief,.screen-review,.screen-ending,.screen-reveal){grid-template-columns:minmax(0,1fr)}
+ :is(.screen-opening,.screen-hub,.screen-brief,.screen-review,.screen-ending,.screen-reveal)>.desktop-art{display:none}
+ :is(.screen-opening,.screen-ending){max-width:1100px}
+ :is(.screen-hub,.screen-brief,.screen-review,.screen-reveal){max-width:760px}
+ :is(.screen-opening,.screen-ending) :is(.opening,.ending){padding:40px}
+ :is(.screen-opening,.screen-ending) :is(.opening-caption,.ending-copy,.scene-controls){width:100%;max-width:680px;margin-inline:auto}
+}
+
+@media(min-width:901px){
+ .screen-dialogue .portrait-scene .portrait-frame{display:none}
+ .screen-dialogue .portrait-scene .back-over{position:static;margin:12px 25px 0}
+}
