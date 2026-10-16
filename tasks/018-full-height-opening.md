@@ -26,7 +26,11 @@ Enlarge opening speaker artwork substantially: target at least104×120px on norm
 
 ## BUILD / QA / release
 
-Pending.
+Candidate `26a78cfd1dfe718a9b54e207d253c50316d038f5`; bounded BUILD by opening_fullheight_build, independent non-editing QA by goal_prompt_qa. All six criteria PASS. Independent baseline reproduced image y104/h740 at390×844 versus candidate y0/h844; portraits70×82 become112×132. All eleven beats at six specified sizes, independent390×660/668→844/rotation, readable captions, accessible controls and protected saved state passed. Lia/Nora authored text contrast11.89:1; choices retain their plum fill. Hub, goal-free briefing and portrait AI geometry/styles match baseline. Build and opening-layout, opening, scenes, intro-voice and hierarchy suites passed; coordinator inspected diff and mobile renderings.
+
+Durable independent evidence: `../../perspectives/concert-opening-release-20261016/independent-qa/`, including verdict.md, results.json, own probe, screenshots and regression results. Controlled Chromium and real local audio assets; zero paid calls. Physical iPhone/Safari remains unverified. Publication pending coordinator checks.
+
+Subsequent user request for the full-portrait translucent treatment in authored dialogue is DRAFT ONLY. It is shown outside the repository in `concert-authored-translucent.html`; this candidate includes only the previously authorized tint. Task017 Lia/Nora/ending redesign likewise remains proposed.
 
 ## User amendment — distinguish authored speech from response choices
 
