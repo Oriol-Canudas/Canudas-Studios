@@ -1,94 +1,56 @@
 # PERSPECTIVES — The Song Was for You
 
-Playable concert proof of concept: [gamex-concert.vercel.app](https://gamex-concert.vercel.app).
+Concert web prototype: [gamex-concert.vercel.app](https://gamex-concert.vercel.app). This checkout's **encore v05 candidate is not a claim of publication**; see root `CURRENT_BUILD_STATE.md` for the verified deployed revision.
 
-You produce a concert whose closing slot can hold one complete song. Lia wants her solo premiere and does not want to erase Nora; Nora will not perform a reconciliation she has not agreed to. Reactive authored preparation leads to a bounded conversation with Lia, confirmation with Nora, your production cue, and a visible performance and reveal.
+The main set has finished. Lia fronts the band; Nora co-writes and sings many of its songs, a core creative member. Backstage, Nora sees a booking confirmation excluding her from the next tour and refuses their customary shared encore. Reactive authored discovery and explicit relays prepare a bounded negotiation with Lia. Nora answers the actual offer, and the producer gives a separate performance cue.
 
-This is a separate product directory and Vercel project. It does not replace The Last Message, The Last Ascent or Flight 702.
+Four outcomes use one song: shared encore with public next-tour acknowledgment; private acknowledgment before singing, agreed stage space and jointly approved statement tomorrow; band and Lia without Nora; no encore. The future tour cannot be rewritten, romance is not payment for performance, and neither notes nor mood grant knowledge or consent. This isolated product does not replace The Last Message, The Last Ascent or Flight 702.
 
 ## Run
 
-Node 24; from this directory:
+Node24, from this directory:
 
 ```sh
 npm ci
 npm run dev -- --port 8785
 npm test
 npm run build
-```
-
-For local live AI, supply `OPENAI_API_KEY` in the server process environment. Vite's development middleware runs the same API handler. No secret belongs in a `VITE_` variable, the client bundle, or version control. Without a key, authored play remains accessible and the AI entry explicitly reports that the connection is unavailable.
-
-Production is linked to Vercel project `gamex-concert` in team `ocanudas-7641`. The existing Production secret was entered as `PerspectivesConcert`; the server accepts that name as an alias for `OPENAI_API_KEY` without revealing or recreating its value. `OPENAI_MODEL` is optional; current default is `gpt-4.1`.
-
-```sh
-npx vercel link --project gamex-concert --scope ocanudas-7641
-npx vercel deploy --prod --scope ocanudas-7641
-```
-
-The current deployment uses the CLI. Git auto-deployment is not configured for this project. Do not repoint another prototype's project.
-
-## Code and state
-
-- `src/story.mjs`: fixed story, authored choices, discoveries, outcome packages.
-- `src/engine.mjs`: preparation replay, private/communicated information separation, proposal versions and consent rules.
-- `src/main.jsx` and `src/style.css`: continuous mobile/desktop experience, local save, notes, AI composer, confirmation and endings.
-- `server/lia.mjs`: character context and OpenAI Responses generation with strict structured output. A separate model check reviews a proposed acceptance for semantic grounding and clarifies incomplete terms instead of silently completing the player's offer.
-- `api/negotiate.mjs`: server-only credentials, signed session envelope, bounded calls, metadata diagnostics and warm-instance deduplication.
-- `tests/engine.test.mjs`: deterministic state invariants.
-- `qa/`: browser and live-model evaluation scripts; generated screenshots and session records stay local and are gitignored.
-
-Past facts, private discoveries, relayed information, proposals, accepted versions and executed outcomes remain distinct. Reading a note does not inform Lia. The model controls Lia's dialogue and proposes an interpretation; it cannot edit the authored past or consent for Nora. Nora confirms the current package in an authored scene. Promising tour reconsideration, withdrawing that promise or admitting a privacy breach changes the confirmation path.
-
-There are three agreement packages: solo, televised duet with public separation, and televised duet with separation acknowledged privately now and a joint statement tomorrow. An optional off-air encore requires both artists. No agreement is also a playable ending. This is not an unrestricted story generator.
-
-## Prototype boundaries
-
-- Six successful player turns in the live conversation. Invalid/failed responses preserve the draft and turn count. Up to one interpretation repair; accepted offers receive a separate grounding check. Overall server generation deadline is 48 seconds.
-- Browser-local save and explicit JSON export; no database, accounts or cross-device sync. The AI envelope expires after two hours; this does not erase the local authored save or an existing agreement.
-- Every model request uses `store:false`. Provider usage, request IDs and latency are recorded; raw dialogue is not written to server logs. Dialogue stays in the local browser and signed request context. Clearing the local save removes browser history for this game.
-- Six turns is a gameplay limit, not a global spending cap. The 90-request/hour/IP guard and deduplication are best-effort per warm server instance. They do not guarantee global quota enforcement or protect a broadly advertised production launch.
-- Grounding review is itself probabilistic. Passing the recorded examples is evidence of these examples, not proof of universal factual consistency or good persuasion quality.
-- Eleven static images, restrained transitions and generated distant audience ambience with explicit mute and volume controls. No recorded character voices or full concert song.
-- Responsive browser checks include 360–430 px widths and a 390×480 keyboard-sized viewport. Actual iPhone Safari/keyboard behavior and enjoyment with fresh human players remain acceptance work.
-
-## English and immersion update
-
-The complete case is in English: opening, authored choices and replies, notes, agreements, endings, interface and live Lia dialogue. A new local save key preserves the older Catalan session separately. The opening explicitly distinguishes two different songs: Lia’s new solo song and the duet Lia and Nora wrote together. This terminology continues through authored conversations, notes, agreements, endings and AI instructions. The opening allows at least 12 seconds per beat, including reading time for action cues; tap the scene to advance one beat, or use pause, previous, next and skip. Selecting text or using controls does not advance the scene. Notes, restart confirmation and hidden tabs pause the opening.
-
-Sound is off by default pending listening review; explicitly enabling it stores the preference for a future Enter backstage gesture, and the control reflects a successfully resumed audio context. Portraits occupy a separate region above the dialogue. Lia has guarded, receptive, hurt and firm expressions, driven by the actual interpreted exchange; threat and private-disclosure events enforce firm and hurt respectively. Expressions do not grant consent. Nora is blonde in her portraits, cover and duet ending.
-
-## Browser evaluation
-
-Playwright is a locked development dependency. With Node 24, from this directory:
-
-```sh
-npm ci
-npx playwright install chromium  # one-time browser download; or use QA_CHROME
-npm test
-npm run qa:local
-# Run just the interrupted-send browser cases:
-npm run qa:interrupted
-# Existing installed Chrome can avoid the browser download (macOS example):
 QA_CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run qa:local
 ```
 
-`qa:local` builds and starts static Vite preview on `127.0.0.1:8796`, then runs the existing authored-route, resilience and agreement-exit scripts plus interrupted-send recovery and opening gesture/clarity cases, sequentially. Preview has no API handler; test requests are either unavailable locally or intercepted by controlled fixtures, so this command cannot make paid model calls. It refuses an occupied port and stops preview afterward. It does not run the `live-*` or `api-cases` scripts. JSON evidence and screenshots are written under ignored `qa/` paths. `QA_PLAYWRIGHT` can still point to an existing module installation. The individual scripts below require their own local server and are separate from the safe runner; live scripts explicitly spend API tokens.
+Playwright1.62.1 is pinned; use installed Chrome as above or install Playwright Chromium once. `npm run qa:interrupted` runs only recovery; `npm run qa:local encore` runs the new full journeys.
 
-The recovery test holds a response before reload, checks both newer-draft and empty-draft cases across two reloads, and migrates an existing pending-message save. Retry keeps the original message, signed token and request ID; no reload automatically resends. A successful retry applies one server-validated fixture turn, keeps one player bubble and one reply, and preserves the newer draft. Recovery cannot determine whether the server processed the original send. Server deduplication remains best-effort, and an expired token still requires finishing with the saved agreement or starting again. Browser storage must be writable for a new message to be dispatched. Existing interrupted saves with a request ID and token are recoverable; a missing original identifier is never invented.
+For live AI, supply `OPENAI_API_KEY` only in the server environment. Existing Production alias `PerspectivesConcert` remains supported. No key belongs in `VITE_`, client code or Git. `OPENAI_MODEL` is optional, default `gpt-4.1`. Vite development middleware runs the same server handler. Without a key, authored preparation remains accessible and AI entry explicitly reports unavailable; no generated reply is faked.
 
+Vercel project is `gamex-concert`, team `ocanudas-7641`, deployed separately through CLI; Git auto-deployment is not configured. Publication is a coordinator action after independent QA, not part of worker testing. Never repoint another prototype.
 
-```sh
-node qa/browser.cjs        # local authored route and unavailable API
-node qa/resilience.cjs     # mocked API; failure/retry/draft/late-response behavior
-node qa/live-journeys.cjs  # published public-duet and solo paths; spends API tokens
-node qa/immersion.cjs      # local audio signal, pacing, portraits and responsive composer
-node qa/live-emotions.cjs  # published threat/disclosure reactions; spends API tokens
-node qa/api-cases.mjs      # live model probes; spends API tokens
-```
+## Code and state
 
-The hypothesis under test is whether preparation makes the player want to intervene, and whether their own words change an agreement in a way they understand and value. A deployed app and passing technical tests do not answer that human question.
+- `src/story.mjs`: fixed past, reactive dialogue graph, discoveries and encore packages.
+- `src/engine.mjs`: event replay, current speech versus history, delivered knowledge, proposal versions, term grounding and consent gates.
+- `src/main.jsx`, `src/style.css`: mobile/desktop flow, attributed speech and gestures, private notes, AI composer, review, cue and causal endings.
+- `src/send-recovery.mjs`: original request recovery without automatic resend.
+- `server/lia.mjs`: strict structured model output plus independent semantic acceptance audit. Latest negations invalidate stale terms; explicit stage-space additions revise the package version.
+- `api/negotiate.mjs`: server secrets, signed story-version envelope, six-turn limit, request-identity deduplication and metadata diagnostics.
+- `tests/`: deterministic logic, semantic-audit fixtures, story-token isolation and recovery invariants.
+- `qa/`: controlled browser suites; generated evidence is ignored by Git.
 
-Audio repair: the original noise-and-sine synthesis was removed after user feedback. A 24-second generated backstage crowd recording now loops with overlapping fades, runs at lower gain during dialogue, and mutes in hidden tabs. No electronic startup tones or ending motifs remain. Provenance and 120-credit generation cost are in `AUDIO_ASSETS.json`. Bruno is explicitly the stage manager who coordinates crew and executes the producer’s cue. Context copy is larger, and opening speaker portraits are 70–76 pixels wide.
+Player discovery, permission and actual delivery are separate. A delivered professional explanation triggers a specific Lia response; private love stays out of the model's context unless explicitly stated in the conversation. A fabricated claim does not retroactively create a real confidence. Shared performance requires both artists' acceptance of the same current package. A real confidentiality breach closes the shared encore; Nora hears an explicit admission rather than learning it by magic. Correcting a tour promise does not force public framing.
 
-Current soundtrack: the 60-second cinematic score is now integrated, with a separate eight-second larger audience call. The rejected continuous crowd bed is no longer used. Audience cues occur at the first backstage hub, a later return after preparation, and the final warning in the AI conversation; cue IDs prevent replay on every navigation and a 20-second gap prevents stacking. Music ducks under the audience and during dialogue. Sound remains opt-in: use Sound on. Browser playback checks: `qa/music-crowd.cjs`.
+A private offer missing physical-space terms goes back to the same signed AI conversation with the actual condition and remaining turns. No new six-turn session is granted. At the limit or after refusal, a distinct review scene can ask Lia explicitly to perform with the band without Nora; it is a new offer and yes, not an invented earlier AI acceptance. House lights/no encore is always available.
+
+## Saves, requests and limits
+
+Encore uses `perspectives-concert-encore-v05` and build `concert-encore-v05`. Old two-song sessions remain untouched under `perspectives-concert-v2-en`; a cover notice offers a sanitized JSON export. They are not silently migrated into a different authored past. Downloaded exports omit top-level and nested request tokens. Browser saves do not sync across devices.
+
+A pending request is durably recorded before dispatch. Reload shows delivery unconfirmed; retry reuses the original message, token and request ID and preserves a newer draft. Reload never automatically resends. Restart ignores a late response. Old-story start requests and signed tokens are rejected before replay/provider invocation. AI envelopes expire after two hours; local saves and existing agreements remain. Server deduplication and rate limits are best-effort per warm instance, not exactly-once inference or a global spend cap.
+
+Six successful substantive turns; failed/invalid generations do not spend one. Up to one interpretation repair, separate grounding audit for acceptance or revision of an earlier acceptance, overall48-second server deadline. Requests use `store:false`; server logs contain usage/request metadata, not raw dialogue. Model interpretation/audit remains probabilistic.
+
+## Verification and media
+
+`qa:local` builds then starts **static** preview on127.0.0.1:8796 and runs seven sequential suites: authored browser route, resilience, interrupted-send, agreement-exit, opening, hierarchy and encore. It strips provider environment variables, refuses a busy port and stops preview afterward. Every API interaction is unavailable or a controlled browser fixture; the runner cannot invoke paid generation. New encore cases cover public professional, private professional relay, Lia-first without Nora, tour-promise correction, love breach/refusal, private-condition revision, six-turn no agreement and legacy isolation/export. Existing `live-*` and `api-cases` scripts are historical two-song probes, are **not v05 acceptance tests**, and must be updated before any separately authorized paid semantic evaluation.
+
+Worker checks cover36 Node tests, production build and controlled Chromium journeys including390×844,390×480 and desktop. Independent QA is a separate gate. None of these establish real-model persuasion, physical iOS keyboard/touch behavior or fresh-player enjoyment.
+
+Existing art and soundtrack are reused. Sound is opt-in: a60-second cinematic score with separate8-second stronger audience calls; dialogue ducking, cue spacing and hidden-tab muting remain. Portraits keep their own region; Lia's guarded/receptive/hurt/firm images reflect interpreted interaction, never consent. No new media or recorded singing was created for v05.

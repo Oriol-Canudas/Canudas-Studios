@@ -36,3 +36,8 @@
 .chat-message .cue{font-size:13px;font-style:italic;line-height:1.6;color:#bfb0c5;margin:7px 0 12px;padding-bottom:10px;border-bottom:1px solid #ffffff12}
 .private-goal{background:#edc58d07;border:1px dashed #6e5868;border-radius:7px;padding:12px 14px;font-style:normal;margin:0}.private-goal .conversation-label{color:#bdafc2}.private-goal p{font-size:13px;line-height:1.6;color:#d5c5d9;margin:0}
 @media(max-width:900px){.character-speech{padding:15px 16px 17px}.character-speech .spoken{font-size:18px}.player-intervention .your-line{font-size:14px}.chat-message .message-speech{font-size:14px}}
+
+/* Booking is a received notification, not a thought or spoken line. */
+.booking-message{font-family:var(--sans, sans-serif);font-size:clamp(1.05rem,3.6vw,1.45rem);padding:1.1rem;border:1px solid #b99a63;border-radius:12px;background:#201c24;line-height:1.55}
+.legacy-notice{background:#201b25;border:1px solid #766076;padding:14px;margin:12px 0;border-radius:8px;font-size:14px;line-height:1.5}.legacy-notice p{font-size:14px!important}.legacy-notice button{display:block;text-align:left;color:#ecc895;margin-top:12px;text-decoration:underline}
+.delivery-receipt{padding:14px;background:#24212a;border-left:2px solid #d9bd86;margin:16px 0;font-size:15px;line-height:1.5}.delivery-receipt small{display:block;color:#d9bd86;margin-bottom:8px}

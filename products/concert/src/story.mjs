@@ -1,81 +1,105 @@
 export const CAST = {
- nora:{name:'Nora',role:'Co-writer · the other half of their duet',image:'nora-guarded',listening:'nora-listening'},
- lia:{name:'Lia',role:'Singer · one step away from going solo',image:'lia-guarded',listening:'lia-receptive'},
- bruno:{name:'Bruno',role:'Stage manager · cues the show on your call',image:'bruno',listening:'bruno'}
+ nora:{name:'Nora',role:'Songwriter & co-vocalist · a core member of the band',image:'nora-guarded',listening:'nora-listening'},
+ lia:{name:'Lia',role:'Lead singer & frontwoman',image:'lia-guarded',listening:'lia-receptive'},
+ bruno:{name:'Bruno',role:'Stage manager · waiting for your cue',image:'bruno',listening:'bruno'}
 };
-export const MOODS = {
- guarded:{image:'lia-guarded',label:'Holding back'},
- receptive:{image:'lia-receptive',label:'Considering your offer'},
- hurt:{image:'lia-hurt',label:'That hit a nerve'},
- firm:{image:'lia-firm',label:'Drawing a line'}
-};
-export const OPENING = [
- {who:'',text:'Five minutes before the broadcast ends.',cue:'Applause carries through the curtain. Nora leaves her microphone on a flight case.'},
- {who:'bruno',text:'We have time for one of two different songs: Lia’s brand-new solo song, or the song you two wrote together. We can’t fit both.'},
- {who:'nora',text:'Then she premieres her new solo song. I’m not going on.'},
- {who:'lia',text:'Don’t do this now. We were going to talk afterwards.'},
- {who:'nora',text:'After what? Our duet, or the solo tour you’ve already planned?',cue:'Lia looks at the folded running sheet in Nora’s hand.'},
- {who:'bruno',text:'You’re the producer. Settle who’s going on; I’ll cue the stage crew. I can’t make them say yes.'}
+export const MOODS={guarded:{image:'lia-guarded',label:'Holding back'},receptive:{image:'lia-receptive',label:'Considering your offer'},hurt:{image:'lia-hurt',label:'That hit a nerve'},firm:{image:'lia-firm',label:'Drawing a line'}};
+export const OPENING=[
+ {who:'',text:'The main set is over. Lia and Nora step offstage together.',cue:'Applause builds into stamping feet. The crowd wants the encore.'},
+ {who:'',text:'Lia fronts the band. Nora co-wrote—and sings—many of the songs the crowd knows by heart.',cue:'They always return together for the encore: their most famous shared song.'},
+ {who:'',text:'BOOKING: “Dates locked. The new tour goes ahead without Nora, as agreed. Ready to announce.”',cue:'Lia puts her phone on a flight case. The screen lights up. Nora reads it.'},
+ {who:'nora',text:'Without Nora. As agreed. You said we’d talk about the next tour after tonight.'},
+ {who:'lia',text:'We were going to.'},
+ {who:'nora',text:'About what? You’ve already told them I’m not coming.',cue:'She puts her microphone down. The chant gets louder.'},
+ {who:'bruno',text:'They’re calling for the encore. Are you both ready?'},
+ {who:'nora',text:'You can take the band on without me. But don’t ask me to sing tonight as if that’s a decision we made together. I’m not going back out.'},
+ {who:'lia',text:'It’s our song. We always do it together.'},
+ {who:'nora',text:'You should have thought about that before planning the next tour without me.',cue:'Nora moves towards the dressing room. Lia stays by the curtain.'},
+ {who:'bruno',text:'Your call on the encore. I can hold the lights. I need to know who’s going back out.'}
 ];
-// Reading time includes action cues; automatic scenes never require rapid reading.
 export function openingDuration(beat){const words=[beat.text,beat.cue||''].join(' ').trim().split(/\s+/).length;return Math.max(12000,words*400+4000);}
-export const NODES = {
- N0:{who:'nora',line:'If I sing with her, tomorrow everyone will say nothing has changed. It has.',choices:[
- ['meaning','What don’t you want the audience to assume?','That I’m staying. I don’t want one last song to sound like a promise of all the ones after it.','N1',['boundary']],
- ['sheet','What did you see on the running sheet?','“Lia. Solo tour.” I was still waiting for us to decide together. She said, “After the concert, we’ll decide what to do with us.”','N2',['phrase']],
- ['goodbye','If it were a real goodbye, would you want to sing?','Maybe. But a goodbye isn’t singing, then going back to waiting in the dressing room.','N1',['boundary']]]},
- N1:{who:'nora',line:'I can sing one last song. I can’t keep pretending we haven’t decided anything.',choices:[
- ['terms','What conditions can I take back to her?','She’s losing a partner, not an angry substitute. The song we wrote together is mine too. And she cannot announce that we’re staying together. You can tell her that.','N3',['offer']],
- ['private','Do you want to say it in front of everyone?','If she acknowledges it privately and doesn’t sell a reunion, maybe it doesn’t have to be tonight. But tomorrow, we review what we say together.','N3',['private']],
- ['promise','I promise she’ll reconsider doing the tour together.','If she really will reconsider, I’ll hear the offer. But don’t get me onstage just to tell me it was already decided.','N3',['promise']]]},
- N2:{who:'nora',line:'I heard a door being left open.',choices:[
- ['residency','What did you put on hold for that conversation?','A residency. I let the deadline pass. She knew I’d been offered it. I didn’t tell her I turned it down.','N2b',['residency']],
- ['departure','What do you need to decide tonight, even if you don’t sing?','That I’m leaving the project. That this time, “afterwards” isn’t another way of asking me to wait.','N1',['boundary']],
- ['respect','I can stand up for that without bringing in anything personal.','Yes. You don’t need to tell my life story to respect what I’m asking for.','N1',[]]]},
- N2b:{who:'nora',line:'And I wasn’t only waiting for a tour.',choices:[
- ['kiss','If you want to tell me, I’m listening.','We kissed. Two years ago. For me, it didn’t end there. For her… I don’t know. This stays here, please.','N1',['kiss']],
- ['enough','You don’t have to tell me more for me to take you seriously.','Thank you. Start by not promising me another wait.','N1',[]]]},
- N3:{who:'nora',line:'I want to know what’s really being offered before I pick up that microphone again.',choices:[
- ['relay','I’ll share only your professional conditions.','All right. One last song. Not a yes to carrying on.','hub',['relay'],'offer'],
- ['hear','First, I want to hear what she’s offering.','Okay. But don’t tell her I’ve agreed.','hub',[]],
- ['repair','I promised too much about the tour. I can’t guarantee it.','Then take it back. If I sing, I want it understood as a farewell. I won’t leave here with two versions again.','hub',['repair'],'promise']]},
- L0:{who:'lia',line:'I’ve spent months getting my new solo song ready. But if I go on alone now, it looks like I’ve erased her. If I don’t go on, it looks like I can’t exist without her.',choices:[
- ['chronology','Had you already decided on the tour when you spoke?','I’d authorized the preparations. Before that conversation, yes. I wanted to tell her after the concert. I said “us” because I didn’t know how to say “me.”','L1',['date','phrase','acknowledgement']],
- ['cost','What do you lose if the new solo song doesn’t premiere tonight?','This broadcast. The band, the press, the premiere, all together. The song won’t disappear tomorrow. But this moment will.','L1',['cost']],
- ['keep','What do you want to keep with her?','The way she looks at me before we start. She knows when I won’t reach a note. But I can’t offer to keep everything the same.','L1',['dependence']]]},
- L1:{who:'lia',line:'I don’t know how to let her go without making it look like I don’t care.',choices:[
- ['listen','I’ll listen to what she would be willing to do.','Do that. But don’t promise her a tour I’m not offering.','hub',[]],
- ['relay_lia','Nora is offering one last song, without staying together.','One last song? I thought she’d only sing if I stopped the tour. Okay. Then we need to talk about what we’d say.','hub',['relay'],'offer'],
- ['plan','I want to work out a plan with you.','Come here. Tell me what you’re proposing, knowing what we’d be giving up.','brief',[]]]},
- B0:{who:'bruno',line:'The song, who sings it, and what we say beforehand. Give me that and I can work with it.',choices:[
- ['date','When was the tour authorized?','Three days ago. Look at the timestamp on this preparation order. I wasn’t in the conversation they had afterwards.','B1',['date']],
- ['encore','Could they sing off air?','The venue will let us do one short song afterwards. People here would see it. People at home wouldn’t. And I need both of them to agree.','B1',['encore']],
- ['ready','Keep both entrances ready.','Ready, yes. Only one is going on air.','hub',[]]]},
- B1:{who:'bruno',line:'I’m keeping both entrances ready. You need an agreement.',choices:[
- ['contrast','I want to ask Lia about the timing of that order.','Talk to her. The order doesn’t tell you the whole conversation.','C1',[],'contradiction'],
- ['done','I have enough to propose an ending.','Once it’s agreed, give me the cue.','hub',[]]]},
- C1:{who:'lia',line:'That it was still open. I know. I didn’t tell her something I could have told her. But I can’t offer her a life I don’t want now.',choices:[
- ['own','You can own that in front of her.','Yes. Without promising the opposite tomorrow.','hub',['acknowledgement']],
- ['tonight','Right now, we need to decide what you can offer tonight.','Let’s talk.','brief',['acknowledgement']]]},
- C2:{who:'nora',line:'I need to hear her say it. But that is different from asking me not to ruin her concert.',choices:[
- ['include','I’ll make that part of my proposal.','I want a clear ending. Not something else that depends on tomorrow.','N1',['ackRelayed']],
- ['norescue','I won’t ask you to go on just to save her night.','I might want to sing for myself too. Don’t take that possibility away from me.','N1',['ackRelayed']]]}
+// [id, player words, character response, next node, discoveries/events, availability gate]
+export const NODES={
+ N0:{who:'nora',line:'I’ve written so many of those songs with her. I’ve sung them beside her every night. And now I’m reading that I’m not on the next tour. She still expects me to go back out and sing the one that means the most to us.',choices:[
+ ['meaning','What would singing it tell the audience?','That we’re still choosing this together. They don’t see the message on her phone. They see us.','N1',['boundary']],
+ ['sheet','What did she tell you before tonight?','Two days ago: “After the concert, we’ll talk about you coming on the next tour.” I thought she meant it was still possible.','N2',['phrase']],
+ ['goodbye','Are you refusing the encore, or refusing to keep working with her?','I won’t keep finding out where I stand from her phone. I haven’t decided whether I want to give up this song tonight. It’s mine too.','N1',['boundary']]]},
+ N1:{who:'nora',line:'I might want to sing it. I won’t sing a promise she doesn’t mean.',choices:[
+ ['terms','What would make it an encore you could mean?','She tells me I’m not on the next tour, herself. She says we wrote this together. And she doesn’t make the encore sound like a promise that I’ll be back.','N3',['offer']],
+ ['private','Would you need the audience to know tonight?','Not necessarily. She tells me before we go on. No taking my hand for the crowd. Tomorrow we agree what to tell people. You can offer her that. I’m not saying yes yet.','N3',['private']],
+ ['promise','I can get her to take you on the tour.','Has she said that? Because if you’re asking me to go on for that reason, I need it to be real.','N3',['promise']]]},
+ N2:{who:'nora',line:'This didn’t start with the message. We haven’t been able to say anything straight to each other for weeks.',choices:[
+ ['changed','What changed between you?','Eva started coming to the shows. Lia was happy. I stopped staying after rehearsals. It was easier to leave than keep watching them.','N2a',['eva']],
+ ['interpretation','Lia may have thought you didn’t want the project anymore.','I wanted to keep singing with her. I don’t want to keep working like this. I was angry with her, and I let it come out every time we played.','N2b',['professional']],
+ ['respect','We can stay with what you need tonight.','Then don’t ask me to look at her the way I always have, and call it business as usual.','N1',[]]]},
+ N2a:{who:'nora',line:'It wasn’t only the singing I wanted to keep. I just never found a way to tell her that.',choices:[
+ ['love','What couldn’t you tell her?','That I love her. Not just the music. She hasn’t promised me that. I know. Please don’t take this to her.','N2b',['love','professional'],null,'She looks towards the door, then back.'],
+ ['enough','You don’t have to tell me for me to take you seriously.','Then take this seriously: I still cared about the music. I just didn’t know how to be beside her anymore.','N2b',['professional']]]},
+ N2b:{who:'nora',line:'I kept finding something wrong with every rehearsal. Her timing. My entrances. Things I’d never cared about before. I made it hard to be in the room with me.',choices:[
+ ['permission','Can I tell her you still believed in the music?','Yes. That, and that I know I hurt her at rehearsals. You can tell her those things. The rest stays here.','N3',['permission','professional']],
+ ['accountability','You can own that without accepting how she handled the tour.','I can. I was unfair in the room. She still let me believe the decision was open. Both happened.','N1',['professional']],
+ ['tonight_nora','For tonight, let’s work out what you can honestly agree to.','One last song might be possible. A future she doesn’t want isn’t.','N1',[]]]},
+ N3:{who:'nora',line:'Bring me what she’s actually willing to do. Don’t come back with what you hope she means.',choices:[
+ ['repair','I promised you a place on the tour. She hasn’t agreed. I take that back.','Then don’t ask me to trust that promise again. Bring me an offer I can hear from her.','hub',['repair'],'promise'],
+ ['relay_context','I’ll tell her you still cared about the music, and let you explain the rest.','Thank you. Let that be all you tell her.','hub',['deliver_context'],'permission'],
+ ['relay_private','I’ll take her your offer: an ending agreed privately, space onstage, and a joint statement tomorrow.','Before we sing. Not a promise to explain it afterwards.','hub',['deliver_private'],'private'],
+ ['relay','I’ll take her your conditions for tonight’s encore.','A possible encore. Not my agreement yet.','hub',['deliver_offer'],'offer'],
+ ['hear','I’ll hear her out before I make any promises.','Good. I’ll be here.','hub',[]]]},
+ L0:{who:'lia',line:'We just played so many of the songs we wrote together. They want us back for the one everyone sings. She saw the message, put down her mic, and now I don’t know how to get through it without her.',choices:[
+ ['why','Why did you decide to take the band on tour without Nora?','Every song we tried to work on turned into a fight. She’d leave before we’d finished. I thought she’d stopped wanting to make music with me. I wanted to keep going, so I started planning a way to do that without her.','L2',['lia_interpretation']],
+ ['chronology','Had you already decided when you said you’d talk after the show?','I’d told Bruno to reserve the dates without her. Three days ago. I hadn’t told Nora. Saying we’d talk about her coming bought me time. It wasn’t fair to her.','L1',['date','phrase','acknowledgement']],
+ ['cost','What would change if you did the encore without her?','I can sing the melody. The band can play it. But she wrote the answering line, and it’s her voice everyone waits for before the last chorus. Getting through the song isn’t the same as it sounding right.','L1',['cost']]]},
+ L2:{who:'lia',line:'I couldn’t tell whether she was angry with me or finished working with me. I stopped asking. That was easier.',choices:[
+ ['asked','What did you actually ask her?','Whether she still wanted to do this. She said, “Do what you want.” I heard permission. Maybe I wanted to.','L1',['reported_exchange']],
+ ['eva_lia','What else changed between you?','I started seeing Eva. I was happy. Nora got further away. I thought she disliked Eva, or the time I spent with her. I didn’t ask the question underneath that.','L1',['eva']],
+ ['hiding','Being hurt by her doesn’t make that message a conversation.','No. It doesn’t. I decided what I needed, then let her believe I hadn’t.','L1',['acknowledgement']]]},
+ L1:{who:'lia',line:'I don’t want to promise another tour together just to get through the last chorus.',choices:[
+ ['goodbye_lia','If she sings, can you accept that it may be goodbye?','I can hear the word. Saying it in front of everyone is different. Once I say it out there, it’s everyone’s business. I haven’t even managed to say it to her.','L3',['public_cost']],
+ ['without','You could do the encore with the band, without Nora, and still acknowledge her.','Yes. But not with some excuse about where she is. If she’s not there, that’s something I’ll have to stand in.','L3',['solo_feasible']],
+ ['plan','I want to work out an offer with you.','Then tell me what you’re asking me to give up. Not just how to get her through the door.','brief',[]]]},
+ L3:{who:'lia',line:'I can keep the band going without her. That doesn’t mean I can replace what she brings to it. I don’t know how to stand beside her tonight and admit what we’re losing.',choices:[
+ ['listen','I’ll ask what she would want from that last song.','Ask her. Don’t tell her I’ve agreed to put her on the next tour.','hub',[]],
+ ['relay_lia','She would consider the encore, with credit and no promise about another tour.','The encore. Without asking me to put her back on the next tour. We need to agree what we say before it.','hub',['deliver_offer'],'offer'],
+ ['concrete','Let’s make the proposal concrete.','All right. What do you want me to say to her?','brief',[]]]},
+ LC:{who:'lia',line:'She said she still wanted the music? Then we were both waiting for the other one to say it. I told myself I was only finishing something she’d already left.',choices:[
+ ['lc_own','You can tell her that without asking her to stay.','Yes. I can own what I decided.','L1',['acknowledgement']],
+ ['lc_excuse','It explains the decision. It doesn’t excuse hiding it.','I know. She needs to hear both.','L1',['acknowledgement']],
+ ['lc_offer','What can you offer her tonight, knowing that?','I don’t know yet. I can admit what I did. Standing beside her for a goodbye is something else.','brief',['acknowledgement']]]},
+ B0:{who:'bruno',line:'The set’s done. The band can go back out when you give the cue. I need to know whether Nora’s with them, Lia takes the vocals herself, or we bring the house lights up.',choices:[
+ ['date','When did the next tour stop including Nora?','Three days ago, Lia asked me to hold the dates with a lineup that didn’t include Nora. Today’s message confirms that plan. I wasn’t there when she spoke to Nora.','B1',['date']],
+ ['rehearsal','What have you seen between them lately?','At soundcheck last week, Nora cut the song halfway through and walked out. Lia finished the run alone. I heard the music stop. I don’t know what either of them meant by it.','B1',['rehearsal']],
+ ['feasible','Can the band do the encore without Nora?','The band can play it. Lia can take the lead on her own, but Nora’s part is a big piece of that arrangement. It’ll be a different ending. Don’t put words in Nora’s mouth. If they sing together, both need to agree what gets said.','B1',['solo_feasible']]]},
+ B1:{who:'bruno',line:'I’ll keep both microphones ready. You tell me what they’ve actually agreed.',choices:[
+ ['contrast','I want to ask Lia when she decided Nora wasn’t coming.','Ask her. A date on a production order doesn’t tell you why she chose it.','C1',[],'contradiction'],
+ ['prepare','We need to settle the words before the cue.','Good. I’ll stay on standby.','brief',[]],
+ ['done','Keep holding. I’m going back to them.','I’m here.','hub',[]]]},
+ C1:{who:'lia',line:'That there was still a choice. I know. I thought if I got us through tonight, I’d find a better way to tell her. There wasn’t one.',choices:[
+ ['own','Tell her that before you ask her to sing.','I can. Without making her responsible for forgiving me tonight.','hub',['acknowledgement']],
+ ['tonight','Then let’s decide what you can honestly offer now.','All right. No promise about a tour I haven’t offered.','brief',['acknowledgement']]]},
+ C2:{who:'nora',line:'I need to hear that from her. But don’t turn it into a reason I owe her the last song.',choices:[
+ ['include','You don’t. I’ll ask her to acknowledge it without asking for anything back.','Then we can start there.','N1',[]],
+ ['norescue','You could still want to sing it for yourself.','I could. That’s the part I haven’t given her an answer to.','N1',[]]]}
 };
-export const FACTS = {
- boundary:['One last song cannot promise a future together.','Nora'],
- offer:['Nora allows her professional conditions to be shared: a farewell, credit, and no promise to continue.','Nora · conditional offer'],
- phrase:['“After the concert, we’ll decide what to do with us.”','A conversation about their future'],
- date:['The solo tour was authorized three days ago, before that conversation.','Preparation order / Lia'],
- residency:['Nora let a residency deadline pass while waiting for the conversation. Lia doesn’t know she turned it down.','Nora · private conversation'],
- kiss:['A kiss two years ago. Nora still sees a possibility. She asked you to keep it confidential.','Nora · confidential'],
- private:['Nora would consider a private separation if they review tomorrow’s statement together.','Nora · condition'],
- cost:['Lia’s new solo song would lose tonight’s TV premiere. The song would still exist tomorrow.','Lia'],
- dependence:['Lia wants to keep their musical closeness, but cannot offer to keep everything the same.','Lia'],
- encore:['An off-air encore is possible if both agree. Viewers at home wouldn’t see it.','Bruno'],
- acknowledgement:['Lia admits she left a door open after she had already begun planning the solo tour.','Lia']
+export const FACTS={
+ boundary:['The encore cannot promise a future Nora has not agreed to.','Nora'],
+ offer:['Nora permits sharing her conditions: acknowledgment before singing, shared credit, no promise of another tour. Not consent.','Nora · conditional offer'],
+ private:['Nora would consider a private acknowledgment before singing, space onstage, and a jointly reviewed statement tomorrow. You may offer it. Not consent.','Nora · conditional offer'],
+ phrase:['Two days ago Lia said they would talk about Nora coming on the next tour after the concert.','Nora / Lia'],
+ date:['Dates for a lineup without Nora were held three days ago. Today’s message confirms that plan.','Lia / Bruno'],
+ eva:['Lia has started seeing Eva. Nora says it became harder to stay after rehearsals.','Their accounts'],
+ love:['Nora is in love with Lia. She asked you not to tell her.','Nora · confidential'],
+ professional:['Nora still believed in the music. She accepts that she made rehearsals difficult.','Nora’s account'],
+ permission:['Nora permits sharing her professional explanation. Permission is not delivery.','Nora · permission'],
+ lia_interpretation:['Lia took Nora’s distance as a sign she no longer wanted the project. An interpretation, not Nora’s decision.','Lia’s account'],
+ reported_exchange:['Lia heard “Do what you want” as permission. That was not an agreement about the tour.','Lia’s account'],
+ acknowledgement:['Lia admits she kept the decision from Nora after she had already planned the tour without her.','Lia'],
+ cost:['Lia can take the melody with the band. Nora’s answering line and creative presence cannot simply be replaced.','Lia'],
+ solo_feasible:['The band can return without Nora. Her absence changes the arrangement and the ending.','Bruno / Lia'],
+ public_cost:['A public acknowledgment means losing control of when the next-tour change becomes everyone’s business.','Lia'],
+ rehearsal:['Bruno saw Nora stop an unfinished soundcheck and leave. He does not know why.','Bruno · observation']
 };
-export const PROGRAMS = {
- solo:{title:'Lia’s new solo song',short:'Solo premiere',cost:'Their shared farewell stays off the broadcast.',intro:'Tonight I’m starting a different chapter. Thank you, Nora, for the songs we made possible together.',terms:['Lia performs alone and premieres the new solo song.','Honest thanks to Nora for their shared songs.','No excuses, endorsement or reconciliation attributed to Nora.'],image:'ending-solo'},
- public:{title:'A farewell together',short:'Farewell duet',cost:'Lia’s new solo song loses tonight’s premiere. The separation becomes public.',intro:'This is the first song we wrote together. Tonight we’re closing that chapter. Thank you, Nora.',terms:['The duet they wrote together fills the four-minute slot.','A public professional farewell, without intimate details.','Shared credit and no promise to continue the duo.'],image:'ending-duet'},
- private:{title:'Their duet, without announcing the end',short:'Duet · private separation',cost:'Lia’s new solo song is left out. The audience won’t know about the separation until tomorrow.',intro:'We wrote this song together. Nora, it’s as much yours as mine.',terms:['Lia acknowledges privately, now, that Nora is leaving.','An honest, neutral introduction; no promise to continue.','Both review tomorrow’s statement before it is published.'],image:'ending-duet'}
+export const PROGRAMS={
+ solo:{title:'The encore without Nora',short:'Band & Lia · without Nora',cost:'One of the voices that shaped the song is missing.',intro:'Nora and I wrote this song together. She won’t be joining me for it tonight.',terms:['The same shared song, with the band and Lia; Nora does not perform.','Lia names Nora as co-writer.','No excuse, endorsement or private explanation attributed to Nora.'],image:'ending-solo'},
+ public:{title:'An encore with public acknowledgment',short:'Shared encore · public acknowledgment',cost:'The audience learns Nora won’t return for the next tour. They no longer control who asks about it tomorrow.',intro:'Nora and I wrote this together. We always come back for this one. Nora won’t be joining the next tour. Tonight, we’d like to sing it together for you.',terms:['Lia acknowledges her earlier decision to Nora before singing.','Both sing the same encore song, with shared credit.','With Nora’s agreement, Lia tells the audience Nora is not on the next tour. No future promise or intimate disclosure.'],image:'ending-duet'},
+ private:{title:'An encore after a private acknowledgment',short:'Shared encore · private acknowledgment',cost:'Tomorrow’s statement still needs both their approval. Tonight’s images may already tell a simpler story.',intro:'We wrote this one together. Nora, this song has your name on it as much as mine.',terms:['Lia acknowledges before singing that Nora is not on the next tour.','Shared credit, no invented continuity and agreed physical space onstage.','Both approve tomorrow’s statement before either publishes it.'],image:'ending-duet'}
 };

@@ -12,13 +12,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const click=n=>page.getByRole('button',{name:n,exact:true}).click();
  const line=()=>page.locator('.opening .big-line');
  const expectBeat=async i=>assert.equal(await line().textContent(),OPENING[i].text);
- const saved=()=>page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('perspectives-concert-v2-en'));return {prep:s.prep,negotiation:s.negotiation,draft:s.draft,confirmed:s.confirmed};});
+ const saved=()=>page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('perspectives-concert-encore-v05'));return {prep:s.prep,negotiation:s.negotiation,draft:s.draft,confirmed:s.confirmed};});
  await click('Enter backstage');await click('Pause');await expectBeat(0);
  const initial=await saved();
  await page.locator('.opening-caption').click();await expectBeat(1);
- assert(OPENING[1].text.includes('two different songs'));
- assert(OPENING[1].text.includes('brand-new solo song'));
- assert(OPENING[1].text.includes('song you two wrote together'));
+ assert(OPENING[0].text.includes('main set'));assert(OPENING[1].text.includes('co-wrote'));assert(OPENING[2].text.includes('without Nora'));
  await page.clock.fastForward(40000);await expectBeat(1); // paused scene tap remains paused
  await click('Previous');await expectBeat(0);
  await page.getByRole('button',{name:'Next',exact:true}).focus();await page.keyboard.press('Enter');await expectBeat(1);
@@ -42,15 +40,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:`qa/opening-${size.width}x${size.height}.png`});
  }
- await page.locator('.opening-caption').click();await expectBeat(3);
- await page.locator('.opening-caption').click();await expectBeat(4);
- await page.locator('.opening-caption').click();await expectBeat(5);
+ for(let i=3;i<OPENING.length;i++){await page.locator('.opening-caption').click();await expectBeat(i);}
  await page.locator('.opening-caption').click();await page.locator('.contact').first().waitFor();
  assert.deepEqual(await saved(),initial);
  // Separate restart verifies Go backstage does not bubble into unrelated state changes.
- await page.evaluate(()=>localStorage.removeItem('perspectives-concert-v2-en'));await page.reload();
+ await page.evaluate(()=>localStorage.removeItem('perspectives-concert-encore-v05'));await page.reload();
  await click('Enter backstage');await click('Go backstage');await page.locator('.contact').first().waitFor();assert.deepEqual(await saved(),initial);
  assert.equal(errors.length,0);
- fs.writeFileSync('qa/opening-results.json',JSON.stringify({passed:true,scope:'Static UI with unavailable API fixture; no model calls',checks:['two different songs explicit','single taps advance once including paused','last tap reaches hub','controls/topbar do not advance scene','selected text and drags do not advance','manual next resets timer; auto progression retained','reduced-motion browser preference','390x844 and 390x480 controls reachable','intro preserves prep/negotiation/draft/consent'],errors},null,2));
+ fs.writeFileSync('qa/opening-results.json',JSON.stringify({passed:true,scope:'Static UI with unavailable API fixture; no model calls',checks:['main set, central creative roles, booking notification and refusal','single taps advance once including paused','last tap reaches hub','controls/topbar do not advance scene','selected text and drags do not advance','manual next resets timer; auto progression retained','reduced-motion browser preference','390x844 and 390x480 controls reachable','intro preserves prep/negotiation/draft/consent'],errors},null,2));
  await browser.close();console.log('Opening clarity, gestures, timer, controls and state: PASS');
 })().catch(e=>{console.error(e);process.exit(1);});

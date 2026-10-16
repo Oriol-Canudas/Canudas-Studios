@@ -10,7 +10,7 @@ function verify(token){
  if(typeof token!=='string'||token.length>45000)throw Error('session');
  const [data,sig]=token.split('.');const expected=signature(data||'');
  if(!sig||sig.length!==expected.length||!timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))throw Error('session');
- const parsed=JSON.parse(Buffer.from(data,'base64url').toString());if(parsed.expires<Date.now())throw Error('expired');return parsed;
+ const parsed=JSON.parse(Buffer.from(data,'base64url').toString());if(parsed.expires<Date.now())throw Error('expired');if(parsed.build!==BUILD)throw Error('session');return parsed;
 }
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
@@ -27,9 +27,10 @@ export default async function handler(req,res){
  bucket.count++;rate.set(ip,bucket);if(rate.size>2000)rate.delete(rate.keys().next().value);
  try{
   if(b.action==='start'){
+   if(b.build!==BUILD)return res.status(409).json({error:'story_version_changed'});
    const prep=replayPrep(b.events);if(!prep.used.length)return res.status(400).json({error:'context_required'});
    const opening=negotiationOpening(prep);
-   const payload={id:randomUUID(),expires:Date.now()+7200000,events:prep.events,n:{...initialNegotiation(),history:[{role:'assistant',content:opening}]}};
+   const payload={build:BUILD,id:randomUUID(),expires:Date.now()+7200000,events:prep.events,n:{...initialNegotiation(prep),history:[{role:'assistant',content:opening}]}};
    return res.status(200).json({token:sign(payload),negotiation:payload.n,opening});
   }
   const payload=verify(b.token);const prep=replayPrep(payload.events);
