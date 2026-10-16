@@ -1,16 +1,16 @@
 # Concert prototype — delivery state
 
-Updated: 16 October 2026. Encore v05 with task005 dialogue, task006/007 presentation and task008 full-cast intro voices is now published to Production after explicit user authorization.
+Updated: 16 October 2026. Encore v05 with revised dialogue, single-scene presentation, full-cast intro voices and task010 readable directions/Lia-first menu is published to Production.
 
-Live: https://gamex-concert.vercel.app/?v=voices-20261016
+Live: https://gamex-concert.vercel.app/?v=clear-cues-20261016
 Vercel: ocanudas-7641/gamex-concert (`prj_pmy012EZyymfl5MvxHQrIRhzYz3R`).
-Deployment: `dpl_9bivHTBy9BqvjqxZLcjwSC5BdFU2` — Production READY.
-Immutable URL: https://gamex-concert-3gx7o7o79-ocanudas-7641.vercel.app
-Deployed commit: `4ace2eeee2765c8918b15341ef9121e8e6dc51c6`; product code matches independently tested `b9175958f4f0d70a76791660fdf550c1a842eb9d`. Branch `codex/concert-encore-v05`; app `products/concert`. No merge or other-product change. Git auto-deploy remains unconfigured. Previous immutable production: https://gamex-concert-gvueggl2s-ocanudas-7641.vercel.app.
+Deployment: `dpl_3Z9Q9f3qLG2fdDNscrj5LUwVvAX8` — Production READY.
+Immutable URL: https://gamex-concert-pgxfku6o2-ocanudas-7641.vercel.app
+Deployed commit: `19960385f5e424fe0eb2c21a8894c86b0d3f59f7`; product code matches independently tested `b3c0c0991876571df7c7f0913d8c6fa8c4760b15`. Branch `codex/concert-encore-v05`; app `products/concert`. No merge or other-product change. Git auto-deploy remains unconfigured. Previous immutable production: https://gamex-concert-3gx7o7o79-ocanudas-7641.vercel.app.
 
-Publication evidence: `../../../perspectives/concert-publication-voices-20261016/`. Anonymous public access200; both client asset hashes match the local build; all11 public voice files match approved hashes. Actual API metadata reports AI configured and a signed session start succeeds without inference. Public controlled intro-voice/scenes/dialogue/recovery checks are recorded in task009. The first instrumented voice run timed out; an uninstrumented public probe played successfully with no console/network errors, and the unchanged voice suite passed on one repeat. Cause of the initial timeout is not established. No product changes or paid calls during publication. Physical iOS and live-model semantics remain unverified.
+Publication evidence: `../../../perspectives/concert-publication-cues-20261016/`. Anonymous public access200; both client asset hashes match the local build. Real API metadata reports AI configured; no generation requested. Public isolated Chromium checks PASS: all11 beats and5cue-bearing beats at390x844,390x480,1440x1000; larger highlighted directions and reachable controls; actual Lia/Nora/Bruno navigation and return order; public first voice playback. Parent inspected live mobile cue, booking and menu screenshots. All browser negotiation requests intercepted. No paid calls. Physical iOS and live-model semantics remain unverified. Prior full-cast publication evidence is retained in concert-publication-voices-20261016; its delivery record is also copied as previous-delivery.json.
 
-For mobile play: open the live link, Enter backstage, then Sound on. Existing encore saves are preserved. Start again restarts that device's game if the player wants the full revised introduction. Only the introduction has recorded character voices. The implementation/QA records below describe each task's original local acceptance; their previous "not published" statements are superseded by this release.
+For mobile play: open the live link and refresh; Enter backstage, then Sound on. Existing encore saves are preserved. Start again restarts that device's game if the player wants the full revised introduction. Only the introduction has recorded character voices. Earlier local acceptance statements below are historical and superseded by this release.
 
 ## Local dialogue amendments — task005
 
@@ -48,7 +48,7 @@ Play local: http://127.0.0.1:8810/?v=voices-008 . Refresh to load the new client
 
 ## Readable scene directions and cast order — task010
 
-Candidate b3c0c0991876571df7c7f0913d8c6fa8c4760b15 accepted by separate QA: all5 criteria PASS,62 Node tests, build and opening/scenes/intro-voice suites. Unvoiced opening directions now18px normal/high-contrast on an opaque dark block with gold edge. Menu order Lia,Nora,then eligible Bruno. All15 cue/viewport combinations and actual contact-state navigation pass at390x844,390x480,1440x1000. No story, timing, voice, eligibility, state, API or save changes. Publication pending; release metadata above still describes prior production. Evidence: task010 and ../../../perspectives/concert-publication-cues-20261016/. Physical iOS and subjective readability remain human checks.
+Candidate b3c0c0991876571df7c7f0913d8c6fa8c4760b15 accepted by separate QA: all5 criteria PASS,62 Node tests, build and opening/scenes/intro-voice suites. Unvoiced opening directions now18px normal/high-contrast on an opaque dark block with gold edge. Menu order Lia,Nora,then eligible Bruno. All15 cue/viewport combinations and actual contact-state navigation pass at390x844,390x480,1440x1000. No story, timing, voice, eligibility, state, API or save changes. Published and checked on the production alias; current release metadata is above. Evidence: task010 and ../../../perspectives/concert-publication-cues-20261016/. Physical iOS and subjective readability remain human checks.
 
 ## Current product
 
