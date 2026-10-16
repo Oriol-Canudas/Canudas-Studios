@@ -1,0 +1,24 @@
+# Task022 — Anticipation before the final Lia conversation
+
+## DESIGN
+
+Oriol says the gateway to the final conversation feels like a routine screen. Make it an emotional invitation to the resolution, applying the new CREATIVE_CANON.md: warm and direct, dramatic when earned. Follow Task021 on codex/concert-encore-v05 after its independent QA; coordinator freezes the exact baseline at handoff. Existing final-conversation state/consent and outcomes remain authoritative. Reproduce the current hub CTA and brief with screenshots before editing.
+
+Use the existing guarded Lia image as one immersive backdrop. Replace the briefing's stacked utilitarian panels with a focused teaser and one primary invitation. Hub CTA reads `Step into the conversation` with supporting line `Lia is by the curtain. What will you say?`. Keep existing readiness gate and goBrief handler. On the brief, use kicker `THE CROWD IS STILL CALLING`, heading `The next words are yours.`, and body `Lia is by the curtain. Nora won’t go back out. What would make this an encore they can both stand behind?`. Add the warm invitation `You don’t need the perfect words. Start with what you want Lia to understand.` Primary CTA stays clearly `Talk to Lia`, with existing busy text/disable/error handling. No second interstitial or extra tap, artificial countdown, forced pacing or added audio.
+
+Keep functional guidance secondary but readable: own words, up to six turns, reading/thinking free, AI disclosure, nothing goes onstage without player cue. Preserve exact existing WHAT CAN CHANGE contents and all conditional delivered-offer / unagreed tour-promise / unavailable / error notices. They may be placed below the principal invitation in a quieter layout, but remain plainly accessible. Do not frame a delivered offer as Nora's acceptance. Do not imply a shared encore is required or guaranteed. Existing Backstage exit remains available.
+
+## Bounded BUILD
+
+One worker, presentation-only main.jsx and scoped style.css, short PRODUCTION_LOG, one focused teaser browser probe/runner registration and only old presentation assertions explicitly superseded by this CTA/layout. Preserve all action/state assertions. No engine/story/model/API/token/saves/drafts/audio/media/dependency changes. No paid calls, push, deployment or user preview8810/storage changes. Coordinator owns canon/task/docs. Do not alter Task021 authored portraits/sequencing or Task020 quiet opening shortcut.
+
+## Acceptance
+
+1. Actual hub → teaser → Lia conversation works with a controlled start fixture; exact same prep events and request payload as baseline for the same route. Original readiness, busy guard, back navigation, errors/unavailable, retry behavior and preserved draft/agreement remain. No API call until explicit Talk to Lia; one click opens one request.
+2. Distinct emotional hierarchy: one existing portrait, crowd kicker, headline, human invitation, clear Talk CTA. Review actual screenshots at390x844,390x480,320x568,844x390,1440x1000; natural face proportions, no horizontal overflow, readable copy/controls, >=44px targets, keyboard focus. Compact screens scroll rather than shrink. No time gate. Reduced motion stays complete.
+3. WHAT CAN CHANGE, six-turn/AI/cue guidance and each existing conditional notice remain accurate/accessibly discoverable. Test no-offer, delivered professional offer, unresolved false promise and API-unavailable/error variants. Private love knowledge is not surfaced in teaser copy. No new facts or consent implied; player can still choose not to obtain a shared encore later.
+4. Independent QA reviews exact bounded diff, runs build + focused teaser and relevant existing dialogue/authored-portrait/portrait/agreement suites. Both Task020+021 stay correct. No state/content/provider/assets altered outside the permitted gateway text/presentation. Evidence includes rendered screenshots and state checks. Do not claim tested emotional impact or real iOS from fixtures.
+
+## Result
+
+Pending. Publish only after independent acceptance, together with accepted Task020+021.

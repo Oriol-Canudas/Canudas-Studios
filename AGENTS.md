@@ -2,6 +2,8 @@
 
 This Git checkout holds executable products; scope each task explicitly. Current trial: `products/concert`. Other products are out of scope; `products/rehearsal` is parked. Reference material under the surrounding project's `sources/` is read-only. Never change canonical strategy or synced sources as part of a code fix.
 
+Read `CREATIVE_CANON.md` for Oriol's standing creative direction: warm, caring, loving, emotional and playful; direct human conversation without bullshit; thoughtful drama, anticipation, humour, surprise and unconventional courage that connect deeply and inspire. Apply with judgment appropriate to the topic. Preserve clarity, factual/knowledge boundaries and player freedom; ask Oriol if tone or sequencing is ambiguous.
+
 - **DESIGN:** confirm checkout, branch, baseline commit and existing changes. Freeze player benefit, allowed files, non-goals and observable acceptance in `tasks/NNN-name.md`. Reproduce a reported defect before changing behavior; if absent, report evidence first.
 - **BUILD:** delegate to one implementation worker with bounded file scope. Preserve unrelated work. Keep the product runnable; update its production log. Handoff a candidate commit, changed files, commands/results and limitations. Commit only the task's files; never reset or sweep unrelated changes.
 - **QA:** after the worker finishes, use a different subagent and `.agents/skills/gamex-qa/SKILL.md`. Verify the candidate commit independently against the frozen criteria. QA cannot edit product code or weaken acceptance. Record PASS / FAIL / BLOCKED and evidence in the task. A build or worker claim alone is insufficient. On failure return to BUILD, then repeat independent QA.
