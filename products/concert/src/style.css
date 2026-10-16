@@ -256,7 +256,7 @@
 .opening-app .fine button{min-height:44px;padding:8px 12px;border:1px solid #edc58d99;border-radius:6px;background:#100d138c;color:var(--gold)}
 .opening-app .scene-controls{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;width:100%;max-width:680px;margin:0 auto;gap:8px}
 .opening-app .scene-controls button{display:flex;align-items:center;justify-content:center;gap:7px;min-width:44px;min-height:44px;margin:0;padding:8px;border:1px solid #ffffff30;border-radius:8px;background:#100d1370;color:#f8edf5;font-size:14px;text-shadow:0 1px 4px #000}
-.opening-app .scene-controls button:last-child{margin:0;padding-inline:15px;border:1px solid var(--gold);background:#39291cbd;color:#ffe0ae;font-weight:700}
+.opening-app .scene-controls button:last-child{margin:0;padding-inline:15px;min-width:150px;border:1px solid transparent;background:transparent;color:#98939b;font-weight:400}
 .opening-app .scene-controls button:disabled{opacity:.4;cursor:default}
 .opening-app .audio-error{position:absolute;top:calc(60px + env(safe-area-inset-top));left:16px;right:16px;z-index:5}
 @media(min-width:901px){.opening-app .speaker img{width:128px;height:150px}.opening-app .big-line{font-size:38px}.opening-app .topbar{padding-inline:max(32px,env(safe-area-inset-left)) max(32px,env(safe-area-inset-right))}}
