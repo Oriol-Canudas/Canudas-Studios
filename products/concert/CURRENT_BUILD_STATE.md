@@ -1,5 +1,21 @@
 # Concert prototype — delivery state
 
+## Current release — portrait conversation, 16 October 2026
+
+Live: https://gamex-concert.vercel.app/?v=portrait-conversation-20261016
+
+Published to the existing `ocanudas-7641/gamex-concert` project. Deployment `dpl_4z1DfrP9vERwRXPs5kU78nZewxmv` is Production READY; immutable URL https://gamex-concert-rgov0d77h-ocanudas-7641.vercel.app. Deployed `ff2c304`; runtime matches independently tested candidate `131a0418823370ed26ed27a9c675981d8299af1a`. Branch `codex/concert-encore-v05`. No merge or other-product change. Previous immutable production: https://gamex-concert-b3l8ptmbw-ocanudas-7641.vercel.app.
+
+Lia's final conversation now has one continuous mood portrait behind translucent dialogue and controls. A compact header keeps actual turns, Review & end and options available. Latest Lia speech and following interruptions have clear attribution; earlier messages/private goal are on demand. Empty offer panel removed. Real offers still lead through review and Nora confirmation before the separate cue.
+
+Talk → Stop → editable review → explicit Send, or Type instead. The text editor appears only in review/type mode; Back to Talk preserves words and Review saved draft makes them discoverable after reload. Suggestions preview before explicit append. Notes, sound/volume and restart are in the options menu. Existing speech provider, microphone lifecycle, authored voices, soundtrack, story, negotiation/consent rules and save versions are unchanged. Refresh the live link and continue the existing save; no restart required.
+
+Independent QA PASS on all six frozen criteria: 81 Node tests, build, eight browser suites and separate focus/draft/suggestion/unsupported-recording/long-reply/retry probes. Rendered 390x844, 390x480, 320x640 and 1440x1000 inspected. Synthetic 430px/360px visible windows retain 227px/157px reading space, with natural text heights and stable controls. Parent also replayed the full authored-to-AI-to-Nora-to-performance path and inspected read/accepted renders.
+
+Published verification PASS: anonymous HTTP 200, both JS/CSS hashes equal the tested build, API metadata available, unchanged microphone policy. Actual public UI journey and published speech-input suite pass with controlled API and microphone fixtures, including native Chromium fake-device capture. No paid calls or new services. Evidence: `../../../perspectives/concert-publication-portrait-20261016/`, including independent verdict, published assets, parent journey and speech results. Physical iPhone/Safari and live provider recognition/AI semantics remain unverified.
+
+## Previous release — voice-first controls and crowd interlude
+
 Updated:16 October2026. Encore v05 now has voice-first Lia controls, prominent Backstage navigation and the requested crowd interlude, published to Production. Existing story, authored voices, agreements and saves remain intact.
 
 Live: https://gamex-concert.vercel.app/?v=talk-and-encore-20261016
