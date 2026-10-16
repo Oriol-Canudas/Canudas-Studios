@@ -1,3 +1,13 @@
+# Current verification —16 October2026
+
+Encore v05 candidate `24f2f22b19b83bbd237a7e8c3b8cf918e9006810`, deployed with documentation at `70c855e`. Independent QA all10 frozen task004 criteria PASS after two observed failures were repaired.43 tests, build, seven offline browser suites including11 encore journeys and independent provider-shaped adversarial probes PASS. Withdrawal invalidates earlier Lia/Nora consent; unchanged agreed close preserves valid acceptance; withdrawn without-Nora package cannot bypass refusal; knowledge provenance stays source-specific. Mobile390x480/390x844 and desktop1440x1000 inspected.
+
+Production `dpl_4znFVPoxbv2DcTfWS8fsaDhNmX2Y` READY at https://gamex-concert.vercel.app. Published11 encore journeys and interrupted-send checks PASS with intercepted negotiation API. Actual metadata + signed-session start200 checked without inference. Public rendered final/private reveal personally inspected. Evidence /tmp/concert-independent-reqa-20261016/ and /tmp/concert-published-encore-20261016/; durable summary ../../../perspectives/concert-delivery-2026-10-16.json.
+
+No paid model calls this revision. Real-model semantic reliability, physical iOS and player enjoyment unverified. Earlier real-model probes below are historical and cannot validate this changed story/schema.
+
+## Superseded verification records
+
 # Current verification — 15 October 2026
 
 Task 002 candidate: `6441d1d8ca27aacf94ab71e5962ae5e6975f29bd`. Explicit two-song terminology throughout authored UI and Lia instructions; tap-to-advance opening with isolated controls and reading timers. Independent QA PASS (all seven criteria; 25 tests and five browser suites), followed by published opening and exact Lia-copy checks with API intercepted. Deployment `dpl_BjuL3p4mZeaBy7c2uTgrtBwq6HRi` READY. No paid model calls. Independent QA and publication record: `../../tasks/002-opening-clarity-and-tap.md`.

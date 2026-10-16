@@ -1,6 +1,6 @@
 # PERSPECTIVES — The Song Was for You
 
-Concert web prototype: [gamex-concert.vercel.app](https://gamex-concert.vercel.app). This checkout's **encore v05 candidate is not a claim of publication**; see root `CURRENT_BUILD_STATE.md` for the verified deployed revision.
+Concert web prototype: [gamex-concert.vercel.app](https://gamex-concert.vercel.app). **Encore v05 published16 October2026**; see `CURRENT_BUILD_STATE.md` for deployment and evidence. Controlled QA does not establish real-model semantics or human enjoyment.
 
 The main set has finished. Lia fronts the band; Nora co-writes and sings many of its songs, a core creative member. Backstage, Nora sees a booking confirmation excluding her from the next tour and refuses their customary shared encore. Reactive authored discovery and explicit relays prepare a bounded negotiation with Lia. Nora answers the actual offer, and the producer gives a separate performance cue.
 

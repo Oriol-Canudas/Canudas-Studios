@@ -1,5 +1,37 @@
 # Concert prototype — delivery state
 
+Updated:16 October2026. Encore v05 independently verified and published.
+
+Live: https://gamex-concert.vercel.app/?v=encore-v05-20261016
+Vercel: ocanudas-7641/gamex-concert (`prj_pmy012EZyymfl5MvxHQrIRhzYz3R`).
+Deployment: `dpl_4znFVPoxbv2DcTfWS8fsaDhNmX2Y` — Production READY.
+Immutable URL: https://gamex-concert-gvueggl2s-ocanudas-7641.vercel.app
+Deployed commit: `70c855e`; product code matches independently tested `24f2f22b19b83bbd237a7e8c3b8cf918e9006810`. Branch `codex/concert-encore-v05`; app `products/concert`. No merge or other-product change. Git auto-deploy remains unconfigured.
+
+## Current product
+
+Main set complete → both artists backstage → Nora sees a phone booking confirmation excluding her from the next tour → refuses the customary shared encore. Lia fronts the band; Nora co-writes and co-sings substantial repertoire, a core creative member. One shared song, no competing solo premiere or broadcast deadline.
+
+Reactive authored preparation, adaptive questions/statements and context-aware returns lead to a bounded Lia negotiation. Discovery, permission and actual delivery stay distinct. Love is optional and confidential; professional resolution is possible without disclosure. Lia cannot rewrite the booked tour or invent Nora consent. Term grounding and artist willingness are distinct. Withdrawal revokes consent/version; new conditions require same-version confirmation before a separate player cue. Four outcomes: shared encore with public next-tour acknowledgment; private acknowledgment, physical space and joint statement; band with Lia without Nora; no encore.
+
+English throughout. Existing artwork/music preserved. Mobile speaker/reply/continuation/choice/history hierarchy clarified. Previous two-song saves retained separately, exportable with tokens stripped, never reinterpreted as the new past. Interrupted-send recovery preserves newer drafts and explicit original-request retry.
+
+## Verification
+
+Different BUILD and QA agents. First QA found invented Nora notes and stale consent after explicit Lia refusal; returned to BUILD and independently rechecked. Final all10 frozen criteria PASS.43 Node tests, build, seven offline browser suites including11 encore journeys, plus independent adversarial probes PASS. Rendered390x480/390x844 and1440x1000 inspected.
+
+After publication, eleven encore journeys and interrupted-send suite PASS against public alias, all negotiation calls intercepted. Actual server metadata reports `concert-encore-v05`, AI available; non-inferential signed-session start returns200. No paid provider calls. This verifies server wiring and client behavior, not real-model semantic reliability, physical iOS or enjoyment.
+
+Task: ../../tasks/004-encore-v05.md. Independent evidence: /tmp/concert-independent-reqa-20261016/. Published evidence: /tmp/concert-published-encore-20261016/. Durable delivery summary: ../../../perspectives/concert-delivery-2026-10-16.json.
+
+Next: human mobile playtest. Does preparation create a clear objective, do choices visibly return through others, does negotiating Lia feel meaningful, and is the encore trade-off understandable? Do not infer those answers from fixtures.
+
+## Superseded delivery history
+
+The following dated records describe earlier releases, not the current story or proof of current live-model behavior. Previous production remains available at https://gamex-concert-ltoi56xx3-ocanudas-7641.vercel.app.
+
+# Historical delivery state
+
 Updated: 2026-10-15. Task 002 independently verified and published.
 
 Live: https://gamex-concert.vercel.app
