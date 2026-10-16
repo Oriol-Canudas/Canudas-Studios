@@ -1,0 +1,27 @@
+# Task019 — Character replies arrive with a readable typewriter reveal
+
+## DESIGN
+
+User requests typewriting on character answers because they currently appear too immediately. Baseline clean d98d9cb571f18d50bf61c9983c131cb8d6a16fbd on codex/concert-encore-v05; live opening release runtime26a78cf. Before editing, reproduce immediate complete authored answer and controlled Lia API reply in the browser.
+
+Player benefit: conversational pacing, with immediate control for fast readers. Scope new active authored replies from Lia/Nora/Bruno (including initial greetings and continuation paragraphs as one sequential reply) and newly received Lia replies in the AI conversation. Keep player text, questions/choices, labels, stage directions, earlier/history text, review/consent exchanges, ending text and already voiced opening captions immediate. No sound effects or extra model/network calls. The full-portrait translucent authored layout and proposed Lia/Nora/ending flow remain DRAFT ONLY.
+
+## Bounded BUILD
+
+Delegate one worker. Allowed src/main.jsx integration, a small local reusable reply-reveal component/helper if warranted, scoped src/style.css, one focused qa/reply-reveal.cjs suite, qa/run-local.cjs registration and relevant existing QA selectors only if required by meaningful markup changes, PRODUCTION_LOG. No story, engine, server/API, audio/recording controller, dependencies, save format or other-product changes. No paid calls, push or deployment by worker. Coordinator may publish after separate QA under continuing user authorization for this Concert build.
+
+Reveal at a gentle readable character pace (roughly45–55 characters/second, bounded to at most6 seconds for a long response). A short initial beat/punctuation pauses are optional within that bound. Start with partial text and progressively reveal whole graphemes; preserve exact punctuation, Unicode and line/paragraph breaks. Never stream synthetic model tokens or alter when the actual response/state is accepted. Reserve final text space so reply buttons/AI controls do not move or compress per character. Do not add another permanent UI section.
+
+During reveal, tapping/clicking the speech shows all remaining text immediately; provide an accessible keyboard equivalent with a concise Show full reply control, only during reveal. Keep choices, Backstage, Talk/type, notes, Review & end available; selecting another action cancels obsolete animation without accidentally executing another action. Selection/scroll gestures must not skip/advance accidentally. Screen readers receive complete text, not character-by-character live announcements. Respect reduced motion: complete text immediately, including a preference change while revealing. Opening an overlay/recording/typing or hiding the page may finish the reveal; returning must not restart it. History/reload/resumed replies are immediately readable; rerenders/draft edits, resizing and panel toggles never restart a previously shown reply. No animation progress in saved game state.
+
+## Acceptance
+
+1. Baseline immediate text recorded. Candidate fresh authored greetings/choice replies for all3 characters and a controlled new Lia AI reply show partial→progressive→complete exact text. Continuation paragraphs reveal sequentially as one reply, not two competing animations. Long reply completes within6s. No save/negotiation/token/consent/draft changes caused by time or skip.
+2. Tap/keyboard Show full reply completes immediately without choosing a response or changing screen/state. Another choice during reveal produces only the correct next reply; navigation/restart cleans up. Scrolling/text selection does not accidentally skip/advance. No stuck reveal/timer console errors.
+3. Reduced motion shows complete reply immediately, including a runtime preference switch. Existing loaded saves, history, old AI replies and UI/player text remain complete. Notes, mode switches, draft typing, resize, retry and returning to prior content do not replay text animation. Screen-reader structure provides the full utterance once without per-character live chatter.
+4. At390×844,390×480,320×568 and1440×1000, the same response has stable final layout geometry throughout its reveal. Choices/navigation/composer remain accessible and readable; no horizontal overflow. Preserve the full-height opening, speech tint and translucent AI backdrop. Inspect actual mid-reveal/completed mobile and desktop screenshots.
+5. Build, focused reveal suite plus hierarchy, dialogue, portrait, speech-input and interrupted-send regressions PASS with controlled fixtures only. Existing suite selector updates may follow accessibility markup but cannot bypass animation behavior in the dedicated suite or weaken state assertions. Separate QA checks the exact candidate, original reproduction, actual diff and rendered results. No live provider calls; do not claim physical iPhone or live-model validation.
+
+## BUILD / QA / release
+
+Pending.
