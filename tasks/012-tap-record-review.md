@@ -19,7 +19,7 @@ Official OpenAI file-transcription guide fetched16October2026 recommends gpt-tra
 5. All Node tests and production build; focused speech-input, keyboard, interrupted-send, agreement-exit, scenes, intro-voice suites pass independently. Actual UI and rendered states inspected by separate non-editing QA. Test Safari-like MP4 and Chromium-like WebM selection, late completions, failure/retry and duplicate clicks. Physical iPhone permission/recording/transcription accuracy remain explicitly unverified unless actually checked.
 
 ## BUILD / QA / release
-Baseline08cdd7f28d04e2489cfe2f6e50bd93c0944dc31f, accepted independently under task011. Branch codex/concert-encore-v05. Product tree clean before handoff; coordinator documentation changes only. BUILD and independent QA complete; publication pending below.
+Baseline08cdd7f28d04e2489cfe2f6e50bd93c0944dc31f, accepted independently under task011. Branch codex/concert-encore-v05. Product tree clean before handoff; coordinator documentation changes only. BUILD and independent QA complete; publication completed below.
 
 
 ## Independent QA — accepted candidate
@@ -30,3 +30,7 @@ QA first found unbounded pending/rejected audio startup. BUILD fixed gesture-tim
 Actual Chrome fake-device recording produced11,392bytes WebM,1.93seconds; tracks ended and existing soundtrack preference restored. Controlled MP4/WebM paths verify review/edit/exact Send, current draft preservation, zero turns before Send, failure/cancellation/overflow recovery. Transcript stays203px at430px visible height and133px at360px; pan offsets, notes, retry, restored portrait and review exit pass. Rendered mobile screenshots inspected by QA and coordinator.
 
 Durable evidence: `../../perspectives/concert-publication-keyboard-20261016/concert-speech-independent-qa.json`, startup/mixer probes, independent speech/keyboard screenshots and JSON. Physical iPhone keyboard/permission/MP4 behavior, actual provider entitlement/recognition accuracy/latency, and subjective experience remain unverified. Safari-like codec fixtures are not Safari testing. No TTS or other-product change.
+
+
+## Publication —16 October2026
+Published `e9e123901cd55940e4eff0aaac674c047a626423` (product matches independently accepted `e293c5cc8da685d1d23af0dd05ba6cb24e170e18`) to existing gamex-concert Production: `dpl_9EiboHjp1ijxyeXqiafYXLxVas4P`, READY. Live https://gamex-concert.vercel.app/?v=record-review-20261016; immutable https://gamex-concert-g1ddhetu7-ocanudas-7641.vercel.app. Public speech-input/keyboard/interrupted-send/agreement-exit suites PASS using isolated controlled APIs. Anonymous200 and client hashes match; signed session and transcription access/media guards pass without inference. Coordinator inspected full/compact mobile screenshots. Evidence: `../../perspectives/concert-publication-keyboard-20261016/`. Physical iPhone and live recognition remain unverified; no paid test calls, merge or other-product changes.

@@ -1,6 +1,6 @@
 # PERSPECTIVES — The Song Was for You
 
-Concert web prototype: [gamex-concert.vercel.app](https://gamex-concert.vercel.app/?v=clear-cues-20261016). **Encore v05 with revised dialogue, single-scene presentation full-cast introduction voices, clearer scene directions and Lia-first menu published 16 October 2026**; see `CURRENT_BUILD_STATE.md` for deployment and evidence. Controlled QA does not establish real-model semantics or human enjoyment.
+Concert web prototype: [gamex-concert.vercel.app](https://gamex-concert.vercel.app/?v=record-review-20261016). **Encore v05 with mobile keyboard correction and optional record/review transcription published16 October2026**; see `CURRENT_BUILD_STATE.md` for deployment and evidence. Controlled QA does not establish real-model semantics or human enjoyment.
 
 The main set has finished. Lia fronts the band; Nora co-writes and sings many of its songs, a core creative member. Backstage, Nora sees a booking confirmation excluding her from the next tour and refuses their customary shared encore. Reactive authored discovery and explicit relays prepare a bounded negotiation with Lia. Nora answers the actual offer, and the producer gives a separate performance cue.
 
@@ -41,6 +41,14 @@ Actor willingness is distinct from whether an offer is grounded. An explicit ref
 
 A private offer missing physical-space terms goes back to the same signed AI conversation with the actual condition and remaining turns. No new six-turn session is granted. At the limit or after refusal, a distinct review scene can ask Lia explicitly to perform with the band without Nora; it is a new offer and yes, not an invented earlier AI acceptance. House lights/no encore is always available.
 
+## Optional recording and mobile typing
+
+In the active Lia conversation, tap Record, grant microphone permission, speak and tap Stop. Recognized words append to the current editable draft; only explicit Send enters the negotiation and uses a turn. Cancel discards an active recording. Overlong combined text is retained for shortening/review instead of silently truncated. Typing remains available after denied permission or failed recognition.
+
+Supported MediaRecorder WebM/MP4, maximum45seconds/2MiB. Capture temporarily mutes the existing soundtrack and releases microphone tracks on Stop, Cancel, scene/notes/reset or hidden-page interruption. No audio is persisted in saves. `src/speech-recording.mjs` owns lifecycle; `api/transcribe.mjs` and `server/transcription.mjs` validate the existing signed session and call OpenAI server-side. Uses the same OPENAI_API_KEY or PerspectivesConcert credential; optional OPENAI_TRANSCRIBE_MODEL defaults to gpt-transcribe. No new key or account is required. There is no AI reply TTS in this release.
+
+The typing layout follows visible viewport height and pan, scrolls only its transcript, preserves natural message heights and compacts decorative elements while the keyboard is open. Existing drafts, explicit retry identity, agreements and saves are unchanged. Run `npm run qa:local speech-input keyboard` for controlled fixtures. Physical iPhone behavior and real recognition still require a device test; a simulated MP4 recorder is not Safari verification.
+
 ## Saves, requests and limits
 
 Encore uses `perspectives-concert-encore-v05` and build `concert-encore-v05`. Old two-song sessions remain untouched under `perspectives-concert-v2-en`; a cover notice offers a sanitized JSON export. They are not silently migrated into a different authored past. Downloaded exports omit top-level and nested request tokens. Browser saves do not sync across devices.
@@ -51,9 +59,9 @@ Six successful substantive turns; failed/invalid generations do not spend one. U
 
 ## Verification and media
 
-`qa:local` builds then starts **static** preview on127.0.0.1:8796 and runs eleven sequential suites: authored browser route, resilience, interrupted-send, agreement-exit, opening, hierarchy, encore, dialogue, cover, scenes and intro-voice. It strips provider environment variables, refuses a busy port and stops preview afterward. Every API interaction is unavailable or a controlled browser fixture; the runner cannot invoke paid generation. New encore cases cover public professional, private professional relay, Lia-first without Nora, tour-promise correction, love breach/refusal, private-condition revision, six-turn no agreement legacy isolation/export, provider-fixture actor withdrawal, solo-refusal fallback protection and source-aware notes. Existing `live-*` and `api-cases` scripts are historical two-song probes, are **not v05 acceptance tests**, and must be updated before any separately authorized paid semantic evaluation.
+`qa:local` builds then starts **static** preview on127.0.0.1:8796 and runs thirteen sequential suites: authored browser route, resilience, interrupted-send, agreement-exit, opening, hierarchy, encore, dialogue, cover, scenes, intro-voice, keyboard and speech-input. It strips provider environment variables, refuses a busy port and stops preview afterward. Every API interaction is unavailable or a controlled browser fixture; the runner cannot invoke paid generation. New encore cases cover public professional, private professional relay, Lia-first without Nora, tour-promise correction, love breach/refusal, private-condition revision, six-turn no agreement legacy isolation/export, provider-fixture actor withdrawal, solo-refusal fallback protection and source-aware notes. Existing `live-*` and `api-cases` scripts are historical two-song probes, are **not v05 acceptance tests**, and must be updated before any separately authorized paid semantic evaluation.
 
-Worker checks cover43 Node tests, production build and controlled Chromium journeys including390×844,390×480 and desktop. Independent QA is a separate gate. None of these establish real-model persuasion, physical iOS keyboard/touch behavior or fresh-player enjoyment.
+Current deterministic checks cover77 Node tests, production build and controlled Chromium journeys including390×844,390×480 and desktop. Independent QA is a separate gate. None of these establish real-model persuasion, physical iOS keyboard/touch behavior or fresh-player enjoyment.
 
 Existing art and soundtrack are reused. Sound is opt-in: a60-second cinematic score with separate8-second stronger audience calls; dialogue ducking, cue spacing and hidden-tab muting remain. Portraits keep their own region; Lia's guarded/receptive/hurt/firm images reflect interpreted interaction, never consent. No new media or recorded singing was created for v05.
 

@@ -1,16 +1,24 @@
 # Concert prototype — delivery state
 
-Updated: 16 October 2026. Encore v05 with revised dialogue, single-scene presentation, full-cast intro voices and task010 readable directions/Lia-first menu is published to Production.
+Updated:16 October2026. Encore v05 now includes optional tap-to-record transcription and the mobile AI keyboard layout correction, published to Production. Existing full-cast introduction, story and saves remain intact.
 
-Live: https://gamex-concert.vercel.app/?v=clear-cues-20261016
+Live: https://gamex-concert.vercel.app/?v=record-review-20261016
 Vercel: ocanudas-7641/gamex-concert (`prj_pmy012EZyymfl5MvxHQrIRhzYz3R`).
-Deployment: `dpl_3Z9Q9f3qLG2fdDNscrj5LUwVvAX8` — Production READY.
-Immutable URL: https://gamex-concert-pgxfku6o2-ocanudas-7641.vercel.app
-Deployed commit: `19960385f5e424fe0eb2c21a8894c86b0d3f59f7`; product code matches independently tested `b3c0c0991876571df7c7f0913d8c6fa8c4760b15`. Branch `codex/concert-encore-v05`; app `products/concert`. No merge or other-product change. Git auto-deploy remains unconfigured. Previous immutable production: https://gamex-concert-3gx7o7o79-ocanudas-7641.vercel.app.
+Deployment: `dpl_9EiboHjp1ijxyeXqiafYXLxVas4P` — Production READY.
+Immutable URL: https://gamex-concert-g1ddhetu7-ocanudas-7641.vercel.app
+Deployed commit: `e9e123901cd55940e4eff0aaac674c047a626423`; product bytes match independently tested `e293c5cc8da685d1d23af0dd05ba6cb24e170e18` (runtime unchanged from242c1f6). Branch `codex/concert-encore-v05`; app `products/concert`. No merge or other-product change. Git auto-deploy remains unconfigured. Previous immutable production: https://gamex-concert-pgxfku6o2-ocanudas-7641.vercel.app.
 
-Publication evidence: `../../../perspectives/concert-publication-cues-20261016/`. Anonymous public access200; both client asset hashes match the local build. Real API metadata reports AI configured; no generation requested. Public isolated Chromium checks PASS: all11 beats and5cue-bearing beats at390x844,390x480,1440x1000; larger highlighted directions and reachable controls; actual Lia/Nora/Bruno navigation and return order; public first voice playback. Parent inspected live mobile cue, booking and menu screenshots. All browser negotiation requests intercepted. No paid calls. Physical iOS and live-model semantics remain unverified. Prior full-cast publication evidence is retained in concert-publication-voices-20261016; its delivery record is also copied as previous-delivery.json.
+In Lia's conversation: Record → allow microphone → Stop → review/edit the transcript → explicit Send. Up to45seconds per recording. Existing typed text is preserved; recording/transcription do not consume a negotiation turn. Cancel or scene/visibility changes stop capture. Soundtrack mutes during recording and returns to the previous setting. AI replies are still text; TTS is not implemented. Only the introduction has recorded character voices.
 
-For mobile play: open the live link and refresh; Enter backstage, then Sound on. Existing encore saves are preserved. Start again restarts that device's game if the player wants the full revised introduction. Only the introduction has recorded character voices. Earlier local acceptance statements below are historical and superseded by this release.
+The AI screen follows visible viewport height and vertical pan. Compact typing keeps the reply, Lia identity/agreement, notes, input and review exit visible; decorative portrait returns when the keyboard closes. Synthetic430px/360px visible windows retain203px/133px transcript respectively. No save migration, restart or new key is needed for this update.
+
+Independent QA: all5 task012 criteria PASS,77 Node tests, build and six required browser suites; task011 independently accepted earlier. QA first found a startup lifecycle defect, fixed with gesture-time audio resume and bounded cleanup. Two timing-sensitive test probes now explicitly wait for the audio render frame or loaded fonts without weakening assertions. Evidence: `../../../perspectives/concert-publication-keyboard-20261016/`; tasks011/012 hold details.
+
+Published verification: anonymous200, both client asset hashes match the tested build, same-origin microphone enabled while camera/geolocation remain denied. Signed session start, unauthenticated/cross-origin/invalid-audio guards pass without inference. Public isolated speech-input, keyboard, interrupted-send and agreement-exit suites PASS. Actual Chrome fake-device recorder plus controlled MP4/WebM/API paths verify review/edit/exact Send, track cleanup, mute/restoration and later Nora confirmation→performance. Coordinator inspected public full-mobile and compact screenshots. No paid provider calls.
+
+Limits: physical iPhone permission/keyboard/MP4 recording, live recognition accuracy/latency/provider entitlement, live-model semantics and human enjoyment remain unverified. MP4 fixtures are not Safari testing. The known15–19px transient cold-font scroll residual remains documented; settled-font layout passes. Runtime transcription uses the existing server key and defaults to gpt-transcribe (optional OPENAI_TRANSCRIBE_MODEL). Rate/dedup guards are per warm instance, not a global quota/exactly-once guarantee.
+
+For mobile play: refresh the live link and continue the existing save. Tap Record in the active Lia conversation; nothing is sent until Send. Start again only if you want to replay the introduction. Earlier local acceptance statements below are historical and superseded by this release.
 
 ## Local dialogue amendments — task005
 
