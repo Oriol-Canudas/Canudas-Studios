@@ -18,6 +18,7 @@ function makeId(): string {
 const PROFILE_STORAGE_KEY = 'nextv02legacy.profile'
 const ONBOARDING_STORAGE_KEY = 'nextv02legacy.onboardingCompleted'
 const POSTPONED_STORAGE_KEY = 'nextv02legacy.postponedQuestionIds'
+const SOUND_STORAGE_KEY = 'nextv02legacy.soundEnabled'
 
 // Only used the very first time, before any language has been saved — the
 // device's own language is a better default than always falling back to
@@ -93,6 +94,26 @@ function savePostponedQuestionIds(ids: string[]) {
   }
 }
 
+// A device-level preference, not part of "her" onboarding identity — kept
+// separate from profile/onboarding so restarting the app never silently
+// re-enables sound she turned off.
+function loadSoundEnabled(): boolean {
+  try {
+    const raw = localStorage.getItem(SOUND_STORAGE_KEY)
+    return raw === null ? true : raw === '1'
+  } catch {
+    return true
+  }
+}
+
+function saveSoundEnabled(enabled: boolean) {
+  try {
+    localStorage.setItem(SOUND_STORAGE_KEY, enabled ? '1' : '0')
+  } catch {
+    // Worst case the preference doesn't survive a reload — not fatal.
+  }
+}
+
 interface GameState {
   screen: ScreenName
   profile: SeniorProfile
@@ -128,7 +149,11 @@ interface GameState {
   isFinalizing: boolean
   isConfirming: boolean
 
+  soundEnabled: boolean
+
   goTo: (screen: ScreenName) => void
+  toggleSound: () => void
+  restartApp: () => void
   setLanguage: (language: SeniorProfile['language']) => void
   completeWelcome: () => void
   setNameAndContinue: (name: string | null) => void
@@ -178,7 +203,53 @@ export const useGameStore = create<GameState>((set, get) => ({
   isFinalizing: false,
   isConfirming: false,
 
+  soundEnabled: loadSoundEnabled(),
+
   goTo: (screen) => set({ screen }),
+
+  toggleSound: () => {
+    const soundEnabled = !get().soundEnabled
+    saveSoundEnabled(soundEnabled)
+    set({ soundEnabled })
+  },
+
+  // A true app restart, distinct from `reset` (which only clears the
+  // current conversation session). Clears the local identity/onboarding
+  // state and returns to Welcome — never touches saved memories, which
+  // live server-side against the senior record, not in this local state.
+  restartApp: () => {
+    try {
+      localStorage.removeItem(PROFILE_STORAGE_KEY)
+      localStorage.removeItem(ONBOARDING_STORAGE_KEY)
+      localStorage.removeItem(POSTPONED_STORAGE_KEY)
+    } catch {
+      // Worst case she lands back on Welcome with stale local state still
+      // present — not fatal, Welcome re-asks for name/language regardless.
+    }
+    set({
+      screen: 'welcome',
+      profile: { preferredName: '', language: detectDeviceLanguage() },
+      onboardingCompleted: false,
+      pendingQuestion: null,
+      postponedQuestionIds: [],
+      lastSavedChapter: null,
+      openChapterId: null,
+      activeQuestionId: null,
+      activeTemplateId: null,
+      turns: [],
+      confirmedContext: [],
+      researchedUnconfirmed: [],
+      pendingOfferedContext: [],
+      activeFunction: null,
+      offeringClose: false,
+      isThinking: false,
+      failedDraft: null,
+      lastError: null,
+      chapterDraft: null,
+      isFinalizing: false,
+      isConfirming: false,
+    })
+  },
 
   setLanguage: (language) => {
     const profile = { ...get().profile, language }

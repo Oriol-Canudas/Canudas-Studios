@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useGameStore } from '../game/store'
 import type { ChapterClip } from '../game/types'
 
 const SLIDE_DURATION_MS = 5500
@@ -9,8 +10,11 @@ interface ClipPlayerProps {
 }
 
 export default function ClipPlayer({ clip, onClose }: ClipPlayerProps) {
+  const soundEnabled = useGameStore((s) => s.soundEnabled)
   const [index, setIndex] = useState(0)
-  const [muted, setMuted] = useState(false)
+  // Starts muted when she's turned sound off globally, but this slide's
+  // own mute button still works as a one-off override during playback.
+  const [muted, setMuted] = useState(!soundEnabled)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const slide = clip.slides[index]
 
@@ -76,7 +80,7 @@ export default function ClipPlayer({ clip, onClose }: ClipPlayerProps) {
           {muted ? '🔇' : '🔊'}
         </button>
 
-        {clip.musicUrl && <audio ref={audioRef} src={clip.musicUrl} loop />}
+        {clip.musicUrl && <audio ref={audioRef} src={clip.musicUrl} loop muted={muted} />}
       </div>
     </div>
   )

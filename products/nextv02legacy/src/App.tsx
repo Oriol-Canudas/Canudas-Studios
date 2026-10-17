@@ -11,10 +11,20 @@ import ChapterConfirmScreen from './components/ChapterConfirmScreen'
 import SessionCloseScreen from './components/SessionCloseScreen'
 import LibraryScreen from './components/LibraryScreen'
 import FamilyTreeScreen from './components/FamilyTreeScreen'
+import SettingsMenu from './components/SettingsMenu'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
 
+  return (
+    <>
+      <SettingsMenu />
+      {renderScreen(screen)}
+    </>
+  )
+}
+
+function renderScreen(screen: ReturnType<typeof useGameStore.getState>['screen']) {
   switch (screen) {
     case 'conversation':
       return <ConversationScreen />
