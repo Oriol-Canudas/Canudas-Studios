@@ -13,7 +13,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs');
  const line=()=>page.locator('.opening .big-line');
  const expectBeat=async i=>assert.equal(await line().textContent(),OPENING[i].text);
  const saved=()=>page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('perspectives-concert-encore-v05'));return {prep:s.prep,negotiation:s.negotiation,draft:s.draft,confirmed:s.confirmed};});
- await click('Enter backstage');await click('Pause');await expectBeat(0);
+ await click('Turn sound off');await click('Enter backstage');await click('Pause');await expectBeat(0);
  const initial=await saved();
  await page.locator('.opening-caption').click();await expectBeat(1);
  assert(OPENING[0].text.includes('main set'));assert(OPENING[1].text.includes('co-wrote'));assert(OPENING[2].text.includes('without Nora'));

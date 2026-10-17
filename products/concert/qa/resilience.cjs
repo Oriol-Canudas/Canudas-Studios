@@ -33,7 +33,7 @@ const assert=require('node:assert/strict'),fs=require('fs');
  assert.equal(await page.locator('#message').inputValue(),'Aquest és el següent pensament.');
  await page.screenshot({path:'qa/10-keyboard-sized.png'});
  await click('Send message');await page.getByRole('status').waitFor();
- await openOptions(page);await click('PERSPECTIVES · start again');await click('Start again');
+ await openOptions(page);await click('PERSPECTIVES · start again');
  release();await page.waitForTimeout(200);assert(await page.getByRole('button',{name:'Enter backstage',exact:true}).isVisible());
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('perspectives-concert-encore-v05')));assert.equal(saved.negotiation.turns,0);assert.equal(saved.screen,'cover');assert.equal(errors.length,0);
  fs.writeFileSync('qa/resilience-results.json',JSON.stringify({scope:'Mock backend; actual browser UI. Keyboard-sized viewport, not real iOS keyboard.',pass:true,checks:['failed request preserves draft and turns','retry keeps request id','in-flight send and close disabled','new draft survives previous reply','send remains visible at 390x480','late reply after restart ignored'],errors},null,2));

@@ -4,6 +4,7 @@ const ASSET='/audio/cinematic-score-v1.mp3';
 const CROWD='/audio/encore-call-v2.mp3';
 const VOLUME_KEY='perspectives-concert-volume';
 let voice,voiceBus,voiceActive=false;const voiceListeners=new Set();
+let soundEpoch=0;
 let ctx,master,musicBus,analyser,buffer,crowdBuffer,loading,timer,nextStart=0,enabled=false,captureMuted=false,scene='cover',hidden=false,scheduled=0;
 const audiencePlayed=new Set();let lastAudienceAt=-Infinity,lastCue=null,cheerSource=null,cheerUntil=0;
 export function getVolume(){try{const raw=localStorage.getItem(VOLUME_KEY);return raw===null?.6:Math.max(0,Math.min(1,Number(raw)||0));}catch{return .6;}}
@@ -28,23 +29,29 @@ function schedule(){
 }
 function initialize(){
  const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;if(!Audio)throw Error('Audio is not supported by this browser.');
- ctx=new Audio();master=ctx.createGain();master.gain.value=0;musicBus=ctx.createGain();musicBus.connect(master);analyser=ctx.createAnalyser();analyser.fftSize=2048;
- master.connect(analyser);analyser.connect(ctx.destination);voiceBus=ctx.createGain();voiceBus.connect(master);
+ const context=new Audio(),main=context.createGain(),music=context.createGain(),meter=context.createAnalyser(),speech=context.createGain();
+ ctx=context;master=main;musicBus=music;analyser=meter;voiceBus=speech;master.gain.value=0;musicBus.connect(master);analyser.fftSize=2048;
+ master.connect(analyser);analyser.connect(ctx.destination);voiceBus.connect(master);
  voice=createIntroVoice(ctx,voiceBus,{duck:value=>{voiceActive=value;mix();},notify:value=>voiceListeners.forEach(fn=>fn(value)),interlude:index=>index===5&&crowdBuffer?{buffer:crowdBuffer,output:master,envelope:audienceEnvelope}:null});
 }
+function startupDeadline(promise){
+ let timeout;return Promise.race([promise,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('The concert soundtrack could not start. Tap Sound on to retry.')),10000);})]).finally(()=>clearTimeout(timeout));
+}
 export async function setSound(on){
- if(!on)voice?.cancel();
- if(!ctx){if(!on)return false;initialize();}
- if(on){
-  // Resume directly on the click, before waiting for the file: required by mobile browsers.
-  await ctx.resume();if(ctx.state!=='running')throw Error('Tap Sound on to allow audio in this browser.');
+ const ticket=++soundEpoch;
+ if(!on){enabled=false;voice?.cancel();mix();return false;}
+ try{
+  if(!ctx)initialize();
+  // Resume in the gesture. A later mute/restart invalidates this pending startup.
+  await startupDeadline(ctx.resume());if(ticket!==soundEpoch)return false;
+  if(ctx.state!=='running')throw Error('Tap Sound on to allow audio in this browser.');
   if(!buffer){
-   if(!loading)loading=(async()=>{const decode=async url=>{const r=await fetch(url);if(!r.ok)throw Error('The concert soundtrack could not load. Tap Sound on to retry.');return ctx.decodeAudioData(await r.arrayBuffer());};[buffer,crowdBuffer]=await Promise.all([decode(ASSET),decode(CROWD).catch(()=>null)]);})().catch(e=>{loading=null;buffer=null;throw e;});
-   await loading;
+   if(!loading)loading=(async()=>{const decode=async url=>{const r=await fetch(url,{signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('The concert soundtrack could not load. Tap Sound on to retry.');return startupDeadline(ctx.decodeAudioData(await r.arrayBuffer()));};[buffer,crowdBuffer]=await Promise.all([decode(ASSET),decode(CROWD).catch(()=>null)]);})().catch(e=>{loading=null;buffer=null;throw e;});
+   await loading;if(ticket!==soundEpoch)return false;
   }
   if(!timer){schedule();timer=setInterval(schedule,200);}
- }
- enabled=on;mix();return enabled;
+  enabled=true;mix();return true;
+ }catch(error){if(ticket!==soundEpoch)return false;enabled=false;voice?.cancel();mix();throw error;}
 }
 export function audioStatus(){
  if(!ctx)return {state:'not_started',enabled:false,rms:0};
