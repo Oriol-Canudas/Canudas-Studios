@@ -1,6 +1,16 @@
 # Concert prototype — delivery state
 
-## Accepted local update with publication blocked — 16 October 2026
+## Current public release — emotional scenes, 17 October 2026
+
+Play: https://gamex-concert.vercel.app/?v=emotional-scenes-20261016 . Tasks020–022 are now published: a quiet opening Backstage shortcut, full-viewport authored character portraits with translucent dialogue and answer-before-choices sequencing, and the emotional Lia conversation teaser. Existing story, audio, state, drafts, consent and request behavior are unchanged.
+
+Published `94e8729555a7cc041a4b57c4bdfc489d6905097c`; runtime matches independently accepted `c0ca9f3fae3f6847ce562099b056c7ee8f4d5aa9`. Existing `ocanudas-7641/gamex-concert`, deployment `dpl_6piJsrXDHLqnGn7YMeWARaUEuVxq`, Production READY. Immutable: https://gamex-concert-d4oaoj0oi-ocanudas-7641.vercel.app . The prior daily-quota block is resolved. Normal Vercel CLI sign-in was restored before publication; no billing or project changes.
+
+Public verification PASS: anonymous HTTP200; JS/CSS hashes exactly match the accepted local build; microphone policy unchanged; non-inferential AI metadata available. Actual opening navigation and subdued shortcut, all-cast portraits, Nora's authored confession, hidden choices during reveal, explicit skip, scroll/resize/reload state preservation and hub→teaser→Lia entry passed. The entry probe used one controlled start fixture and verified unchanged event payload, zero consumed turns and no fabricated agreement. Coordinator inspected the public mobile booking, Nora answer and Lia teaser renders.
+
+Evidence: ../../../perspectives/concert-authored-portraits-20261016/deployment.json, published-assets.json, public-opening-results.json, public-portraits-results.json, public-teaser-results.json and adjacent screenshots. These are public-client checks with controlled API fixtures, not live-model validation. No paid model calls, merge or other-product changes. Physical iPhone/Safari, recognition/model quality and human emotional impact remain unverified. The broader task017 Lia/Nora agreement and expanded ending redesign remains a proposal.
+
+## Previous publication attempt — blocked on 16 October 2026; resolved 17 October
 
 Local UI preview: http://127.0.0.1:8822/?v=emotional-scenes-20261016 . Static preview only: authored screens and presentation can be reviewed; it has no live AI API. Existing user preview 8810 and browser storage were left untouched.
 
@@ -10,15 +20,15 @@ Oriol explicitly established the cross-project creative philosophy in ../../CREA
 
 Independent QA PASS: Task020 289b172; Task021 bce3fd8749588c74311eab41efad35beb4e31423; final runtime Task022 c0ca9f3fae3f6847ce562099b056c7ee8f4d5aa9. Build and focused/regression browser suites pass; all cast/five viewport sizes, normal/reduced motion, skip, stale timer, privacy/draft/consent, actual authored paths, unchanged baseline start payload/state, errors/retry and settled rotation verified. Parent inspected mobile and desktop including the final clean resize render. No paid model calls. Physical iPhone/Safari and emotional impact remain unverified.
 
-Attempted to publish ccf39c599387450e851e354500ca99e2935cf732 to the existing ocanudas-7641/gamex-concert. Vercel refused with `api-deployments-free-per-day`: `Resource is limited - try again in 24 hours (more than 100).` No new deployment ID was issued. Public HTTP200 and JS/CSS SHA256 hashes were subsequently confirmed identical to the earlier character-replies release below. The new build is NOT public; its prepared public verification probes have not run. No workaround project or paid upgrade was created.
+Attempted to publish ccf39c599387450e851e354500ca99e2935cf732 to the existing ocanudas-7641/gamex-concert. Vercel refused with `api-deployments-free-per-day`: `Resource is limited - try again in 24 hours (more than 100).` No new deployment ID was issued. Public HTTP200 and JS/CSS SHA256 hashes were subsequently confirmed identical to the earlier character-replies release below. At that time the new build was not public and the prepared public verification probes had not run. The successful retry is recorded above. No workaround project or paid upgrade was created.
 
 Evidence: ../../../perspectives/concert-quiet-backstage-20261016/, ../../../perspectives/concert-authored-portraits-20261016/ (including deployment-blocked.json), ../../../perspectives/concert-emotional-teaser-20261016/. Each accepted task records independent evidence. Changes are pushed on codex/concert-encore-v05.
 
-Next release action after the Vercel limit resets: from products/concert, run the existing Vercel CLI with `--prod --yes`, confirm the same project and READY status, then run the four prepared `verify-assets.cjs`, `public-opening.cjs`, `public-portraits.cjs` and `public-teaser.cjs` under the authored-portraits evidence directory. They target `?v=emotional-scenes-20261016` and use controlled browser fixtures, no paid inference. Record the new deployment and public evidence before marking this update published. No automatic retry has been scheduled.
+Resolved on 17 October following Oriol’s explicit deployment request: the existing project reached READY and all four prepared public verification probes passed. See the current release above. No automatic retry was scheduled.
 
-## Current public release — paced character replies, 16 October 2026
+## Previous release — paced character replies, 16 October 2026
 
-Live: https://gamex-concert.vercel.app/?v=character-replies-20261016. New authored character answers and new Lia AI replies reveal progressively, with sequential paragraphs and stable final text space. Tap the speech or choose Show full reply to read immediately. Choices and navigation remain available. Reduced motion, loaded saves and earlier messages show complete text; notes, typing, review and reload do not replay old replies. No animation progress is saved. Existing story, voices, images, agreements, consent, drafts, full-height opening and portrait AI layout are unchanged. This public release predates the locally accepted full-portrait authored update above.
+Live: https://gamex-concert.vercel.app/?v=character-replies-20261016. New authored character answers and new Lia AI replies reveal progressively, with sequential paragraphs and stable final text space. Tap the speech or choose Show full reply to read immediately. Choices and navigation remain available. Reduced motion, loaded saves and earlier messages show complete text; notes, typing, review and reload do not replay old replies. No animation progress is saved. Existing story, voices, images, agreements, consent, drafts, full-height opening and portrait AI layout are unchanged. This historical release predates the full-portrait authored update published above.
 
 Candidate3865f88f7e845213a3ca95159ec9116508a31975 independently PASS all five task019 criteria: build plus six controlled browser suites, four viewport sizes, whole Unicode graphemes, sequential paragraphs, <=5.82s completion, stable geometry and protected state. Independent accessibility snapshots contain the complete utterance once and no per-tick text mutations. Published9715da57f13451d2df435b35d9d663937455dd13 as deploymentdpl_GVHCxTyJmsdhsBT4wFwifpFy89KN, Production READY in existing gamex-concert. Immutable: https://gamex-concert-7ntzm1803-ocanudas-7641.vercel.app.
 

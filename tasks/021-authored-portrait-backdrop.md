@@ -28,9 +28,16 @@ Acceptance6: during a fresh normal-motion authored reply, follow-up choices are 
 
 Independent QA PASS at bce3fd8749588c74311eab41efad35beb4e31423. Build and authored-portrait, hierarchy, dialogue, reply-reveal, scenes and portrait suites passed. Actual Nora confession/permission/history, all cast/five sizes, state/privacy/draft/reload, natural completion/skip and explicit prior-reply deadline probe passed. No defects or source edits during QA. Evidence: /private/tmp/task021-independent-qa and durable outputs/perspectives/concert-authored-portraits-20261016/independent-qa. Physical iPhone/Safari and human emotional impact remain unverified.
 
-Accepted locally. Task022 also passed independent QA; combined publication is blocked as recorded below.
+Accepted and published with Task022 on 17 October; the earlier blocked attempt and successful publication are recorded below.
 
 
-## Publication attempt
+## Historical publication attempt — 16 October 2026
 
 Combined020+021+022 accepted runtime c0ca9f3, release attempt ccf39c5 on 16 October 2026. Vercel refused publication with api-deployments-free-per-day (more than 100; try again in 24 hours), no new deployment ID. Public assets independently verified unchanged from the previous release. Accepted code is pushed; local static UI preview 8822 is available, no live AI. Public verification remains pending after a successful future deployment; no automatic retry scheduled. See CURRENT_BUILD_STATE.md and outputs/perspectives/concert-authored-portraits-20261016/deployment-blocked.json.
+
+
+## Published — 17 October 2026
+
+Combined Tasks020–022 published from `94e8729555a7cc041a4b57c4bdfc489d6905097c`, with runtime identical to independently accepted `c0ca9f3fae3f6847ce562099b056c7ee8f4d5aa9`. Existing `ocanudas-7641/gamex-concert`; deployment `dpl_6piJsrXDHLqnGn7YMeWARaUEuVxq` is Production READY. Play https://gamex-concert.vercel.app/?v=emotional-scenes-20261016 . Immutable https://gamex-concert-d4oaoj0oi-ocanudas-7641.vercel.app . The previous daily-quota block is resolved.
+
+All four prepared public checks PASS: exact asset hashes and non-inferential metadata, opening shortcut/navigation, full-screen authored portraits with answer-before-choices/skip/scroll/resize/reload, and teaser→Lia with the unchanged guarded start payload. Coordinator visually inspected the public mobile booking beat, Nora reply and Lia teaser. Browser paths use controlled API fixtures; no paid model calls. Physical iPhone/Safari, live-model quality and emotional impact remain unverified. Durable evidence: outputs/perspectives/concert-authored-portraits-20261016/deployment.json and adjacent public results/screenshots. No runtime changes, merge, billing changes or other-product changes in this publication pass.
