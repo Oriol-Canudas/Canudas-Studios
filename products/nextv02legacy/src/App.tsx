@@ -1,12 +1,14 @@
 import { useGameStore } from './game/store'
-import LanguageScreen from './components/LanguageScreen'
-import IntakeScreen from './components/IntakeScreen'
+import WelcomeScreen from './components/WelcomeScreen'
+import NameScreen from './components/NameScreen'
+import FirstChoiceScreen from './components/FirstChoiceScreen'
 import HomeScreen from './components/HomeScreen'
+import ConversationEntryScreen from './components/ConversationEntryScreen'
+import CategoryBrowserScreen from './components/CategoryBrowserScreen'
 import ConversationScreen from './components/ConversationScreen'
 import ChapterConfirmScreen from './components/ChapterConfirmScreen'
 import SessionCloseScreen from './components/SessionCloseScreen'
 import LibraryScreen from './components/LibraryScreen'
-import TopicPickerScreen from './components/TopicPickerScreen'
 import FamilyTreeScreen from './components/FamilyTreeScreen'
 
 export default function App() {
@@ -21,16 +23,20 @@ export default function App() {
       return <SessionCloseScreen />
     case 'library':
       return <LibraryScreen />
-    case 'topicPicker':
-      return <TopicPickerScreen />
     case 'familyTree':
       return <FamilyTreeScreen />
+    case 'conversationEntry':
+      return <ConversationEntryScreen />
+    case 'categoryBrowser':
+      return <CategoryBrowserScreen />
     case 'home':
       return <HomeScreen />
-    case 'intake':
-      return <IntakeScreen />
-    case 'language':
+    case 'firstChoice':
+      return <FirstChoiceScreen />
+    case 'name':
+      return <NameScreen />
+    case 'welcome':
     default:
-      return <LanguageScreen />
+      return <WelcomeScreen />
   }
 }

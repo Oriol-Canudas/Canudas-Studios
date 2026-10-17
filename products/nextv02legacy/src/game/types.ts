@@ -41,16 +41,16 @@ export interface DirectorTurnResult {
 
 export interface SeniorProfile {
   preferredName: string
-  city: string
-  age: number
   language: 'es' | 'ca' | 'en'
 }
 
 export type ScreenName =
-  | 'language'
-  | 'intake'
+  | 'welcome'
+  | 'name'
+  | 'firstChoice'
   | 'home'
-  | 'topicPicker'
+  | 'conversationEntry'
+  | 'categoryBrowser'
   | 'conversation'
   | 'chapterConfirm'
   | 'sessionClose'
@@ -93,3 +93,8 @@ export interface FamilyMember {
   note: string
   createdAt: string
 }
+
+/** 'starter' = opened via "Sorprèn-me" (one highlighted suggestion shown
+ * above the grid); 'overview' = opened via "Ensenya'm què podem fer" or
+ * "Inspira'm" (neutral, no highlighted pick). */
+export type CategoryBrowserMode = 'starter' | 'overview'

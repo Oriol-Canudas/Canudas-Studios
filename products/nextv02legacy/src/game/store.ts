@@ -7,6 +7,7 @@ import type {
   ScreenName,
   PendingQuestion,
   ChapterDraft,
+  CategoryBrowserMode,
 } from './types'
 import { requestDirectorTurn, requestPendingQuestion, requestChapterFinalize } from './directorClient'
 
@@ -15,33 +16,92 @@ function makeId(): string {
 }
 
 const PROFILE_STORAGE_KEY = 'nextv02legacy.profile'
+const ONBOARDING_STORAGE_KEY = 'nextv02legacy.onboardingCompleted'
+const POSTPONED_STORAGE_KEY = 'nextv02legacy.postponedQuestionIds'
 
-function loadSavedProfile(): SeniorProfile | null {
+// Only used the very first time, before any language has been saved — the
+// device's own language is a better default than always falling back to
+// Catalan, per the brief ("suggest the device language when supported").
+function detectDeviceLanguage(): SeniorProfile['language'] {
+  try {
+    const lang = navigator.language?.toLowerCase() ?? ''
+    if (lang.startsWith('ca')) return 'ca'
+    if (lang.startsWith('es')) return 'es'
+    return 'en'
+  } catch {
+    return 'en'
+  }
+}
+
+// Always returns a usable profile (never null) — language is decided one
+// way or another (saved choice, else device, else English) even before
+// she's given a name, since the language control is live from frame one.
+function loadSavedProfile(): SeniorProfile {
   try {
     const raw = localStorage.getItem(PROFILE_STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    if (!parsed?.preferredName || !parsed?.city || !parsed?.language) return null
-    return parsed as SeniorProfile
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (parsed?.language === 'ca' || parsed?.language === 'es' || parsed?.language === 'en') {
+        return { preferredName: typeof parsed.preferredName === 'string' ? parsed.preferredName : '', language: parsed.language }
+      }
+    }
   } catch {
-    return null
+    // fall through to a fresh default
   }
+  return { preferredName: '', language: detectDeviceLanguage() }
 }
 
 function saveProfile(profile: SeniorProfile) {
   try {
     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile))
   } catch {
-    // localStorage unavailable — intake just re-asks next time, not fatal.
+    // localStorage unavailable — settings just don't survive a reload, not fatal.
+  }
+}
+
+function loadOnboardingCompleted(): boolean {
+  try {
+    return localStorage.getItem(ONBOARDING_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function saveOnboardingCompleted() {
+  try {
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, '1')
+  } catch {
+    // Worst case she sees the welcome sequence again next visit — not fatal.
+  }
+}
+
+function loadPostponedQuestionIds(): string[] {
+  try {
+    const raw = localStorage.getItem(POSTPONED_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function savePostponedQuestionIds(ids: string[]) {
+  try {
+    localStorage.setItem(POSTPONED_STORAGE_KEY, JSON.stringify(ids))
+  } catch {
+    // A postponed question might get re-promoted once more — not fatal.
   }
 }
 
 interface GameState {
   screen: ScreenName
   profile: SeniorProfile
+  onboardingCompleted: boolean
   pendingQuestion: PendingQuestion | null
+  postponedQuestionIds: string[]
+  categoryBrowserMode: CategoryBrowserMode
   activeQuestionId: string | null
-  // Set when a session starts from a TopicPickerScreen template — read back
+  // Set when a session starts from a category-browser template — read back
   // at chapter-confirm time so the backend knows whether to also run
   // family-member extraction (only for the 'family-tree' template, to
   // avoid an extra AI call on every single confirmed chapter).
@@ -64,10 +124,13 @@ interface GameState {
   isConfirming: boolean
 
   goTo: (screen: ScreenName) => void
-  setProfile: (p: SeniorProfile) => void
-  chooseLanguage: (language: SeniorProfile['language']) => void
-  completeIntake: (p: SeniorProfile) => void
+  setLanguage: (language: SeniorProfile['language']) => void
+  completeWelcome: () => void
+  setNameAndContinue: (name: string | null) => void
+  completeOnboarding: () => void
+  openCategoryBrowser: (mode: CategoryBrowserMode) => void
   loadPendingQuestion: () => Promise<void>
+  postponeQuestion: (id: string) => void
   startSession: (openingTopic: string, questionId?: string | null, templateId?: string | null) => Promise<void>
   sendSeniorReply: (text: string) => Promise<void>
   retryLastTurn: () => Promise<void>
@@ -78,12 +141,15 @@ interface GameState {
 }
 
 const savedProfile = loadSavedProfile()
-const fallbackProfile: SeniorProfile = { preferredName: '', city: '', age: 0, language: 'ca' }
+const onboardingCompleted = loadOnboardingCompleted()
 
 export const useGameStore = create<GameState>((set, get) => ({
-  screen: savedProfile ? 'home' : 'language',
-  profile: savedProfile ?? fallbackProfile,
+  screen: onboardingCompleted ? 'home' : 'welcome',
+  profile: savedProfile,
+  onboardingCompleted,
   pendingQuestion: null,
+  postponedQuestionIds: loadPostponedQuestionIds(),
+  categoryBrowserMode: 'overview',
   activeQuestionId: null,
   activeTemplateId: null,
 
@@ -102,16 +168,38 @@ export const useGameStore = create<GameState>((set, get) => ({
   isConfirming: false,
 
   goTo: (screen) => set({ screen }),
-  setProfile: (p) => set({ profile: p }),
-  chooseLanguage: (language) => set({ profile: { ...get().profile, language }, screen: 'intake' }),
-  completeIntake: (p) => {
-    saveProfile(p)
-    set({ profile: p, screen: 'home' })
+
+  setLanguage: (language) => {
+    const profile = { ...get().profile, language }
+    saveProfile(profile)
+    set({ profile })
   },
+
+  completeWelcome: () => set({ screen: 'name' }),
+
+  setNameAndContinue: (name) => {
+    const profile = { ...get().profile, preferredName: (name ?? '').trim() }
+    saveProfile(profile)
+    set({ profile, screen: 'firstChoice' })
+  },
+
+  completeOnboarding: () => {
+    saveOnboardingCompleted()
+    set({ onboardingCompleted: true })
+  },
+
+  openCategoryBrowser: (mode) => set({ categoryBrowserMode: mode, screen: 'categoryBrowser' }),
 
   loadPendingQuestion: async () => {
     const question = await requestPendingQuestion()
-    set({ pendingQuestion: question })
+    const postponed = get().postponedQuestionIds
+    set({ pendingQuestion: question && !postponed.includes(question.id) ? question : null })
+  },
+
+  postponeQuestion: (id) => {
+    const ids = [...get().postponedQuestionIds, id]
+    savePostponedQuestionIds(ids)
+    set({ postponedQuestionIds: ids, pendingQuestion: null })
   },
 
   startSession: async (openingTopic, questionId = null, templateId = null) => {

@@ -5,9 +5,17 @@ interface TopicTemplateText {
   openingPrompt: string
 }
 
+// The 6 fixed subcategories of "Crear i recordar" — the only top-level
+// area with real content today. 'llocs', 'bandaSonora', and
+// 'cosesQueSeFer' have no templates yet and render an honest "Aviat"
+// state in CategoryBrowserScreen rather than a faked one. Matches the
+// key names in strings.ts's categoryBrowser.subcategories exactly.
+export type TopicSubcategory = 'llocs' | 'bandaSonora' | 'gent' | 'cosesQueSeFer' | 'histories' | 'maneraDeVeure'
+
 export interface TopicTemplate {
   id: string
   image: string
+  subcategory: TopicSubcategory
   ca: TopicTemplateText
   es: TopicTemplateText
   en: TopicTemplateText
@@ -22,6 +30,7 @@ export const TOPIC_TEMPLATES: TopicTemplate[] = [
   {
     id: 'wedding',
     image: '/topics/wedding.jpg',
+    subcategory: 'histories',
     ca: {
       label: 'El dia del casament',
       openingPrompt:
@@ -41,6 +50,7 @@ export const TOPIC_TEMPLATES: TopicTemplate[] = [
   {
     id: 'unforgettable-day',
     image: '/topics/unforgettable-day.jpg',
+    subcategory: 'histories',
     ca: {
       label: 'Un dia que no oblidarà mai',
       openingPrompt:
@@ -60,6 +70,7 @@ export const TOPIC_TEMPLATES: TopicTemplate[] = [
   {
     id: 'money',
     image: '/topics/money.jpg',
+    subcategory: 'maneraDeVeure',
     ca: {
       label: 'Els diners',
       openingPrompt:
@@ -79,6 +90,7 @@ export const TOPIC_TEMPLATES: TopicTemplate[] = [
   {
     id: 'love',
     image: '/topics/love.jpg',
+    subcategory: 'maneraDeVeure',
     ca: {
       label: "L'amor",
       openingPrompt:
@@ -98,6 +110,7 @@ export const TOPIC_TEMPLATES: TopicTemplate[] = [
   {
     id: 'justice',
     image: '/topics/justice.jpg',
+    subcategory: 'maneraDeVeure',
     ca: {
       label: 'La justícia',
       openingPrompt:
@@ -117,6 +130,7 @@ export const TOPIC_TEMPLATES: TopicTemplate[] = [
   {
     id: 'family',
     image: '/topics/family.jpg',
+    subcategory: 'gent',
     ca: {
       label: 'La família',
       openingPrompt:
@@ -136,6 +150,7 @@ export const TOPIC_TEMPLATES: TopicTemplate[] = [
   {
     id: 'family-tree',
     image: '/topics/family-tree.jpg',
+    subcategory: 'gent',
     ca: {
       label: "Fem l'arbre familiar",
       openingPrompt:

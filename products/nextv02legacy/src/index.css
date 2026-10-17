@@ -76,3 +76,32 @@ h1, h2, h3 {
 .gift-glow {
   animation: gift-glow 4s ease-in-out infinite;
 }
+
+/* Short, gentle entrance for each phase of the onboarding sequence — the
+   whole arrival stays under ~1s per the brief, and never blocks input:
+   controls are interactive immediately, this is purely visual. */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 300ms ease-out both;
+}
+
+.fade-in-up-delayed {
+  animation: fade-in-up 300ms ease-out 150ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up,
+  .fade-in-up-delayed {
+    animation: none;
+  }
+}
