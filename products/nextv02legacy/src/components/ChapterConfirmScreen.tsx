@@ -3,6 +3,7 @@ import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 import DirectorAvatar from './DirectorAvatar'
 import TypewriterText from './TypewriterText'
+import ScreenBadge from './ScreenBadge'
 
 export default function ChapterConfirmScreen() {
   const [correctionDraft, setCorrectionDraft] = useState('')
@@ -14,6 +15,7 @@ export default function ChapterConfirmScreen() {
   if (!chapterDraft) {
     return (
       <div className="min-h-screen bg-cream-deep flex items-center justify-center px-6">
+        <ScreenBadge n={9} />
         <p className="text-ink-soft text-lg">{t.preparing}</p>
       </div>
     )
@@ -21,6 +23,7 @@ export default function ChapterConfirmScreen() {
 
   return (
     <div className="min-h-screen flex flex-col items-center px-6 py-10 relative">
+      <ScreenBadge n={9} />
       <div className="fixed inset-0 -z-10">
         <img src="/director.jpg" alt="" className="w-full h-full object-cover object-top" />
         <div className="absolute inset-0 bg-cream-deep/60" />

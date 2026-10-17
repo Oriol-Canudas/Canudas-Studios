@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
+import ScreenBadge from './ScreenBadge'
 
 export default function NameScreen() {
   const { profile, setNameAndContinue } = useGameStore()
@@ -9,6 +10,7 @@ export default function NameScreen() {
 
   return (
     <div className="min-h-screen md:flex md:flex-row overflow-hidden bg-cream-deep">
+      <ScreenBadge n={2} />
       {/* Same house scene as Welcome, for continuity — same stacked (not
           overlaid) composition so no amount of text/accessibility-size
           growth can ever creep over the face, on mobile or desktop. */}

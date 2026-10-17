@@ -2,6 +2,7 @@ import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 import DirectorAvatar from './DirectorAvatar'
 import TypewriterText from './TypewriterText'
+import ScreenBadge from './ScreenBadge'
 
 export default function SessionCloseScreen() {
   const { profile, reset } = useGameStore()
@@ -10,6 +11,7 @@ export default function SessionCloseScreen() {
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center justify-center px-6 text-center gap-6">
+      <ScreenBadge n={10} />
       <DirectorAvatar size="hero" />
       <TypewriterText
         text={closingLine}

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
+import ScreenBadge from './ScreenBadge'
 
 export default function HomeScreen() {
   const {
@@ -31,6 +32,7 @@ export default function HomeScreen() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      <ScreenBadge n={4} />
       {/* The full-screen companion scene, edge to edge. A bottom-weighted
           scrim keeps the translucent menu legible, matching Welcome's
           anchored-down text treatment. */}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 import { TOPIC_TEMPLATES, getTopicText, type TopicSubcategory } from '../game/topics'
+import ScreenBadge from './ScreenBadge'
 
 type AreaId = 'discover' | 'create' | 'daily' | 'moving'
 
@@ -43,6 +44,7 @@ export default function CategoryBrowserScreen() {
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center px-6 py-10">
+      <ScreenBadge n={6} />
       <div className="w-full max-w-sm flex flex-col gap-6">
         <header className="flex items-center justify-between">
           <button

@@ -3,6 +3,7 @@ import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 import { useVoiceToText } from '../game/useVoiceToText'
 import TypographicMemoryCard from './TypographicMemoryCard'
+import ScreenBadge from './ScreenBadge'
 import {
   STARTER_OPTIONS,
   localize,
@@ -201,6 +202,7 @@ export default function MemoryActivityScreen() {
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col px-6 py-10">
+      <ScreenBadge n={7} />
       <div className="w-full max-w-sm mx-auto flex flex-col gap-6 flex-1">
         {state.step !== 'result' && leaveButton}
 

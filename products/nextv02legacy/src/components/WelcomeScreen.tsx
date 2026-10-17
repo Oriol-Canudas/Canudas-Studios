@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings, LANGUAGE_NAMES } from '../game/strings'
 import type { SeniorProfile } from '../game/types'
+import ScreenBadge from './ScreenBadge'
 
 // The Senyera (Catalan flag) has no reliable emoji across devices/fonts —
 // drawn inline instead of risking a blank glyph. Paired with its text
@@ -30,6 +31,7 @@ export default function WelcomeScreen() {
 
   return (
     <div className="min-h-screen relative md:flex md:flex-row overflow-hidden bg-cream-deep">
+      <ScreenBadge n={1} />
       {/* Mobile: image fills the screen, copy overlays the bottom third.
           Desktop (md:): the two live in separate halves entirely, so no
           crop/scale math can ever put text over the face — it's a

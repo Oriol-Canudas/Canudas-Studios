@@ -3,6 +3,7 @@ import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 import { requestChapterLibrary } from '../game/directorClient'
 import { useVoiceToText } from '../game/useVoiceToText'
+import ScreenBadge from './ScreenBadge'
 import type { MemoryChapter } from '../game/types'
 
 export default function ConversationEntryScreen() {
@@ -21,6 +22,7 @@ export default function ConversationEntryScreen() {
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col px-6 py-10">
+      <ScreenBadge n={5} />
       <div className="w-full max-w-sm mx-auto flex flex-col gap-6 flex-1">
         <button onClick={() => goTo('home')} className="self-start text-ink-soft text-sm underline">
           {t.backHome}

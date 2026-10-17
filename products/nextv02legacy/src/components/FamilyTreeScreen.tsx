@@ -3,6 +3,7 @@ import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 import { requestFamilyTree } from '../game/directorClient'
 import type { FamilyMember } from '../game/types'
+import ScreenBadge from './ScreenBadge'
 
 export default function FamilyTreeScreen() {
   const { profile, goTo } = useGameStore()
@@ -15,6 +16,7 @@ export default function FamilyTreeScreen() {
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center px-5 py-8">
+      <ScreenBadge n={12} />
       <div className="w-full max-w-md flex flex-col gap-6">
         <header className="flex items-center justify-between">
           <h1 className="font-display text-2xl text-ink">{t.title}</h1>

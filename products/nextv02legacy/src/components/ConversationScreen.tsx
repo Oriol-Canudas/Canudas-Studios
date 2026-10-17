@@ -4,6 +4,7 @@ import { getStrings } from '../game/strings'
 import DirectorAvatar from './DirectorAvatar'
 import TypewriterText from './TypewriterText'
 import VoiceButton from './VoiceButton'
+import ScreenBadge from './ScreenBadge'
 
 export default function ConversationScreen() {
   const [draft, setDraft] = useState('')
@@ -41,6 +42,7 @@ export default function ConversationScreen() {
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col">
+      <ScreenBadge n={8} />
       <div className="flex-1 overflow-y-auto px-5 py-6">
         <div className="max-w-md mx-auto flex flex-col gap-4">
           <div className="flex justify-center">

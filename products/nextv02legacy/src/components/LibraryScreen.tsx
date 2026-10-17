@@ -5,6 +5,7 @@ import { requestChapterLibrary, requestChapterClip } from '../game/directorClien
 import type { MemoryChapter, ChapterClip } from '../game/types'
 import ClipPlayer from './ClipPlayer'
 import TypographicMemoryCard from './TypographicMemoryCard'
+import ScreenBadge from './ScreenBadge'
 
 function shareChapter(chapter: MemoryChapter) {
   const text = `${chapter.title}\n\n${chapter.testimonyText}`
@@ -64,6 +65,7 @@ export default function LibraryScreen() {
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center px-5 py-8">
+      <ScreenBadge n={11} />
       <div className="w-full max-w-md flex flex-col gap-6">
         <header className="flex items-center justify-between">
           <h1 className="font-display text-2xl text-ink">{t.title}</h1>
