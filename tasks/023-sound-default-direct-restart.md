@@ -20,4 +20,8 @@ One worker must reproduce baseline behavior in an isolated browser before editin
 
 ## Result
 
-Pending BUILD and independent QA.
+Accepted candidate `8847b596aa2081fb358a06a828488d8d4ebd1d5b`, independently PASS all five frozen criteria. Baseline `8932eed61f2d7f0076a061fc66b8a6670b0ad0f9` was independently rebuilt and reproduced. Worker passed build and eleven browser suites; separate QA passed build and all six required suites, inspected mobile/compact/desktop renders and verified an additional delayed successful AI start cannot restore old state after reset. Runtime changes are confined to `src/main.jsx` and `src/audio.mjs`; no story, engine, API, media or other-product change.
+
+The initial combined QA run timed out on the existing 6.1-second natural reply-reveal wait. The exact unchanged suite passed in isolation; both results are retained. An optional restored-AI audio probe scheduled the score and preserved state, but the host audio clock stalled; it does not establish audible playback for that additional probe. Required restored-authored first-gesture and actual MP3 progress/capture checks passed. Physical iOS/Safari autoplay, subjective audio quality and live AI remain unverified; no paid calls.
+
+Durable evidence: `../../perspectives/concert-sound-reset-20261018/build/` and `../../perspectives/concert-sound-reset-20261018/independent-qa/verdict.md`. Candidate stayed clean throughout independent QA. Coordinator accepted for publication to the existing gamex-concert project; publication and public verification pending.
