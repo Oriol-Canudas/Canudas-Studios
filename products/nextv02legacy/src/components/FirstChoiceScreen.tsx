@@ -2,13 +2,14 @@ import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 
 export default function FirstChoiceScreen() {
-  const { profile, completeOnboarding, openCategoryBrowser, goTo } = useGameStore()
+  const { profile, completeOnboarding, openCategoryBrowser, startSorpremMe, goTo } = useGameStore()
   const t = getStrings(profile.language).firstChoice
 
   function choose(destination: 'starter' | 'mind' | 'overview') {
     completeOnboarding()
     if (destination === 'mind') goTo('conversationEntry')
-    else openCategoryBrowser(destination === 'starter' ? 'starter' : 'overview')
+    else if (destination === 'starter') startSorpremMe()
+    else openCategoryBrowser()
   }
 
   return (

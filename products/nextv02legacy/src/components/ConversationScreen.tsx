@@ -8,6 +8,7 @@ import VoiceButton from './VoiceButton'
 export default function ConversationScreen() {
   const [draft, setDraft] = useState('')
   const [showTextFallback, setShowTextFallback] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const {
     profile,
     turns,
@@ -24,50 +25,74 @@ export default function ConversationScreen() {
   } = useGameStore()
   const strings = getStrings(profile.language).conversation
 
-  // The closing offer is a mood shift — a different full-screen image
-  // marks it, instead of the same portrait sitting behind every turn.
-  const backgroundImage = offeringClose ? '/landing-memory.jpg' : '/director.jpg'
-
-  // Once she's actually said something, "switch topic" saves it as a
-  // chapter first (same pipeline as "Prou per avui") rather than
-  // silently discarding what she just shared. Before that, there's
-  // nothing to save, so it's a plain reset back to Home.
   const hasSeniorReply = turns.some((turn) => turn.role === 'senior')
   const handleSwitchTopic = hasSeniorReply ? finalizeChapter : reset
 
-  return (
-    <div className="min-h-screen flex flex-col relative">
-      <div className="fixed inset-0 -z-10">
-        <img src={backgroundImage} alt="" className="w-full h-full object-cover object-top" />
-        <div className="absolute inset-0 bg-cream-deep/55" />
-      </div>
+  // One current card, not a growing transcript: the latest thing the
+  // Director actually said, plus — only while waiting on a reply — her
+  // own just-sent message as a small compact note. Everything before
+  // that stays out of view until she explicitly asks to see it.
+  const lastTurn = turns[turns.length - 1]
+  const latestDirectorTurn = [...turns].reverse().find((turn) => turn.role === 'director')
+  const pendingSeniorTurn = lastTurn?.role === 'senior' ? lastTurn : null
+  const priorTurns = latestDirectorTurn
+    ? turns.slice(0, turns.lastIndexOf(latestDirectorTurn))
+    : turns.slice(0, Math.max(turns.length - 1, 0))
 
-      <div className="flex-1 overflow-y-auto px-5 py-8">
+  return (
+    <div className="min-h-screen bg-cream-deep flex flex-col">
+      <div className="flex-1 overflow-y-auto px-5 py-6">
         <div className="max-w-md mx-auto flex flex-col gap-4">
-          {turns.map((turn) =>
-            turn.role === 'director' ? (
-              <div
-                key={turn.id}
-                className="self-start max-w-[90%] flex items-start gap-3 bg-surface/80 backdrop-blur-md rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm"
+          <div className="flex justify-center">
+            <DirectorAvatar size="small" />
+          </div>
+
+          {priorTurns.length > 0 && (
+            <div className="self-center">
+              <button
+                onClick={() => setShowHistory((v) => !v)}
+                className="text-ink-soft text-sm underline"
               >
-                <DirectorAvatar size="small" />
-                <TypewriterText
-                  text={turn.content}
-                  className="font-display text-lg text-ink leading-relaxed"
-                />
-              </div>
-            ) : (
-              <div
-                key={turn.id}
-                className="self-end max-w-[85%] ml-auto bg-terracotta/90 backdrop-blur-md text-surface rounded-2xl rounded-br-sm px-5 py-4"
-              >
-                <p className="text-lg leading-relaxed whitespace-pre-wrap">{turn.content}</p>
-              </div>
-            ),
+                {showHistory ? strings.hideHistory : strings.showHistory}
+              </button>
+            </div>
+          )}
+
+          {showHistory && priorTurns.length > 0 && (
+            <div className="max-h-64 overflow-y-auto flex flex-col gap-3 border border-ink/10 rounded-2xl p-4 bg-surface/60">
+              {priorTurns.map((turn) =>
+                turn.role === 'director' ? (
+                  <p key={turn.id} className="text-ink-soft text-base leading-relaxed">
+                    {turn.content}
+                  </p>
+                ) : (
+                  <p key={turn.id} className="text-ink text-base leading-relaxed font-medium">
+                    {turn.content}
+                  </p>
+                ),
+              )}
+            </div>
+          )}
+
+          {latestDirectorTurn && (
+            <div
+              key={latestDirectorTurn.id}
+              className="bg-surface rounded-2xl rounded-tl-sm px-5 py-5 shadow-sm"
+            >
+              <TypewriterText
+                key={latestDirectorTurn.id}
+                text={latestDirectorTurn.content}
+                className="font-display text-xl text-ink leading-relaxed"
+              />
+            </div>
+          )}
+
+          {pendingSeniorTurn && (
+            <p className="self-end max-w-[85%] text-ink-soft text-base italic px-2">{pendingSeniorTurn.content}</p>
           )}
 
           {confirmedContext.length > 0 && (
-            <div className="self-start max-w-[90%] bg-gold/25 backdrop-blur-md border border-gold/40 rounded-xl px-4 py-3">
+            <div className="self-start max-w-[90%] bg-gold/25 border border-gold/40 rounded-xl px-4 py-3">
               <p className="text-xs uppercase tracking-wide text-terracotta-deep font-semibold mb-1">
                 {strings.confirmed}
               </p>
@@ -75,14 +100,10 @@ export default function ConversationScreen() {
             </div>
           )}
 
-          {isThinking && (
-            <p className="text-ink-soft italic text-lg bg-surface/70 backdrop-blur-md rounded-xl px-4 py-2 self-start">
-              {strings.thinking}
-            </p>
-          )}
+          {isThinking && <p className="text-ink-soft italic text-lg self-start">{strings.thinking}</p>}
 
           {lastError && (
-            <div className="bg-red-50/90 backdrop-blur-md border border-red-200 text-red-800 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-center justify-between gap-3">
               <span>{strings.connectError(lastError)}</span>
               {failedDraft && (
                 <button onClick={retryLastTurn} className="underline whitespace-nowrap">
@@ -94,7 +115,7 @@ export default function ConversationScreen() {
         </div>
       </div>
 
-      <div className="border-t border-ink/10 bg-cream/85 backdrop-blur-md px-5 py-5">
+      <div className="border-t border-ink/10 bg-cream px-5 py-5">
         <div className="max-w-md mx-auto flex flex-col gap-3">
           {offeringClose && (
             <div className="flex flex-col gap-2">

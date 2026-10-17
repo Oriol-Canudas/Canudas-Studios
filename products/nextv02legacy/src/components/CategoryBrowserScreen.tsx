@@ -12,27 +12,34 @@ const AREA_IMAGES: Record<AreaId, string> = {
   moving: '/areas/moving.jpg',
 }
 
-// Only "create" has real subcategories with content today — the other
-// three areas are visible (per the brief, all four must show) but open
-// straight to an honest "coming soon" state, never a faked activity.
+// Only "create" has real content today.
+const AVAILABLE_AREAS: AreaId[] = ['create']
+
+// Order matches the brief exactly. Three reuse an existing topic image
+// that already fits; the other three (no content yet) get their own
+// small illustration so every subcategory still reads as a real,
+// designed card rather than a placeholder row.
 const CREATE_SUBCATEGORIES: TopicSubcategory[] = ['llocs', 'bandaSonora', 'gent', 'cosesQueSeFer', 'histories', 'maneraDeVeure']
 
-// The one highlighted pick for "Sorprèn-me" — a real, directly-startable
-// template, not a fabricated personalised recommendation.
-const STARTER_TEMPLATE_ID = 'family-tree'
+const SUBCATEGORY_IMAGES: Record<TopicSubcategory, string> = {
+  llocs: '/subcategories/llocs.jpg',
+  bandaSonora: '/subcategories/banda-sonora.jpg',
+  gent: '/topics/family.jpg',
+  cosesQueSeFer: '/subcategories/coses-que-se-fer.jpg',
+  histories: '/topics/wedding.jpg',
+  maneraDeVeure: '/topics/love.jpg',
+}
 
 type View = { kind: 'areas' } | { kind: 'unavailable'; area: AreaId } | { kind: 'subcategories' } | { kind: 'activities'; subcategory: TopicSubcategory }
 
 export default function CategoryBrowserScreen() {
-  const { profile, categoryBrowserMode, startSession, goTo } = useGameStore()
+  const { profile, startSession, goTo } = useGameStore()
   const t = getStrings(profile.language).categoryBrowser
   const [view, setView] = useState<View>({ kind: 'areas' })
 
   function openArea(area: AreaId) {
     setView(area === 'create' ? { kind: 'subcategories' } : { kind: 'unavailable', area })
   }
-
-  const starterTemplate = TOPIC_TEMPLATES.find((tpl) => tpl.id === STARTER_TEMPLATE_ID)
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center px-6 py-10">
@@ -50,39 +57,30 @@ export default function CategoryBrowserScreen() {
           <>
             <h1 className="fade-in-up font-display text-2xl text-ink">{t.title}</h1>
 
-            {categoryBrowserMode === 'starter' && starterTemplate && (
-              <button
-                onClick={() => {
-                  const text = getTopicText(starterTemplate, profile.language)
-                  startSession(text.openingPrompt, null, starterTemplate.id)
-                }}
-                className="fade-in-up relative aspect-[16/9] rounded-2xl overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform"
-              >
-                <img src={starterTemplate.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
-                <div className="absolute bottom-3 left-4 right-4">
-                  <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1">{t.starterLabel}</p>
-                  <p className="font-display text-xl text-surface leading-snug">
-                    {getTopicText(starterTemplate, profile.language).label}
-                  </p>
-                </div>
-              </button>
-            )}
-
             <div className="fade-in-up-delayed grid grid-cols-2 gap-4">
-              {(Object.keys(t.areas) as AreaId[]).map((area) => (
-                <button
-                  key={area}
-                  onClick={() => openArea(area)}
-                  className="relative aspect-square rounded-2xl overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform"
-                >
-                  <img src={AREA_IMAGES[area]} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
-                  <p className="absolute bottom-3 left-3 right-3 font-display text-base text-surface leading-snug">
-                    {t.areas[area].title}
-                  </p>
-                </button>
-              ))}
+              {(Object.keys(t.areas) as AreaId[]).map((area) => {
+                const available = AVAILABLE_AREAS.includes(area)
+                return (
+                  <button
+                    key={area}
+                    onClick={() => openArea(area)}
+                    className={`relative aspect-square rounded-2xl overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform ${
+                      available ? '' : 'opacity-60'
+                    }`}
+                  >
+                    <img src={AREA_IMAGES[area]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
+                    {!available && (
+                      <span className="absolute top-2 right-2 text-[10px] uppercase tracking-wide bg-ink/60 text-surface rounded-full px-2 py-1">
+                        {t.comingSoon}
+                      </span>
+                    )}
+                    <p className="absolute bottom-3 left-3 right-3 font-display text-base text-surface leading-snug">
+                      {t.areas[area].title}
+                    </p>
+                  </button>
+                )
+              })}
             </div>
           </>
         )}
@@ -102,19 +100,27 @@ export default function CategoryBrowserScreen() {
           <div className="fade-in-up flex flex-col gap-4">
             <h1 className="font-display text-2xl text-ink">{t.areas.create.title}</h1>
             <p className="text-ink-soft text-base">{t.areas.create.invitation}</p>
-            <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {CREATE_SUBCATEGORIES.map((sub) => {
                 const hasContent = TOPIC_TEMPLATES.some((tpl) => tpl.subcategory === sub)
                 return (
                   <button
                     key={sub}
                     onClick={() => setView({ kind: 'activities', subcategory: sub })}
-                    className="text-left bg-surface border border-ink/10 rounded-2xl p-5 shadow-sm active:scale-[0.98] transition-transform flex items-center justify-between gap-3"
+                    className={`relative aspect-square rounded-2xl overflow-hidden shadow-sm text-left active:scale-[0.98] transition-transform ${
+                      hasContent ? '' : 'opacity-60'
+                    }`}
                   >
-                    <span className="font-display text-lg text-ink">{t.subcategories[sub]}</span>
+                    <img src={SUBCATEGORY_IMAGES[sub]} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
                     {!hasContent && (
-                      <span className="text-xs uppercase tracking-wide text-terracotta-deep shrink-0">{t.comingSoon}</span>
+                      <span className="absolute top-2 right-2 text-[10px] uppercase tracking-wide bg-ink/60 text-surface rounded-full px-2 py-1">
+                        {t.comingSoon}
+                      </span>
                     )}
+                    <p className="absolute bottom-3 left-3 right-3 font-display text-base text-surface leading-snug">
+                      {t.subcategories[sub]}
+                    </p>
                   </button>
                 )
               })}

@@ -7,7 +7,7 @@ import type {
   ScreenName,
   PendingQuestion,
   ChapterDraft,
-  CategoryBrowserMode,
+  SavedChapterSummary,
 } from './types'
 import { requestDirectorTurn, requestPendingQuestion, requestChapterFinalize } from './directorClient'
 
@@ -99,7 +99,12 @@ interface GameState {
   onboardingCompleted: boolean
   pendingQuestion: PendingQuestion | null
   postponedQuestionIds: string[]
-  categoryBrowserMode: CategoryBrowserMode
+  // The most recently saved "Un petit record" (or any chapter) this
+  // session, so Home can acknowledge it — cleared once she's seen it.
+  lastSavedChapter: SavedChapterSummary | null
+  // Set right before navigating to Library so it can auto-open this one
+  // chapter instead of just showing the grid.
+  openChapterId: string | null
   activeQuestionId: string | null
   // Set when a session starts from a category-browser template — read back
   // at chapter-confirm time so the backend knows whether to also run
@@ -128,9 +133,14 @@ interface GameState {
   completeWelcome: () => void
   setNameAndContinue: (name: string | null) => void
   completeOnboarding: () => void
-  openCategoryBrowser: (mode: CategoryBrowserMode) => void
+  openCategoryBrowser: () => void
+  startSorpremMe: () => void
   loadPendingQuestion: () => Promise<void>
   postponeQuestion: (id: string) => void
+  setLastSavedChapter: (chapter: SavedChapterSummary) => void
+  clearLastSavedChapter: () => void
+  openLibraryChapter: (chapterId: string) => void
+  clearOpenChapterId: () => void
   startSession: (openingTopic: string, questionId?: string | null, templateId?: string | null) => Promise<void>
   sendSeniorReply: (text: string) => Promise<void>
   retryLastTurn: () => Promise<void>
@@ -149,7 +159,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   onboardingCompleted,
   pendingQuestion: null,
   postponedQuestionIds: loadPostponedQuestionIds(),
-  categoryBrowserMode: 'overview',
+  lastSavedChapter: null,
+  openChapterId: null,
   activeQuestionId: null,
   activeTemplateId: null,
 
@@ -188,7 +199,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ onboardingCompleted: true })
   },
 
-  openCategoryBrowser: (mode) => set({ categoryBrowserMode: mode, screen: 'categoryBrowser' }),
+  openCategoryBrowser: () => set({ screen: 'categoryBrowser' }),
+
+  // "Sorprèn-me" goes straight to a short, available, outcome-clear
+  // activity — never the open-ended Director chat, and never the
+  // heaviest thing we have (family tree) as the very first ask.
+  startSorpremMe: () => set({ screen: 'memoryActivity' }),
+
+  setLastSavedChapter: (chapter) => set({ lastSavedChapter: chapter }),
+  clearLastSavedChapter: () => set({ lastSavedChapter: null }),
+  openLibraryChapter: (chapterId) => set({ openChapterId: chapterId, screen: 'library' }),
+  clearOpenChapterId: () => set({ openChapterId: null }),
 
   loadPendingQuestion: async () => {
     const question = await requestPendingQuestion()

@@ -91,3 +91,61 @@ export async function requestFamilyTree(): Promise<FamilyMember[]> {
   const data = await res.json()
   return Array.isArray(data?.members) ? data.members : []
 }
+
+async function postMemoryDraft<T>(payload: Record<string, unknown>): Promise<T> {
+  const res = await fetch('/api/memory-draft', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'unknown_error' }))
+    throw new Error(error.error ?? `request_failed_${res.status}`)
+  }
+  return (await res.json()) as T
+}
+
+export interface MemoryInterpretation {
+  sufficient: boolean
+  clarificationPrompt: string | null
+}
+
+export function requestMemoryInterpret(rawText: string, starterLabel: string, language: SeniorProfile['language']) {
+  return postMemoryDraft<MemoryInterpretation>({ mode: 'interpret', rawText, starterLabel, language })
+}
+
+export interface MemoryDraft {
+  title: string
+  body: string
+}
+
+export function requestMemoryDraft(
+  rawText: string,
+  detail: string | null,
+  starterLabel: string,
+  language: SeniorProfile['language'],
+) {
+  return postMemoryDraft<MemoryDraft>({ mode: 'draft', rawText, detail, starterLabel, language })
+}
+
+export function requestMemoryRevise(
+  currentTitle: string,
+  currentBody: string,
+  instruction: string,
+  language: SeniorProfile['language'],
+) {
+  return postMemoryDraft<MemoryDraft>({ mode: 'revise', currentTitle, currentBody, instruction, language })
+}
+
+export async function requestMemorySave(title: string, body: string): Promise<{ id: string; title: string }> {
+  const res = await fetch('/api/memory-save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, body }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'unknown_error' }))
+    throw new Error(error.error ?? `request_failed_${res.status}`)
+  }
+  return (await res.json()) as { id: string; title: string }
+}

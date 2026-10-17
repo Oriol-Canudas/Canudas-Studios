@@ -51,6 +51,7 @@ export type ScreenName =
   | 'home'
   | 'conversationEntry'
   | 'categoryBrowser'
+  | 'memoryActivity'
   | 'conversation'
   | 'chapterConfirm'
   | 'sessionClose'
@@ -94,7 +95,9 @@ export interface FamilyMember {
   createdAt: string
 }
 
-/** 'starter' = opened via "Sorprèn-me" (one highlighted suggestion shown
- * above the grid); 'overview' = opened via "Ensenya'm què podem fer" or
- * "Inspira'm" (neutral, no highlighted pick). */
-export type CategoryBrowserMode = 'starter' | 'overview'
+/** Set right after a successful save so Home can acknowledge the actual
+ * item just created, instead of staying silent about it. */
+export interface SavedChapterSummary {
+  id: string
+  title: string
+}

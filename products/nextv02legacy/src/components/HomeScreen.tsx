@@ -3,14 +3,31 @@ import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 
 export default function HomeScreen() {
-  const { profile, pendingQuestion, loadPendingQuestion, postponeQuestion, startSession, openCategoryBrowser, goTo } =
-    useGameStore()
+  const {
+    profile,
+    pendingQuestion,
+    loadPendingQuestion,
+    postponeQuestion,
+    lastSavedChapter,
+    startSession,
+    startSorpremMe,
+    openCategoryBrowser,
+    openLibraryChapter,
+    clearLastSavedChapter,
+    goTo,
+  } = useGameStore()
   const t = getStrings(profile.language).home
   const familyTreeStrings = getStrings(profile.language).familyTree
 
   useEffect(() => {
     loadPendingQuestion()
   }, [loadPendingQuestion])
+
+  function viewSavedChapter() {
+    if (!lastSavedChapter) return
+    openLibraryChapter(lastSavedChapter.id)
+    clearLastSavedChapter()
+  }
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col items-center relative">
@@ -31,9 +48,11 @@ export default function HomeScreen() {
             <h1 className="font-display text-3xl text-ink">{t.greeting(profile.preferredName)}</h1>
           </header>
 
-          {/* The one main card: a pending family question is the highest
-              reward when present; otherwise an honest general invitation.
-              Never both, never neither leaving a visible gap. */}
+          {/* The one main card, in priority order: a pending family
+              question (the highest reward) > an acknowledgment of what
+              she just saved > an honest, outcome-clear suggestion. Never
+              more than one, never the same destination as the stable
+              actions below. */}
           {pendingQuestion ? (
             <div className="gift-glow bg-gradient-to-br from-gold/25 to-surface rounded-3xl p-6 fade-in-up-delayed">
               <button
@@ -52,17 +71,28 @@ export default function HomeScreen() {
                 {t.postpone}
               </button>
             </div>
+          ) : lastSavedChapter ? (
+            <div className="bg-gradient-to-br from-terracotta/15 to-surface rounded-3xl p-6 fade-in-up-delayed">
+              <p className="text-xs uppercase tracking-wide text-terracotta-deep font-semibold mb-2">
+                ✨ {t.justSavedLabel}
+              </p>
+              <p className="font-display text-xl text-ink leading-snug mb-3">{lastSavedChapter.title}</p>
+              <button onClick={viewSavedChapter} className="text-terracotta-deep font-medium underline">
+                {t.viewSaved}
+              </button>
+            </div>
           ) : (
             <button
-              onClick={() => goTo('conversationEntry')}
+              onClick={startSorpremMe}
               className="text-left bg-surface border border-ink/10 rounded-3xl p-6 shadow-sm active:scale-[0.98] transition-transform fade-in-up-delayed"
             >
-              <p className="font-display text-xl text-ink leading-snug">{t.generalInvitationTitle}</p>
-              <p className="text-ink-soft text-base mt-1">{t.generalInvitationSubtitle}</p>
+              <p className="font-display text-xl text-ink leading-snug">{t.suggestionTitle}</p>
+              <p className="text-ink-soft text-base mt-1">{t.suggestionSubtitle}</p>
             </button>
           )}
 
-          {/* Two compact stable actions — not big competing panels. */}
+          {/* Two compact stable actions — distinct from the main card and
+              from each other: "bring your own" vs "offer me something." */}
           <div className="flex gap-3">
             <button
               onClick={() => goTo('conversationEntry')}
@@ -71,7 +101,7 @@ export default function HomeScreen() {
               <span className="font-display text-base text-ink leading-snug">{t.mindAction}</span>
             </button>
             <button
-              onClick={() => openCategoryBrowser('overview')}
+              onClick={openCategoryBrowser}
               className="flex-1 bg-surface border border-ink/10 rounded-2xl py-4 px-4 text-left active:scale-[0.98] transition-transform"
             >
               <span className="font-display text-base text-ink leading-snug">{t.inspireAction}</span>

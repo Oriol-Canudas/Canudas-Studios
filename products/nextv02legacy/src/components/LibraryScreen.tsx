@@ -4,6 +4,7 @@ import { getStrings } from '../game/strings'
 import { requestChapterLibrary, requestChapterClip } from '../game/directorClient'
 import type { MemoryChapter, ChapterClip } from '../game/types'
 import ClipPlayer from './ClipPlayer'
+import TypographicMemoryCard from './TypographicMemoryCard'
 
 function shareChapter(chapter: MemoryChapter) {
   const text = `${chapter.title}\n\n${chapter.testimonyText}`
@@ -20,7 +21,7 @@ function shareChapter(chapter: MemoryChapter) {
 }
 
 export default function LibraryScreen() {
-  const { profile, goTo } = useGameStore()
+  const { profile, openChapterId, clearOpenChapterId, goTo } = useGameStore()
   const t = getStrings(profile.language).library
   const [chapters, setChapters] = useState<MemoryChapter[] | null>(null)
   const [opened, setOpened] = useState<MemoryChapter | null>(null)
@@ -30,7 +31,16 @@ export default function LibraryScreen() {
   const [playingClip, setPlayingClip] = useState<ChapterClip | null>(null)
 
   useEffect(() => {
-    requestChapterLibrary().then(setChapters)
+    requestChapterLibrary().then((loaded) => {
+      setChapters(loaded)
+      if (openChapterId) {
+        const match = loaded.find((c) => c.id === openChapterId)
+        if (match) setOpened(match)
+        clearOpenChapterId()
+      }
+    })
+    // Only on mount — openChapterId is a one-shot "jump to this item" signal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleClipAction(chapter: MemoryChapter) {
@@ -76,11 +86,7 @@ export default function LibraryScreen() {
               {chapter.illustrationUrl ? (
                 <img src={chapter.illustrationUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
               ) : (
-                <img
-                  src="/director.jpg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover opacity-40"
-                />
+                <TypographicMemoryCard id={chapter.id} />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-transparent" />
               <p className="absolute bottom-2 left-2 right-2 text-surface font-display text-sm leading-snug">
@@ -94,9 +100,13 @@ export default function LibraryScreen() {
       {opened && (
         <div className="fixed inset-0 z-20 flex items-end sm:items-center justify-center bg-ink/60 px-4 py-6">
           <div className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-surface rounded-2xl shadow-lg flex flex-col">
-            {opened.illustrationUrl && (
-              <img src={opened.illustrationUrl} alt="" className="w-full h-56 object-cover rounded-t-2xl" />
-            )}
+            <div className="relative w-full h-56 rounded-t-2xl overflow-hidden">
+              {opened.illustrationUrl ? (
+                <img src={opened.illustrationUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <TypographicMemoryCard id={opened.id} />
+              )}
+            </div>
             <div className="p-6 flex flex-col gap-4">
               <h2 className="font-display text-2xl text-ink leading-snug">{opened.title}</h2>
               <p className="text-lg text-ink leading-relaxed whitespace-pre-wrap">{opened.testimonyText}</p>

@@ -29,23 +29,28 @@ export default function WelcomeScreen() {
   const [showLanguageSheet, setShowLanguageSheet] = useState(false)
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <img src="/director.jpg" alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
-      <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-ink/10" />
+    <div className="min-h-screen relative md:flex md:flex-row overflow-hidden bg-cream-deep">
+      {/* Mobile: image fills the screen, copy overlays the bottom third.
+          Desktop (md:): the two live in separate halves entirely, so no
+          crop/scale math can ever put text over the face — it's a
+          different region of the layout, not a careful overlay. */}
+      <div className="relative h-[60vh] md:h-screen md:w-1/2 overflow-hidden">
+        <img src="/director.jpg" alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/5 md:hidden" />
 
-      {/* Visible from the first frame, unobtrusive top corner — never full-screen. */}
-      <button
-        onClick={() => setShowLanguageSheet(true)}
-        className="absolute top-5 right-5 flex items-center gap-2 bg-ink/40 backdrop-blur-sm text-surface rounded-full px-4 py-2 text-sm"
-      >
-        <span aria-hidden>🌐</span>
-        <span>{LANGUAGE_NAMES[profile.language]}</span>
-      </button>
+        <button
+          onClick={() => setShowLanguageSheet(true)}
+          className="absolute top-5 right-5 flex items-center gap-2 bg-ink/40 backdrop-blur-sm text-surface rounded-full px-4 py-2 text-sm"
+        >
+          <span aria-hidden>🌐</span>
+          <span>{LANGUAGE_NAMES[profile.language]}</span>
+        </button>
+      </div>
 
-      <div className="absolute bottom-0 left-0 right-0 px-6 pb-10 pt-16 flex flex-col items-center gap-6 text-center">
-        <div className="fade-in-up flex flex-col gap-2">
-          <h1 className="font-display text-3xl text-surface leading-snug">{t.title}</h1>
-          <p className="text-surface/90 text-lg">{t.subtitle}</p>
+      <div className="relative md:h-screen md:w-1/2 flex flex-col items-center justify-center px-6 py-10 md:py-0 gap-6 text-center">
+        <div className="fade-in-up flex flex-col gap-2 max-w-sm">
+          <h1 className="font-display text-3xl text-ink leading-snug">{t.title}</h1>
+          <p className="text-ink-soft text-lg">{t.subtitle}</p>
         </div>
         <button
           onClick={completeWelcome}
@@ -57,7 +62,7 @@ export default function WelcomeScreen() {
 
       {showLanguageSheet && (
         <div
-          className="fixed inset-0 z-20 flex items-end justify-center bg-ink/50 px-4 pb-6"
+          className="fixed inset-0 z-20 flex items-end md:items-center justify-center bg-ink/50 px-4 pb-6"
           onClick={() => setShowLanguageSheet(false)}
         >
           <div

@@ -5,6 +5,7 @@ import FirstChoiceScreen from './components/FirstChoiceScreen'
 import HomeScreen from './components/HomeScreen'
 import ConversationEntryScreen from './components/ConversationEntryScreen'
 import CategoryBrowserScreen from './components/CategoryBrowserScreen'
+import MemoryActivityScreen from './components/MemoryActivityScreen'
 import ConversationScreen from './components/ConversationScreen'
 import ChapterConfirmScreen from './components/ChapterConfirmScreen'
 import SessionCloseScreen from './components/SessionCloseScreen'
@@ -29,6 +30,8 @@ export default function App() {
       return <ConversationEntryScreen />
     case 'categoryBrowser':
       return <CategoryBrowserScreen />
+    case 'memoryActivity':
+      return <MemoryActivityScreen />
     case 'home':
       return <HomeScreen />
     case 'firstChoice':

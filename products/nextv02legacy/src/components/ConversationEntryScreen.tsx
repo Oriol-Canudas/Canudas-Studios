@@ -1,63 +1,23 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 import { requestChapterLibrary } from '../game/directorClient'
+import { useVoiceToText } from '../game/useVoiceToText'
 import type { MemoryChapter } from '../game/types'
-
-type RecorderState = 'idle' | 'recording' | 'transcribing' | 'error'
 
 export default function ConversationEntryScreen() {
   const { profile, startSession, openCategoryBrowser, goTo } = useGameStore()
   const t = getStrings(profile.language).conversationEntry
   const [draft, setDraft] = useState('')
   const [recent, setRecent] = useState<MemoryChapter[]>([])
-  const [recorderState, setRecorderState] = useState<RecorderState>('idle')
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
+
+  const { state: recorderState, startRecording, stopRecording } = useVoiceToText(profile.language, (text) =>
+    setDraft((prev) => (prev ? `${prev} ${text}` : text)),
+  )
 
   useEffect(() => {
     requestChapterLibrary().then((chapters) => setRecent(chapters.slice(0, 2)))
   }, [])
-
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
-      chunksRef.current = []
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data)
-      }
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((track) => track.stop())
-        setRecorderState('transcribing')
-        try {
-          const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
-          const res = await fetch(`/api/transcribe?lang=${profile.language}`, {
-            method: 'POST',
-            headers: { 'Content-Type': blob.type },
-            body: blob,
-          })
-          if (!res.ok) throw new Error('transcribe_failed')
-          const { text } = await res.json()
-          // Fills the composer rather than sending — she reviews/edits before
-          // anything starts, since there's no active session here yet.
-          if (text?.trim()) setDraft((prev) => (prev ? `${prev} ${text.trim()}` : text.trim()))
-          setRecorderState('idle')
-        } catch {
-          setRecorderState('error')
-        }
-      }
-      recorder.start()
-      mediaRecorderRef.current = recorder
-      setRecorderState('recording')
-    } catch {
-      setRecorderState('error')
-    }
-  }
-
-  function stopRecording() {
-    mediaRecorderRef.current?.stop()
-  }
 
   return (
     <div className="min-h-screen bg-cream-deep flex flex-col px-6 py-10">
@@ -112,7 +72,7 @@ export default function ConversationEntryScreen() {
             </button>
           </div>
 
-          <button onClick={() => openCategoryBrowser('overview')} className="text-ink-soft text-base underline text-center">
+          <button onClick={openCategoryBrowser} className="text-ink-soft text-base underline text-center">
             {t.escape}
           </button>
         </div>
