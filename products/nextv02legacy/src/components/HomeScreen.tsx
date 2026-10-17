@@ -30,22 +30,24 @@ export default function HomeScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-cream-deep flex flex-col items-center relative">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Full-screen companion portrait — the persistent backdrop, not a
+          cropped box. A bottom-weighted scrim keeps the translucent menu
+          legible while leaving her face, near the top, fully uncovered. */}
       <div className="fixed inset-0 -z-10">
-        <img src="/landing-memory.jpg" alt="" className="w-full h-full object-cover opacity-10" />
+        <img src="/director.jpg" alt="" className="w-full h-full object-cover object-top" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
       </div>
 
-      <div className="w-full max-w-md">
-        <img
-          src="/director.jpg"
-          alt=""
-          className="w-full h-72 object-cover object-top rounded-b-[2.5rem] shadow-sm"
-        />
-
-        <div className="px-6 pt-8 pb-10 flex flex-col gap-6">
+      <div className="relative min-h-screen flex flex-col">
+        {/* Guaranteed clear zone — her face stays uncovered no matter the
+            viewport height, unlike a plain justify-end which lets content
+            grow upward to fill whatever space remains. */}
+        <div className="flex-1 min-h-[55vh] md:min-h-[76vh]" />
+        <div className="w-full max-w-md mx-auto px-6 pb-10 flex flex-col gap-6">
           {/* Brief greeting — time-neutral, no location. */}
           <header className="text-center fade-in-up">
-            <h1 className="font-display text-3xl text-ink">{t.greeting(profile.preferredName)}</h1>
+            <h1 className="font-display text-3xl text-cream drop-shadow-sm">{t.greeting(profile.preferredName)}</h1>
           </header>
 
           {/* The one main card, in priority order: a pending family
@@ -54,40 +56,40 @@ export default function HomeScreen() {
               more than one, never the same destination as the stable
               actions below. */}
           {pendingQuestion ? (
-            <div className="gift-glow bg-gradient-to-br from-gold/25 to-surface rounded-3xl p-6 fade-in-up-delayed">
+            <div className="gift-glow bg-gold/20 backdrop-blur-xl border border-gold/40 rounded-3xl p-6 shadow-lg fade-in-up-delayed">
               <button
                 onClick={() => startSession(pendingQuestion.text, pendingQuestion.id)}
                 className="w-full text-left active:scale-[0.98] transition-transform"
               >
-                <p className="text-xs uppercase tracking-wide text-terracotta-deep font-semibold mb-2">
+                <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-2">
                   ✨ {t.familyGift}
                 </p>
-                <p className="font-display text-xl text-ink leading-snug">{pendingQuestion.text}</p>
+                <p className="font-display text-xl text-cream leading-snug">{pendingQuestion.text}</p>
               </button>
               <button
                 onClick={() => postponeQuestion(pendingQuestion.id)}
-                className="text-ink-soft text-sm underline mt-3"
+                className="text-cream/70 text-sm underline mt-3"
               >
                 {t.postpone}
               </button>
             </div>
           ) : lastSavedChapter ? (
-            <div className="bg-gradient-to-br from-terracotta/15 to-surface rounded-3xl p-6 fade-in-up-delayed">
-              <p className="text-xs uppercase tracking-wide text-terracotta-deep font-semibold mb-2">
+            <div className="bg-terracotta/20 backdrop-blur-xl border border-terracotta/40 rounded-3xl p-6 shadow-lg fade-in-up-delayed">
+              <p className="text-xs uppercase tracking-wide text-terracotta font-semibold mb-2">
                 ✨ {t.justSavedLabel}
               </p>
-              <p className="font-display text-xl text-ink leading-snug mb-3">{lastSavedChapter.title}</p>
-              <button onClick={viewSavedChapter} className="text-terracotta-deep font-medium underline">
+              <p className="font-display text-xl text-cream leading-snug mb-3">{lastSavedChapter.title}</p>
+              <button onClick={viewSavedChapter} className="text-cream font-medium underline">
                 {t.viewSaved}
               </button>
             </div>
           ) : (
             <button
               onClick={startSorpremMe}
-              className="text-left bg-surface border border-ink/10 rounded-3xl p-6 shadow-sm active:scale-[0.98] transition-transform fade-in-up-delayed"
+              className="text-left bg-cream/15 backdrop-blur-xl border border-cream/30 rounded-3xl p-6 shadow-lg active:scale-[0.98] transition-transform fade-in-up-delayed"
             >
-              <p className="font-display text-xl text-ink leading-snug">{t.suggestionTitle}</p>
-              <p className="text-ink-soft text-base mt-1">{t.suggestionSubtitle}</p>
+              <p className="font-display text-xl text-cream leading-snug">{t.suggestionTitle}</p>
+              <p className="text-cream/70 text-base mt-1">{t.suggestionSubtitle}</p>
             </button>
           )}
 
@@ -96,15 +98,15 @@ export default function HomeScreen() {
           <div className="flex gap-3">
             <button
               onClick={() => goTo('conversationEntry')}
-              className="flex-1 bg-surface border border-ink/10 rounded-2xl py-4 px-4 text-left active:scale-[0.98] transition-transform"
+              className="flex-1 bg-cream/15 backdrop-blur-xl border border-cream/30 rounded-2xl py-4 px-4 text-left active:scale-[0.98] transition-transform shadow-lg"
             >
-              <span className="font-display text-base text-ink leading-snug">{t.mindAction}</span>
+              <span className="font-display text-base text-cream leading-snug">{t.mindAction}</span>
             </button>
             <button
               onClick={openCategoryBrowser}
-              className="flex-1 bg-surface border border-ink/10 rounded-2xl py-4 px-4 text-left active:scale-[0.98] transition-transform"
+              className="flex-1 bg-cream/15 backdrop-blur-xl border border-cream/30 rounded-2xl py-4 px-4 text-left active:scale-[0.98] transition-transform shadow-lg"
             >
-              <span className="font-display text-base text-ink leading-snug">{t.inspireAction}</span>
+              <span className="font-display text-base text-cream leading-snug">{t.inspireAction}</span>
             </button>
           </div>
 
@@ -112,17 +114,17 @@ export default function HomeScreen() {
           <div className="flex gap-3 mt-1">
             <button
               onClick={() => goTo('library')}
-              className="flex-1 flex items-center justify-center gap-2 bg-ink/5 rounded-full py-3 px-4 active:scale-[0.98] transition-transform"
+              className="flex-1 flex items-center justify-center gap-2 bg-cream/10 backdrop-blur-xl border border-cream/20 rounded-full py-3 px-4 active:scale-[0.98] transition-transform"
             >
               <span className="text-lg">📖</span>
-              <span className="text-ink-soft text-sm font-medium">{t.libraryButton}</span>
+              <span className="text-cream/90 text-sm font-medium">{t.libraryButton}</span>
             </button>
             <button
               onClick={() => goTo('familyTree')}
-              className="flex-1 flex items-center justify-center gap-2 bg-ink/5 rounded-full py-3 px-4 active:scale-[0.98] transition-transform"
+              className="flex-1 flex items-center justify-center gap-2 bg-cream/10 backdrop-blur-xl border border-cream/20 rounded-full py-3 px-4 active:scale-[0.98] transition-transform"
             >
               <span className="text-lg">🌳</span>
-              <span className="text-ink-soft text-sm font-medium">{familyTreeStrings.button}</span>
+              <span className="text-cream/90 text-sm font-medium">{familyTreeStrings.button}</span>
             </button>
           </div>
         </div>
