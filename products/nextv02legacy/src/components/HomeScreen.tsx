@@ -30,13 +30,22 @@ export default function HomeScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-cream-deep flex flex-col items-center justify-center px-6 py-10">
-      <div className="w-full max-w-sm flex flex-col gap-8">
+    <div className="min-h-screen relative md:flex md:flex-row overflow-hidden bg-cream-deep">
+      {/* Same structure as Welcome: on mobile the portrait is its own band
+          up top, content flows below in normal document flow (never an
+          overlay, so her face can never end up covered); on desktop the
+          two live side by side. */}
+      <div className="relative h-[42vh] md:h-screen md:w-1/2 overflow-hidden shrink-0">
+        <img src="/director.jpg" alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/5 md:hidden" />
+      </div>
+
+      <div className="relative md:h-screen md:w-1/2 md:overflow-y-auto flex flex-col items-center px-6 py-8 md:py-10 gap-6">
         <h1 className="fade-in-up font-display text-2xl text-ink text-center leading-snug">
           {t.greeting(profile.preferredName)}
         </h1>
 
-        <div className="fade-in-up-delayed flex flex-col gap-4">
+        <div className="fade-in-up-delayed flex flex-col gap-4 w-full max-w-sm">
           {/* The top row, in priority order: a pending family question (the
               highest reward) > an acknowledgment of what she just saved >
               an honest, outcome-clear suggestion. Never more than one. */}
