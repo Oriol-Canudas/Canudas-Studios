@@ -30,42 +30,38 @@ export default function HomeScreen() {
   }
 
   return (
-    <div className="min-h-screen relative md:flex md:flex-row overflow-hidden bg-cream-deep">
-      {/* Same structure as Welcome: on mobile the portrait is its own band
-          up top, content flows below in normal document flow (never an
-          overlay, so her face can never end up covered); on desktop the
-          two live side by side. */}
-      <div className="relative h-[42vh] md:h-screen md:w-1/2 overflow-hidden shrink-0">
-        <img src="/director.jpg" alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/5 md:hidden" />
+    <div className="min-h-screen relative overflow-hidden">
+      {/* The full-screen companion scene, edge to edge. A top-weighted
+          scrim keeps the translucent menu legible; it fades out by the
+          point her face begins, so the picture reads clearly below it. */}
+      <div className="fixed inset-0 -z-10">
+        <img src="/director.jpg" alt="" className="w-full h-full object-cover object-top" />
+        <div className="absolute inset-0 bg-gradient-to-b from-ink/75 via-ink/15 to-transparent" />
       </div>
 
-      <div className="relative md:h-screen md:w-1/2 md:overflow-y-auto flex flex-col items-center px-6 py-8 md:py-10 gap-6">
-        <h1 className="fade-in-up font-display text-2xl text-ink text-center leading-snug">
-          {t.greeting(profile.preferredName)}
-        </h1>
+      <div className="relative min-h-screen flex flex-col items-center px-6 pt-8 pb-10 gap-4">
+        <header className="text-center fade-in-up">
+          <h1 className="font-display text-2xl text-cream drop-shadow-sm leading-snug">
+            {t.greeting(profile.preferredName)}
+          </h1>
+        </header>
 
-        <div className="fade-in-up-delayed flex flex-col gap-4 w-full max-w-sm">
-          {/* The top row, in priority order: a pending family question (the
-              highest reward) > an acknowledgment of what she just saved >
-              an honest, outcome-clear suggestion. Never more than one. */}
+        <div className="fade-in-up-delayed w-full max-w-sm flex flex-col gap-3">
+          {/* The one primary card, in priority order: a pending family
+              question > an acknowledgment of what she just saved > an
+              honest, outcome-clear suggestion. Never more than one. */}
           {pendingQuestion ? (
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => startSession(pendingQuestion.text, pendingQuestion.id)}
-                className="gift-glow flex items-center gap-4 bg-gold/15 border border-gold/40 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-transform text-left"
+                className="gift-glow text-left bg-gold/20 backdrop-blur-xl border border-gold/40 rounded-2xl p-4 shadow-lg active:scale-[0.98] transition-transform"
               >
-                <span className="w-16 h-16 rounded-xl bg-gold/20 border border-gold/30 flex items-center justify-center text-2xl shrink-0">
-                  ✨
-                </span>
-                <div>
-                  <p className="font-display text-lg text-ink leading-snug">{t.familyGift}</p>
-                  <p className="text-ink-soft text-sm mt-0.5">{pendingQuestion.text}</p>
-                </div>
+                <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1">✨ {t.familyGift}</p>
+                <p className="font-display text-lg text-cream leading-snug">{pendingQuestion.text}</p>
               </button>
               <button
                 onClick={() => postponeQuestion(pendingQuestion.id)}
-                className="text-ink-soft text-sm underline self-start ml-1"
+                className="text-cream/80 text-sm underline self-start ml-1"
               >
                 {t.postpone}
               </button>
@@ -73,70 +69,53 @@ export default function HomeScreen() {
           ) : lastSavedChapter ? (
             <button
               onClick={viewSavedChapter}
-              className="flex items-center gap-4 bg-terracotta/10 border border-terracotta/30 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-transform text-left"
+              className="text-left bg-terracotta/20 backdrop-blur-xl border border-terracotta/40 rounded-2xl p-4 shadow-lg active:scale-[0.98] transition-transform"
             >
-              <span className="w-16 h-16 rounded-xl bg-terracotta/15 border border-terracotta/20 flex items-center justify-center text-2xl shrink-0">
-                ✨
-              </span>
-              <div>
-                <p className="font-display text-lg text-ink leading-snug">{t.justSavedLabel}</p>
-                <p className="text-ink-soft text-sm mt-0.5">{lastSavedChapter.title}</p>
-              </div>
+              <p className="text-xs uppercase tracking-wide text-terracotta font-semibold mb-1">✨ {t.justSavedLabel}</p>
+              <p className="font-display text-lg text-cream leading-snug">{lastSavedChapter.title}</p>
             </button>
           ) : (
             <button
               onClick={startSorpremMe}
-              className="flex items-center gap-4 bg-surface border border-ink/10 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-transform text-left"
+              className="text-left bg-cream/15 backdrop-blur-xl border border-cream/30 rounded-2xl p-4 shadow-lg active:scale-[0.98] transition-transform"
             >
-              <img src="/entry/surprise.jpg" alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
-              <div>
-                <p className="font-display text-lg text-ink leading-snug">{t.suggestionTitle}</p>
-                <p className="text-ink-soft text-sm mt-0.5">{t.suggestionSubtitle}</p>
-              </div>
+              <p className="font-display text-lg text-cream leading-snug">{t.suggestionTitle}</p>
+              <p className="text-cream/80 text-sm mt-0.5">{t.suggestionSubtitle}</p>
             </button>
           )}
 
           <button
             onClick={() => goTo('conversationEntry')}
-            className="flex items-center gap-4 bg-surface border border-ink/10 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-transform text-left"
+            className="text-left bg-cream/15 backdrop-blur-xl border border-cream/30 rounded-2xl p-4 shadow-lg active:scale-[0.98] transition-transform"
           >
-            <img src="/entry/mind.jpg" alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
-            <div>
-              <p className="font-display text-lg text-ink leading-snug">{t.mindAction}</p>
-            </div>
+            <span className="font-display text-lg text-cream leading-snug">{t.mindAction}</span>
           </button>
 
-          <button
-            onClick={openCategoryBrowser}
-            className="flex items-center gap-4 bg-surface border border-ink/10 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-transform text-left"
-          >
-            <img src="/entry/showme.jpg" alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
-            <div>
-              <p className="font-display text-lg text-ink leading-snug">{t.inspireAction}</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => goTo('library')}
-            className="flex items-center gap-4 bg-surface border border-ink/10 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-transform text-left"
-          >
-            <span className="w-16 h-16 rounded-xl bg-cream-deep border border-ink/10 flex items-center justify-center text-2xl shrink-0">
-              📖
-            </span>
-            <div>
-              <p className="font-display text-lg text-ink leading-snug">{t.libraryButton}</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => goTo('familyTree')}
-            className="flex items-center gap-4 bg-surface border border-ink/10 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-transform text-left"
-          >
-            <img src="/topics/family-tree.jpg" alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
-            <div>
-              <p className="font-display text-lg text-ink leading-snug">{familyTreeStrings.button}</p>
-            </div>
-          </button>
+          {/* Three compact actions in a row — keeps the menu's total
+              height from growing down into her face on short viewports. */}
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={openCategoryBrowser}
+              className="flex flex-col items-center gap-1.5 bg-cream/10 backdrop-blur-xl border border-cream/20 rounded-2xl py-3 px-2 active:scale-[0.98] transition-transform"
+            >
+              <span className="text-xl">🧭</span>
+              <span className="text-cream/90 text-xs font-medium text-center leading-tight">{t.inspireAction}</span>
+            </button>
+            <button
+              onClick={() => goTo('library')}
+              className="flex flex-col items-center gap-1.5 bg-cream/10 backdrop-blur-xl border border-cream/20 rounded-2xl py-3 px-2 active:scale-[0.98] transition-transform"
+            >
+              <span className="text-xl">📖</span>
+              <span className="text-cream/90 text-xs font-medium text-center leading-tight">{t.libraryButton}</span>
+            </button>
+            <button
+              onClick={() => goTo('familyTree')}
+              className="flex flex-col items-center gap-1.5 bg-cream/10 backdrop-blur-xl border border-cream/20 rounded-2xl py-3 px-2 active:scale-[0.98] transition-transform"
+            >
+              <span className="text-xl">🌳</span>
+              <span className="text-cream/90 text-xs font-medium text-center leading-tight">{familyTreeStrings.button}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
