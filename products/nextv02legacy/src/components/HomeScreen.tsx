@@ -31,15 +31,20 @@ export default function HomeScreen() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* The full-screen companion scene, edge to edge. A top-weighted
-          scrim keeps the translucent menu legible; it fades out by the
-          point her face begins, so the picture reads clearly below it. */}
+      {/* The full-screen companion scene, edge to edge. A bottom-weighted
+          scrim keeps the translucent menu legible, matching Welcome's
+          anchored-down text treatment. */}
       <div className="fixed inset-0 -z-10">
         <img src="/director.jpg" alt="" className="w-full h-full object-cover object-top" />
-        <div className="absolute inset-0 bg-gradient-to-b from-ink/75 via-ink/15 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/25 to-transparent" />
       </div>
 
-      <div className="relative min-h-screen flex flex-col items-center px-6 pt-8 pb-10 gap-4">
+      <div className="relative min-h-screen flex flex-col items-center px-6 pb-10 gap-4">
+        {/* Guaranteed clear zone, verified against director.jpg's actual
+            face position so the menu can never grow up into her face —
+            see the Home full-screen commit history for the measurement. */}
+        <div className="flex-1 min-h-[55vh] md:min-h-[76vh]" />
+
         <header className="text-center fade-in-up">
           <h1 className="font-display text-2xl text-cream drop-shadow-sm leading-snug">
             {t.greeting(profile.preferredName)}
