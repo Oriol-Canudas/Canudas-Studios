@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { suspendBackgroundMusic, resumeBackgroundMusic } from './backgroundMusic'
 import type { SeniorProfile } from './types'
 
 export type RecorderState = 'idle' | 'recording' | 'transcribing' | 'error'
@@ -16,6 +17,9 @@ export function useVoiceToText(language: SeniorProfile['language'], onTranscribe
   async function startRecording() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // Ambient music bleeding into the mic (via speaker leakage on a
+      // phone without headphones) would hurt transcription quality.
+      suspendBackgroundMusic()
       const recorder = new MediaRecorder(stream)
       chunksRef.current = []
       recorder.ondataavailable = (e) => {
@@ -23,6 +27,7 @@ export function useVoiceToText(language: SeniorProfile['language'], onTranscribe
       }
       recorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop())
+        resumeBackgroundMusic()
         setState('transcribing')
         try {
           const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })

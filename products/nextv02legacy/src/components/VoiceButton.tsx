@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
+import { suspendBackgroundMusic, resumeBackgroundMusic } from '../game/backgroundMusic'
 
 type RecorderState = 'idle' | 'recording' | 'transcribing' | 'error'
 
@@ -19,6 +20,7 @@ export default function VoiceButton() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
+      suspendBackgroundMusic()
       const recorder = new MediaRecorder(stream)
       chunksRef.current = []
       recorder.ondataavailable = (e) => {
@@ -37,6 +39,7 @@ export default function VoiceButton() {
   function stopRecording() {
     mediaRecorderRef.current?.stop()
     streamRef.current?.getTracks().forEach((t) => t.stop())
+    resumeBackgroundMusic()
   }
 
   async function handleStop(mimeType: string) {

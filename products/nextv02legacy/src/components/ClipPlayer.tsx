@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../game/store'
+import { suspendBackgroundMusic, resumeBackgroundMusic } from '../game/backgroundMusic'
 import type { ChapterClip } from '../game/types'
 
 const SLIDE_DURATION_MS = 5500
@@ -29,6 +30,10 @@ export default function ClipPlayer({ clip, onClose }: ClipPlayerProps) {
       // Autoplay with sound can be blocked even after a tap in some
       // browsers — not fatal, the slideshow still plays silently.
     })
+    // The clip has its own soundtrack — ambient background music stays
+    // out of the way while it's open, and comes back once she closes it.
+    suspendBackgroundMusic()
+    return () => resumeBackgroundMusic()
   }, [])
 
   return (

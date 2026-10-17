@@ -12,12 +12,14 @@ import SessionCloseScreen from './components/SessionCloseScreen'
 import LibraryScreen from './components/LibraryScreen'
 import FamilyTreeScreen from './components/FamilyTreeScreen'
 import SettingsMenu from './components/SettingsMenu'
+import BackgroundMusic from './components/BackgroundMusic'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
 
   return (
     <>
+      <BackgroundMusic />
       <SettingsMenu />
       {renderScreen(screen)}
     </>
