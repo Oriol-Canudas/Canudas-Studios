@@ -1,6 +1,18 @@
 # Concert prototype — delivery state
 
-## Current public release — emotional scenes, 17 October 2026
+## Current public release — sound on and direct restart, 18 October 2026
+
+Play: https://gamex-concert.vercel.app/?v=sound-reset-20261018 . Sound defaults on for fresh/restored visits and reset, unlocked by the first normal gesture. In-visit mute/zero remains respected; a positive volume preference persists. Brand, AI options and Try another approach restart directly without a confirmation dialog. Existing cover remains the start screen. Late audio/AI/transcription completions cannot undo a reset.
+
+Published `41848dcba3040583b21c4a09f5d6238204dc08b9`; runtime matches independently accepted `8847b596aa2081fb358a06a828488d8d4ebd1d5b`. Existing gamex-concert project, deployment `dpl_YC3dha7EuCPUw8YTZeAy7d6kMUbN`, Production READY. Immutable: https://gamex-concert-ft5qpevk9-ocanudas-7641.vercel.app . No merge, new project, billing change or other-product change.
+
+Independent local QA PASS all five task023 criteria: build and six required browser suites, actual MP3 playback and recording/mixer checks, baseline reproduction, all reset routes, late responses and mobile/compact/desktop rendering. An unchanged isolated reply-reveal rerun passed after an initial timing timeout; both results are retained. Public anonymous HTTP200, exact JS/CSS and soundtrack/crowd hashes, API metadata and UI/state checks PASS at390×844/390×480/1440×1000. Public checks verify default-on, deliberate mute, reload-on, all three immediate resets and retained legacy/unrelated storage.
+
+Public audible playback is not confirmed: two real-audio browser attempts scheduled the correct score/voice, but their visible/running AudioContext clock stalled at0.0053s with master gain0. This matches an optional local QA probe limitation; it does not replace the successful required local audio checks or establish a production-specific defect. No tests were weakened to label this as a pass. Physical iOS/Safari autoplay and subjective listening remain human checks. All API browser calls were controlled fixtures; no paid inference.
+
+Evidence: ../../../perspectives/concert-sound-reset-20261018/ — deployment.json, independent-qa/verdict.md, published-assets.json, public-audio-assets.json, public-ui-results.json, public-audio-diagnostic.json and mobile renders. The story, state engine, media and providers remain unchanged.
+
+## Previous public release — emotional scenes, 17 October 2026
 
 Play: https://gamex-concert.vercel.app/?v=emotional-scenes-20261016 . Tasks020–022 are now published: a quiet opening Backstage shortcut, full-viewport authored character portraits with translucent dialogue and answer-before-choices sequencing, and the emotional Lia conversation teaser. Existing story, audio, state, drafts, consent and request behavior are unchanged.
 
