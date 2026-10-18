@@ -1,8 +1,15 @@
-// Self-contained — same convention as the other api/*.ts files. Returns
-// the family-tree members ledger for the (single, for this
-// proof-of-concept stage) test senior, built up over time by
-// chapter-finalize.ts whenever a chapter from the 'family-tree'
-// TopicPickerScreen template is confirmed.
+// Self-contained — same convention as the other api/*.ts files.
+//
+// EXPLICITLY DISABLED for NEXT v1 — the family-request loop this powers
+// is out of v1's reachable scope by product decision (SPECIFICATION.md:
+// "No ... family request loop ... in the first scope"). Disabled rather
+// than retrofitted with ownership scoping, since the feature itself
+// isn't staying for this version. Code below is preserved, not deleted,
+// in case the family-tree screen returns in a later version — it also
+// had a real cross-owner leak before this (picked "the" senior via
+// `.limit(1).maybeSingle()` with no caller identity at all, so it
+// returned whichever senior happened to be first in the table to
+// anyone who called it) — do not re-enable without fixing that first.
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -18,7 +25,14 @@ function safeJsonParse<T>(raw: string): T | null {
   }
 }
 
-export default async function handler(req: any, res: any) {
+export default async function handler(_req: any, res: any) {
+  return res.status(501).json({ error: 'not_available_in_this_version' })
+}
+
+// Preserved verbatim, not called from the handler above while this route
+// is disabled — kept so the pre-v1 logic is still here if the
+// family-tree screen comes back in a later version.
+export async function legacyFamilyTreeHandler(req: any, res: any) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET')
     return res.status(405).json({ error: 'method_not_allowed' })

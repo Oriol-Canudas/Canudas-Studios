@@ -15,10 +15,42 @@
 // and never re-spends image generation credits.
 
 import { createClient } from '@supabase/supabase-js'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5.5'
 const CLIP_BUCKET = 'chapter-clips'
 const SLIDE_COUNT = 3
+
+// Duplicated per-file by this project's self-contained api/*.ts convention
+// (see api/session.ts, which issues this cookie).
+function sessionSecret(): string {
+  return process.env.SESSION_SECRET || ''
+}
+function signSeniorId(seniorId: string): string {
+  return createHmac('sha256', sessionSecret()).update(seniorId).digest('hex')
+}
+function verifiedSeniorIdFromCookie(cookieHeader: string | undefined): string | null {
+  if (!cookieHeader || !sessionSecret()) return null
+  const match = cookieHeader.match(/(?:^|;\s*)next_session=([^;]+)/)
+  if (!match) return null
+  let raw: string
+  try {
+    raw = decodeURIComponent(match[1])
+  } catch {
+    return null
+  }
+  const sep = raw.lastIndexOf('.')
+  if (sep < 0) return null
+  const seniorId = raw.slice(0, sep)
+  const sig = raw.slice(sep + 1)
+  if (!/^[0-9a-f]{64}$/.test(sig)) return null
+  const expected = signSeniorId(seniorId)
+  const sigBuf = Buffer.from(sig, 'hex')
+  const expBuf = Buffer.from(expected, 'hex')
+  if (sigBuf.length !== expBuf.length) return null
+  if (!timingSafeEqual(sigBuf, expBuf)) return null
+  return seniorId
+}
 
 // A small pool of warm, nostalgic instrumental tracks generated once
 // up front (not per-chapter — the ElevenLabs key here is scoped to
@@ -193,8 +225,27 @@ export default async function handler(req: any, res: any) {
   const chapterId = sanitizeText(req.body?.chapterId)
   if (!chapterId) return res.status(400).json({ error: 'missing_chapter_id' })
 
+  const seniorId = verifiedSeniorIdFromCookie(req.headers.cookie)
+  if (!seniorId) {
+    return res.status(401).json({ error: 'no_session' })
+  }
+
   const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
   const manifestPath = `${chapterId}/manifest.json`
+
+  // Ownership check comes before anything else — including the cache
+  // lookup below, which used to key purely off an attacker-controllable
+  // chapterId with no verification that it belonged to the caller.
+  const { data: chapter, error: fetchError } = await supabase
+    .from('chapters')
+    .select('title, testimony_text, senior_id, seniors(language)')
+    .eq('id', chapterId)
+    .maybeSingle()
+
+  if (fetchError || !chapter || chapter.senior_id !== seniorId) {
+    logDiagnostic({ outcome: 'chapter_not_found', chapterId })
+    return res.status(404).json({ error: 'chapter_not_found' })
+  }
 
   // --- Cache hit: a clip already exists for this chapter ---
   const { data: cached } = await supabase.storage.from(CLIP_BUCKET).download(manifestPath)
@@ -211,16 +262,6 @@ export default async function handler(req: any, res: any) {
   }
 
   const startedAt = Date.now()
-  const { data: chapter, error: fetchError } = await supabase
-    .from('chapters')
-    .select('title, testimony_text, seniors(language)')
-    .eq('id', chapterId)
-    .maybeSingle()
-
-  if (fetchError || !chapter) {
-    logDiagnostic({ outcome: 'chapter_not_found', chapterId })
-    return res.status(404).json({ error: 'chapter_not_found' })
-  }
 
   const language: 'es' | 'ca' | 'en' = ['es', 'en'].includes((chapter as any)?.seniors?.language)
     ? (chapter as any).seniors.language
