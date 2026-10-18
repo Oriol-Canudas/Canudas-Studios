@@ -3,11 +3,12 @@ import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
 import { suspendBackgroundMusic, resumeBackgroundMusic } from '../game/backgroundMusic'
 
-type RecorderState = 'idle' | 'recording' | 'transcribing' | 'error'
+type RecorderState = 'idle' | 'recording' | 'transcribing' | 'reviewing' | 'error'
 
 export default function VoiceButton() {
   const [state, setState] = useState<RecorderState>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [transcript, setTranscript] = useState('')
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
@@ -38,7 +39,7 @@ export default function VoiceButton() {
 
   function stopRecording() {
     mediaRecorderRef.current?.stop()
-    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current?.getTracks().forEach((track) => track.stop())
     resumeBackgroundMusic()
   }
 
@@ -56,17 +57,66 @@ export default function VoiceButton() {
         throw new Error(payload.error ?? 'transcribe_failed')
       }
       const { text } = await res.json()
-      setState('idle')
-      if (text?.trim()) {
-        sendSeniorReply(text.trim())
-      }
+      // Never record implicitly: she reviews/edits the transcript here —
+      // sendSeniorReply only fires once she explicitly confirms Send.
+      setTranscript((text ?? '').trim())
+      setState('reviewing')
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : t.transcribeError)
       setState('error')
     }
   }
 
+  function confirmSend() {
+    if (!transcript.trim()) return
+    sendSeniorReply(transcript.trim())
+    setTranscript('')
+    setState('idle')
+  }
+
+  function cancelReview() {
+    setTranscript('')
+    setState('idle')
+  }
+
   const disabled = isThinking || state === 'transcribing'
+
+  if (state === 'reviewing') {
+    return (
+      <div className="w-full flex flex-col gap-3">
+        <p className="text-ink-soft text-sm">{t.reviewLabel}</p>
+        <textarea
+          value={transcript}
+          onChange={(e) => setTranscript(e.target.value)}
+          rows={3}
+          className="w-full bg-surface border border-ink/20 rounded-2xl px-4 py-3 text-lg text-ink resize-none"
+          autoFocus
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={confirmSend}
+            disabled={!transcript.trim() || isThinking}
+            className="flex-1 bg-terracotta text-surface rounded-xl py-3 text-base font-medium disabled:opacity-50"
+          >
+            {t.send}
+          </button>
+          <button
+            onClick={() => {
+              setTranscript('')
+              setState('idle')
+              startRecording()
+            }}
+            className="border border-ink/20 text-ink-soft rounded-xl px-4 py-3 text-base"
+          >
+            {t.rerecord}
+          </button>
+        </div>
+        <button onClick={cancelReview} className="text-ink-soft text-sm underline text-center">
+          {t.cancel}
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-center gap-2">

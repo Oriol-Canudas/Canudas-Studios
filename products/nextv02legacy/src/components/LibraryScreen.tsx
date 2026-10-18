@@ -22,7 +22,7 @@ function shareChapter(chapter: MemoryChapter) {
 }
 
 export default function LibraryScreen() {
-  const { profile, openChapterId, clearOpenChapterId, goTo } = useGameStore()
+  const { profile, openChapterId, clearOpenChapterId, goTo, startResumeStory } = useGameStore()
   const t = getStrings(profile.language).library
   const [chapters, setChapters] = useState<MemoryChapter[] | null>(null)
   const [opened, setOpened] = useState<MemoryChapter | null>(null)
@@ -76,7 +76,17 @@ export default function LibraryScreen() {
 
         {chapters === null && <p className="text-ink-soft text-lg">…</p>}
 
-        {chapters?.length === 0 && <p className="text-ink-soft text-lg">{t.empty}</p>}
+        {chapters?.length === 0 && (
+          <div className="flex flex-col items-center gap-4 py-10 text-center">
+            <p className="text-ink-soft text-lg">{t.empty}</p>
+            <button
+              onClick={() => goTo('conversationEntry')}
+              className="bg-terracotta text-surface rounded-xl px-6 py-3 text-base font-medium"
+            >
+              {t.emptyCta}
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           {chapters?.map((chapter) => (
@@ -114,6 +124,13 @@ export default function LibraryScreen() {
               <p className="text-lg text-ink leading-relaxed whitespace-pre-wrap">{opened.testimonyText}</p>
 
               {clipError && <p className="text-red-800 text-base">{clipError}</p>}
+
+              <button
+                onClick={() => startResumeStory(opened.id, opened.testimonyText)}
+                className="border border-terracotta-deep text-terracotta-deep rounded-xl py-3 text-lg font-medium"
+              >
+                {t.addMemory}
+              </button>
 
               <button
                 onClick={() => handleClipAction(opened)}

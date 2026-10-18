@@ -15,6 +15,8 @@ import SettingsMenu from './components/SettingsMenu'
 import BackgroundMusic from './components/BackgroundMusic'
 import TopicMenuScreen from './components/TopicMenuScreen'
 import SummerOpeningScreen from './components/SummerOpeningScreen'
+import SurpriseMenuScreen from './components/SurpriseMenuScreen'
+import WhitneyJourneyScreen from './components/WhitneyJourneyScreen'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
@@ -44,6 +46,10 @@ function renderScreen(screen: ReturnType<typeof useGameStore.getState>['screen']
       return <TopicMenuScreen />
     case 'summerOpening':
       return <SummerOpeningScreen />
+    case 'surpriseMenu':
+      return <SurpriseMenuScreen />
+    case 'whitneyJourney':
+      return <WhitneyJourneyScreen />
     case 'conversationEntry':
       return <ConversationEntryScreen />
     case 'categoryBrowser':

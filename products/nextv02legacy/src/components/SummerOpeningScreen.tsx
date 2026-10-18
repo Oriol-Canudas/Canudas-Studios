@@ -4,38 +4,23 @@ import { getStrings } from '../game/strings'
 import ScreenBadge from './ScreenBadge'
 
 // E02-E05 — "Aquells estius," built as one sequential component (same
-// spirit as MemoryActivityScreen's step reducer). No AI this stage: pure
-// authored content, matching acceptance journey 2 ("Explica'm through
-// three scenes, no input, graceful close"). "Em ve un record" is visible
-// everywhere the approved reference shows it, but — since contribution
-// (P01) isn't part of this bounded stage — tapping it shows an honest
-// inline "not yet" notice rather than faking a working flow or silently
-// hiding an approved control.
+// spirit as MemoryActivityScreen's step reducer). No AI drives the scene
+// sequence itself (that stays authored, matching acceptance journey 2:
+// "Explica'm through three scenes, no input, graceful close"), but every
+// "Em ve un record" control now opens the real contribution pipeline
+// (startSession -> ConversationScreen -> ChapterConfirmScreen) instead of
+// an honest-but-fake "not yet" notice — that placeholder is gone now that
+// P01-P03 are wired in for this stage.
 type Step = 'e02' | 'e03' | 'e04' | 'e05'
 
 export default function SummerOpeningScreen() {
-  const { profile, goTo } = useGameStore()
+  const { profile, goTo, startSession } = useGameStore()
   const t = getStrings(profile.language).summerOpening
   const [step, setStep] = useState<Step>('e02')
-  const [showComingSoon, setShowComingSoon] = useState(false)
 
-  function contribute() {
-    setShowComingSoon(true)
+  function contribute(topic: string) {
+    startSession(topic)
   }
-
-  const comingSoonNotice = showComingSoon && (
-    <div
-      className="fixed inset-0 z-20 flex items-end md:items-center justify-center bg-ink/50 px-4 pb-6"
-      onClick={() => setShowComingSoon(false)}
-    >
-      <div className="w-full max-w-sm bg-surface rounded-3xl p-6" onClick={(e) => e.stopPropagation()}>
-        <p className="text-ink text-base">{t.contributeComingSoon}</p>
-        <button onClick={() => setShowComingSoon(false)} className="text-terracotta-deep font-medium underline mt-4">
-          {t.ok}
-        </button>
-      </div>
-    </div>
-  )
 
   if (step === 'e02') {
     return (
@@ -46,7 +31,10 @@ export default function SummerOpeningScreen() {
           <div className="absolute inset-0 bg-gradient-to-t from-cream via-cream/40 to-transparent" />
         </div>
         <div className="relative min-h-screen flex flex-col px-6 pt-8 pb-8">
-          <button onClick={() => goTo('topicMenu')} className="text-ink-soft text-sm underline self-start drop-shadow-sm">
+          <button
+            onClick={() => goTo('topicMenu')}
+            className="self-start bg-ink/55 backdrop-blur-sm text-cream text-sm rounded-full px-4 py-2"
+          >
             {t.back}
           </button>
           <div className="mt-auto flex flex-col gap-3 max-w-sm">
@@ -59,7 +47,10 @@ export default function SummerOpeningScreen() {
             >
               {t.e02.continue}
             </button>
-            <button onClick={contribute} className="border border-terracotta-deep text-terracotta-deep rounded-xl px-6 py-3.5 text-base font-medium">
+            <button
+              onClick={() => contribute(t.topicGeneric)}
+              className="border border-terracotta-deep text-terracotta-deep rounded-xl px-6 py-3.5 text-base font-medium"
+            >
               🎙 {t.contribute}
             </button>
             <button onClick={() => goTo('home')} className="text-ink-soft text-sm underline text-center">
@@ -67,7 +58,6 @@ export default function SummerOpeningScreen() {
             </button>
           </div>
         </div>
-        {comingSoonNotice}
       </div>
     )
   }
@@ -78,10 +68,16 @@ export default function SummerOpeningScreen() {
         <ScreenBadge n={7} />
         <div className="relative h-[52vh]">
           <img src="/v1/aquells-estius-window.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
-          <button onClick={() => setStep('e02')} className="absolute top-8 left-5 text-surface text-sm underline drop-shadow">
+          <button
+            onClick={() => setStep('e02')}
+            className="absolute top-3 left-4 bg-ink/55 backdrop-blur-sm text-cream text-sm rounded-full px-4 py-2"
+          >
             {t.back}
           </button>
-          <button onClick={() => goTo('home')} className="absolute top-8 right-5 text-surface text-sm underline drop-shadow">
+          <button
+            onClick={() => goTo('home')}
+            className="absolute top-14 right-3 bg-ink/55 backdrop-blur-sm text-cream text-sm rounded-full px-4 py-2"
+          >
             {t.backHome}
           </button>
         </div>
@@ -91,14 +87,16 @@ export default function SummerOpeningScreen() {
           <button onClick={() => setStep('e04')} className="bg-terracotta text-surface rounded-xl px-6 py-3.5 text-base font-medium mt-2">
             {t.e03.continue}
           </button>
-          <button onClick={contribute} className="border border-terracotta-deep text-terracotta-deep rounded-xl px-6 py-3.5 text-base font-medium">
+          <button
+            onClick={() => contribute(t.topicGeneric)}
+            className="border border-terracotta-deep text-terracotta-deep rounded-xl px-6 py-3.5 text-base font-medium"
+          >
             🎙 {t.contribute}
           </button>
           <button onClick={() => goTo('home')} className="text-ink-soft text-sm underline text-center">
             {t.leave}
           </button>
         </div>
-        {comingSoonNotice}
       </div>
     )
   }
@@ -109,10 +107,16 @@ export default function SummerOpeningScreen() {
         <ScreenBadge n={7} />
         <div className="relative h-[38vh]">
           <img src="/v1/aquells-estius-street.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: 'bottom' }} />
-          <button onClick={() => setStep('e03')} className="absolute top-8 left-5 text-surface text-sm underline drop-shadow">
+          <button
+            onClick={() => setStep('e03')}
+            className="absolute top-3 left-4 bg-ink/55 backdrop-blur-sm text-cream text-sm rounded-full px-4 py-2"
+          >
             {t.back}
           </button>
-          <button onClick={() => goTo('home')} className="absolute top-8 right-5 text-surface text-sm underline drop-shadow">
+          <button
+            onClick={() => goTo('home')}
+            className="absolute top-14 right-3 bg-ink/55 backdrop-blur-sm text-cream text-sm rounded-full px-4 py-2"
+          >
             {t.backHome}
           </button>
         </div>
@@ -120,15 +124,24 @@ export default function SummerOpeningScreen() {
           <h1 className="font-display text-2xl text-ink leading-snug">{t.e04.title}</h1>
           <p className="text-ink-soft text-base">{t.e04.subtitle}</p>
           <p className="font-display text-lg text-ink mt-2">{t.e04.prompt}</p>
-          <button onClick={contribute} className="flex items-center justify-between bg-surface border border-ink/10 rounded-xl px-5 py-3.5">
+          <button
+            onClick={() => contribute(t.topicPlace)}
+            className="flex items-center justify-between bg-surface border border-ink/10 rounded-xl px-5 py-3.5"
+          >
             <span className="text-ink">{t.e04.place}</span>
             <span className="text-ink-faint">›</span>
           </button>
-          <button onClick={contribute} className="flex items-center justify-between bg-surface border border-ink/10 rounded-xl px-5 py-3.5">
+          <button
+            onClick={() => contribute(t.topicPerson)}
+            className="flex items-center justify-between bg-surface border border-ink/10 rounded-xl px-5 py-3.5"
+          >
             <span className="text-ink">{t.e04.person}</span>
             <span className="text-ink-faint">›</span>
           </button>
-          <button onClick={contribute} className="flex items-center justify-between bg-surface border border-ink/10 rounded-xl px-5 py-3.5">
+          <button
+            onClick={() => contribute(t.topicActivity)}
+            className="flex items-center justify-between bg-surface border border-ink/10 rounded-xl px-5 py-3.5"
+          >
             <span className="text-ink">{t.e04.activity}</span>
             <span className="text-ink-faint">›</span>
           </button>
@@ -136,7 +149,6 @@ export default function SummerOpeningScreen() {
             {t.e04.keepWatching}
           </button>
         </div>
-        {comingSoonNotice}
       </div>
     )
   }
@@ -156,12 +168,14 @@ export default function SummerOpeningScreen() {
           <button onClick={() => goTo('home')} className="bg-terracotta text-surface rounded-xl px-6 py-3.5 text-base font-medium mt-2">
             {t.e05.home}
           </button>
-          <button onClick={contribute} className="border border-terracotta-deep text-terracotta-deep rounded-xl px-6 py-3.5 text-base font-medium">
+          <button
+            onClick={() => contribute(t.topicGeneric)}
+            className="border border-terracotta-deep text-terracotta-deep rounded-xl px-6 py-3.5 text-base font-medium"
+          >
             🎙 {t.contribute}
           </button>
         </div>
       </div>
-      {comingSoonNotice}
     </div>
   )
 }

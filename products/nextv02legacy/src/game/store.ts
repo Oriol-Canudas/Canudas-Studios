@@ -132,6 +132,12 @@ interface GameState {
   // family-member extraction (only for the 'family-tree' template, to
   // avoid an extra AI call on every single confirmed chapter).
   activeTemplateId: string | null
+  // L04 resume: set when she's adding to an already-saved story rather
+  // than starting a new one. Threaded into both the Director's context
+  // and the eventual craft call so the result updates that chapter
+  // instead of creating a new one.
+  resumeChapterId: string | null
+  resumeExcerpt: string | null
 
   turns: ConversationTurn[]
   confirmedContext: ContextItem[]
@@ -166,12 +172,14 @@ interface GameState {
   clearLastSavedChapter: () => void
   openLibraryChapter: (chapterId: string) => void
   clearOpenChapterId: () => void
+  startResumeStory: (chapterId: string, excerpt: string) => void
   startSession: (openingTopic: string, questionId?: string | null, templateId?: string | null) => Promise<void>
   sendSeniorReply: (text: string) => Promise<void>
   retryLastTurn: () => Promise<void>
   finalizeChapter: () => Promise<void>
   confirmChapter: () => Promise<void>
   requestCorrection: (note: string) => Promise<void>
+  updateChapterDraft: (edits: Partial<Pick<ChapterDraft, 'title' | 'testimonyText'>>) => void
   reset: () => void
 }
 
@@ -188,6 +196,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   openChapterId: null,
   activeQuestionId: null,
   activeTemplateId: null,
+  resumeChapterId: null,
+  resumeExcerpt: null,
 
   turns: [],
   confirmedContext: [],
@@ -236,6 +246,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       openChapterId: null,
       activeQuestionId: null,
       activeTemplateId: null,
+      resumeChapterId: null,
+      resumeExcerpt: null,
       turns: [],
       confirmedContext: [],
       researchedUnconfirmed: [],
@@ -282,6 +294,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   openLibraryChapter: (chapterId) => set({ openChapterId: chapterId, screen: 'library' }),
   clearOpenChapterId: () => set({ openChapterId: null }),
 
+  // L04 — "Afegir un record" from an existing story's detail. Routes
+  // through the same voice/text entry as a fresh topic, but carries the
+  // chapter id + a relevant excerpt so the Director builds on it instead
+  // of starting over.
+  startResumeStory: (chapterId, excerpt) =>
+    set({ resumeChapterId: chapterId, resumeExcerpt: excerpt, screen: 'conversationEntry' }),
+
   loadPendingQuestion: async () => {
     const question = await requestPendingQuestion()
     const postponed = get().postponedQuestionIds
@@ -308,6 +327,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         history: [],
         pendingOfferedContext: [],
         openingTopic,
+        existingExcerpt: get().resumeExcerpt,
       })
       const directorTurn: ConversationTurn = {
         id: makeId(),
@@ -344,11 +364,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     })
 
     try {
-      const { profile, turns, pendingOfferedContext } = get()
+      const { profile, turns, pendingOfferedContext, resumeExcerpt } = get()
       const result = await requestDirectorTurn({
         profile,
         history: turns,
         pendingOfferedContext,
+        existingExcerpt: resumeExcerpt,
       })
 
       const nowConfirmed = pendingOfferedContext.filter((item) =>
@@ -392,12 +413,13 @@ export const useGameStore = create<GameState>((set, get) => ({
   finalizeChapter: async () => {
     set({ isFinalizing: true, lastError: null })
     try {
-      const { profile, turns, confirmedContext, activeQuestionId } = get()
+      const { profile, turns, confirmedContext, activeQuestionId, resumeChapterId } = get()
       const draft = await requestChapterFinalize({
         profile,
         history: turns,
         confirmedContext,
         questionId: activeQuestionId,
+        existingChapterId: resumeChapterId,
       })
       set({ chapterDraft: draft, isFinalizing: false, screen: 'chapterConfirm' })
     } catch (e) {
@@ -413,7 +435,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       const res = await fetch('/api/chapter-finalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chapterId: draft.id, confirm: true, templateId: get().activeTemplateId }),
+        body: JSON.stringify({
+          chapterId: draft.id,
+          confirm: true,
+          templateId: get().activeTemplateId,
+          title: draft.title,
+          testimonyText: draft.testimonyText,
+        }),
       })
       if (!res.ok) throw new Error(`confirm_failed_${res.status}`)
       set({ isConfirming: false, screen: 'sessionClose' })
@@ -425,7 +453,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   requestCorrection: async (note) => {
     set({ isFinalizing: true, lastError: null })
     try {
-      const { profile, turns, confirmedContext, activeQuestionId } = get()
+      const { profile, turns, confirmedContext, activeQuestionId, resumeChapterId } = get()
       const correctedHistory: ConversationTurn[] = [
         ...turns,
         { id: makeId(), role: 'senior', content: `Correction: ${note}`, createdAt: new Date().toISOString() },
@@ -435,6 +463,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         history: correctedHistory,
         confirmedContext,
         questionId: activeQuestionId,
+        existingChapterId: resumeChapterId,
       })
       set({ chapterDraft: draft, isFinalizing: false })
     } catch (e) {
@@ -442,11 +471,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
+  updateChapterDraft: (edits) => {
+    const draft = get().chapterDraft
+    if (!draft) return
+    set({ chapterDraft: { ...draft, ...edits } })
+  },
+
   reset: () =>
     set({
       screen: 'home',
       activeQuestionId: null,
       activeTemplateId: null,
+      resumeChapterId: null,
+      resumeExcerpt: null,
       turns: [],
       confirmedContext: [],
       researchedUnconfirmed: [],

@@ -110,7 +110,7 @@ function sanitizeContextItems(value: unknown): ContextItem[] {
   }))
 }
 
-function buildCraftInstructions(profile: SeniorProfile): string {
+function buildCraftInstructions(profile: SeniorProfile, existingChapter: { title: string; testimonyText: string } | null): string {
   const langLine =
     profile.language === 'ca'
       ? 'Escriu-ho en català.'
@@ -119,12 +119,18 @@ function buildCraftInstructions(profile: SeniorProfile): string {
         : 'Escríbelo en español.'
 
   return [
-    `You are crafting a finished chapter from a conversation the Director just had with ${profile.preferredName}, a person in her 70s, about her own life.`,
+    existingChapter
+      ? `You are extending an already-saved chapter of ${profile.preferredName}'s life story with new material from a follow-up conversation. Weave the new material into the existing chapter coherently — do not just append it as a disconnected paragraph, and do not drop or contradict anything already there unless the new conversation explicitly corrects it.`
+      : `You are crafting a finished chapter from a conversation the Director just had with ${profile.preferredName}, a person in her 70s, about her own life.`,
     langLine,
     '',
     'HONESTY, ABSOLUTE RULE: the chapter is built ONLY from what she actually said (her testimony turns) and context she genuinely confirmed. Never invent a detail, date, or quote that is not in the conversation. If something was offered as context but never confirmed, leave it out entirely — do not sneak it in as if it were fact.',
     '',
     'TONE: the same respect-through-rigor principle as the conversation itself — no performed warmth, no "how wonderful." Write it with real craft, like something worth printing in a real book, not a transcript summary.',
+    '',
+    existingChapter
+      ? `EXISTING CHAPTER (preserve this, extend it — do not rewrite it from scratch):\nTitle: ${existingChapter.title}\n${existingChapter.testimonyText}`
+      : '',
     '',
     'Respond with ONLY a single JSON object as your final answer text, no other prose before or after it, matching exactly this shape:',
     '{"title": string, "testimonyText": string}',
@@ -305,7 +311,7 @@ export default async function handler(req: any, res: any) {
 
     const { data: chapter, error: fetchError } = await supabase
       .from('chapters')
-      .select('id, title, testimony_text, question_id, senior_id, seniors(language)')
+      .select('id, title, testimony_text, question_id, senior_id, illustration_url, seniors(language)')
       .eq('id', chapterId)
       .maybeSingle()
 
@@ -317,9 +323,18 @@ export default async function handler(req: any, res: any) {
       return res.status(404).json({ error: 'chapter_not_found' })
     }
 
+    // She may have edited the title/text directly in review (P03 "Editar
+    // el text") before saving — persist those edits here, not just the
+    // status flip, or they'd be silently discarded.
+    const editedTitle = typeof body?.title === 'string' ? sanitizeText(body.title).trim() : ''
+    const editedText = typeof body?.testimonyText === 'string' ? sanitizeText(body.testimonyText).trim() : ''
+    const updatePayload: Record<string, unknown> = { status: 'confirmed' }
+    if (editedTitle) updatePayload.title = editedTitle
+    if (editedText) updatePayload.testimony_text = editedText
+
     const { error: updateError } = await supabase
       .from('chapters')
-      .update({ status: 'confirmed' })
+      .update(updatePayload)
       .eq('id', chapterId)
 
     if (updateError) {
@@ -327,11 +342,17 @@ export default async function handler(req: any, res: any) {
       return res.status(502).json({ error: 'db_error' })
     }
 
+    if (editedTitle) chapter.title = editedTitle
+    if (editedText) chapter.testimony_text = editedText
+
     if (chapter.question_id) {
       await supabase.from('questions').update({ status: 'answered' }).eq('id', chapter.question_id)
     }
 
-    if (aiAvailable()) {
+    // Only generate on first confirm — re-confirming an already-illustrated
+    // chapter (e.g. an L04 resume-and-save) must not silently replace a
+    // picture she already has, and avoids a wasted image call every time.
+    if (aiAvailable() && !chapter.illustration_url) {
       const b64 = await generateIllustrationBase64(
         buildIllustrationPrompt(chapter.title, chapter.testimony_text),
       )
@@ -349,33 +370,35 @@ export default async function handler(req: any, res: any) {
       } else {
         logDiagnostic({ outcome: 'illustration_generation_failed', chapterId })
       }
+    }
 
-      if (sanitizeText(body?.templateId) === 'family-tree') {
-        const language: SeniorProfile['language'] = ['es', 'en'].includes((chapter as any)?.seniors?.language)
-          ? (chapter as any).seniors.language
-          : 'ca'
-        const extracted = await extractFamilyMembers(language, chapter.testimony_text)
-        if (extracted.length > 0) {
-          const familyPath = `${chapter.senior_id}/members.json`
-          const { data: existingFile } = await supabase.storage.from('family-tree').download(familyPath)
-          const existing = existingFile
-            ? (safeJsonParse<{ members: FamilyMember[] }>(await existingFile.text())?.members ?? [])
-            : []
-          const merged = mergeFamilyMembers(existing, extracted)
-          const { error: writeError } = await supabase.storage
-            .from('family-tree')
-            .upload(familyPath, JSON.stringify({ members: merged }), {
-              contentType: 'application/json',
-              upsert: true,
-            })
-          if (writeError) {
-            logDiagnostic({ outcome: 'family_tree_write_failed', message: writeError.message, chapterId })
-          } else {
-            logDiagnostic({ outcome: 'family_tree_updated', chapterId, memberCount: merged.length })
-          }
+    // Independent of illustration generation — must still run on a resume
+    // confirm even though the chapter already has a picture.
+    if (aiAvailable() && sanitizeText(body?.templateId) === 'family-tree') {
+      const language: SeniorProfile['language'] = ['es', 'en'].includes((chapter as any)?.seniors?.language)
+        ? (chapter as any).seniors.language
+        : 'ca'
+      const extracted = await extractFamilyMembers(language, chapter.testimony_text)
+      if (extracted.length > 0) {
+        const familyPath = `${chapter.senior_id}/members.json`
+        const { data: existingFile } = await supabase.storage.from('family-tree').download(familyPath)
+        const existing = existingFile
+          ? (safeJsonParse<{ members: FamilyMember[] }>(await existingFile.text())?.members ?? [])
+          : []
+        const merged = mergeFamilyMembers(existing, extracted)
+        const { error: writeError } = await supabase.storage
+          .from('family-tree')
+          .upload(familyPath, JSON.stringify({ members: merged }), {
+            contentType: 'application/json',
+            upsert: true,
+          })
+        if (writeError) {
+          logDiagnostic({ outcome: 'family_tree_write_failed', message: writeError.message, chapterId })
         } else {
-          logDiagnostic({ outcome: 'family_tree_extraction_empty', chapterId })
+          logDiagnostic({ outcome: 'family_tree_updated', chapterId, memberCount: merged.length })
         }
+      } else {
+        logDiagnostic({ outcome: 'family_tree_extraction_empty', chapterId })
       }
     }
 
@@ -399,9 +422,27 @@ export default async function handler(req: any, res: any) {
   const history = sanitizeHistory(body?.history)
   const confirmedContext = sanitizeContextItems(body?.confirmedContext)
   const questionId = body?.questionId ? sanitizeText(body.questionId) : null
+  const existingChapterId = body?.existingChapterId ? sanitizeText(body.existingChapterId) : null
 
   if (history.length === 0) {
     return res.status(400).json({ error: 'empty_conversation' })
+  }
+
+  // L04 resume: verify she actually owns the chapter she's extending
+  // before using its text as context or updating it — same
+  // can't-distinguish-exists-vs-not-yours 404 pattern as the confirm path.
+  let existingChapter: { title: string; testimonyText: string } | null = null
+  if (existingChapterId) {
+    const { data: row, error: fetchError } = await supabase
+      .from('chapters')
+      .select('title, testimony_text, senior_id')
+      .eq('id', existingChapterId)
+      .maybeSingle()
+    if (fetchError || !row || row.senior_id !== seniorId) {
+      logDiagnostic({ outcome: 'resume_chapter_not_found', existingChapterId })
+      return res.status(404).json({ error: 'chapter_not_found' })
+    }
+    existingChapter = { title: row.title, testimonyText: row.testimony_text }
   }
 
   const controller = new AbortController()
@@ -422,7 +463,7 @@ export default async function handler(req: any, res: any) {
       },
       body: JSON.stringify({
         model: MODEL,
-        instructions: buildCraftInstructions(profile),
+        instructions: buildCraftInstructions(profile, existingChapter),
         input: [{ role: 'user', content: `CONVERSATION:\n${transcript}${confirmedBlock}` }],
       }),
       signal: controller.signal,
@@ -441,6 +482,34 @@ export default async function handler(req: any, res: any) {
     if (!parsed || typeof parsed.title !== 'string' || typeof parsed.testimonyText !== 'string') {
       logDiagnostic({ outcome: 'parse_failed', latencyMs: Date.now() - startedAt })
       return res.status(502).json({ error: 'interpret_failed' })
+    }
+
+    // Resume (L04): this is a PROPOSED update to an already-confirmed
+    // chapter, not a new one. Per spec ("P02 -> proposed update P03 ->
+    // explicit save. Cancel preserves prior version"), it must not touch
+    // that row yet — only confirmChapter's title/testimonyText update (see
+    // the confirm path above) writes it, once she explicitly approves.
+    if (existingChapterId) {
+      const turnRows = history.map((t) => ({
+        senior_id: seniorId,
+        chapter_id: existingChapterId,
+        role: t.role,
+        content: t.content,
+      }))
+      await supabase.from('conversation_turns').insert(turnRows)
+
+      logDiagnostic({
+        outcome: 'ok_resume_proposed',
+        latencyMs: Date.now() - startedAt,
+        usage: data?.usage,
+        chapterId: existingChapterId,
+      })
+
+      return res.status(200).json({
+        id: existingChapterId,
+        title: sanitizeText(parsed.title),
+        testimonyText: sanitizeText(parsed.testimonyText),
+      })
     }
 
     const { data: chapter, error: insertError } = await supabase

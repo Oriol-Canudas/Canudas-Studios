@@ -83,7 +83,11 @@ function sanitizeContextItems(value: unknown): ContextItem[] {
   }))
 }
 
-function buildInstructions(profile: SeniorProfile, pendingOfferedContext: ContextItem[]): string {
+function buildInstructions(
+  profile: SeniorProfile,
+  pendingOfferedContext: ContextItem[],
+  existingExcerpt: string | null,
+): string {
   const langLine =
     profile.language === 'ca'
       ? 'Respon sempre en català, en to proper i càlid.'
@@ -127,6 +131,10 @@ function buildInstructions(profile: SeniorProfile, pendingOfferedContext: Contex
       ? `PENDING OFFERED CONTEXT (from your last turn, not yet confirmed — check her latest reply against these verbatim for confirmedThisTurn):\n${pendingOfferedContext.map((c) => `- "${c.text}" (source: ${c.source})`).join('\n')}`
       : 'PENDING OFFERED CONTEXT: none yet.',
     '',
+    existingExcerpt
+      ? `SHE IS ADDING TO AN ALREADY-SAVED STORY (do not repeat it back to her wholesale — she already has it; use it only to understand what's already captured and ask toward what's missing or new):\n"""${existingExcerpt}"""`
+      : '',
+    '',
     'Respond with ONLY a single JSON object as your final answer text, no other prose before or after it, matching exactly this shape:',
     '{"dialogue": string, "offeredContext": [{"text": string, "source": string}], "confirmedThisTurn": [string], "researchedUnconfirmed": [{"text": string, "source": string}], "activeFunction": "evoke"|"research"|"contrast"|"deepen"|"connect", "offeringClose": boolean}',
   ].join('\n')
@@ -163,6 +171,7 @@ export default async function handler(req: any, res: any) {
   const history = sanitizeHistory(body?.history)
   const pendingOfferedContext = sanitizeContextItems(body?.pendingOfferedContext)
   const openingTopic = body?.openingTopic ? sanitizeText(body.openingTopic) : null
+  const existingExcerpt = body?.existingExcerpt ? sanitizeText(body.existingExcerpt) : null
 
   if (history.length === 0 && !openingTopic) {
     return res.status(400).json({ error: 'empty_session' })
@@ -193,7 +202,7 @@ export default async function handler(req: any, res: any) {
       },
       body: JSON.stringify({
         model: MODEL,
-        instructions: buildInstructions(profile, pendingOfferedContext),
+        instructions: buildInstructions(profile, pendingOfferedContext, existingExcerpt),
         input,
         tools: [{ type: 'web_search' }],
       }),

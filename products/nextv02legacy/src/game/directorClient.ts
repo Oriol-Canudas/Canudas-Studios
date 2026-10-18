@@ -15,6 +15,9 @@ export interface DirectorRequestBody {
   history: ConversationTurn[]
   pendingOfferedContext: ContextItem[]
   openingTopic?: string
+  // L04 resume: the existing saved story she's adding to, so the Director
+  // can build on it coherently instead of starting a fresh one.
+  existingExcerpt?: string | null
 }
 
 export async function requestDirectorTurn(body: DirectorRequestBody): Promise<DirectorTurnResult> {
@@ -44,6 +47,9 @@ export interface ChapterFinalizeRequestBody {
   history: ConversationTurn[]
   confirmedContext: ContextItem[]
   questionId?: string | null
+  // L04 resume: when set, the crafted chapter updates this existing row
+  // (merging with what's already there) instead of creating a new one.
+  existingChapterId?: string | null
 }
 
 export async function requestChapterFinalize(

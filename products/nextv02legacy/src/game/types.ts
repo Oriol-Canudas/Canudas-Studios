@@ -62,6 +62,10 @@ export type ScreenName =
   // the only one actually rewired this stage (see HomeScreen.tsx).
   | 'topicMenu'
   | 'summerOpening'
+  // NEXT v1 — Sorprèn-me's own destination (S01-S07), distinct from
+  // Explica'm's topic menu.
+  | 'surpriseMenu'
+  | 'whitneyJourney'
 
 export interface PendingQuestion {
   id: string
