@@ -11,6 +11,44 @@ function elevenLabsAvailable(): boolean {
   return Boolean(process.env.ELEVENLABS_API_KEY) && process.env.STT_DISABLED !== '1'
 }
 
+// This endpoint has no user auth (the app has none), so an Origin check
+// is the cheap first line of defense against a direct curl hit on a
+// discovered URL — it stops casual/scripted abuse, though it can't stop
+// a determined attacker who forges the header themselves. The rate limit
+// below is the real backstop for that case.
+function isAllowedOrigin(originHeader: string | undefined): boolean {
+  if (!originHeader) return false
+  try {
+    const { hostname } = new URL(originHeader)
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.vercel.app')
+  } catch {
+    return false
+  }
+}
+
+// In-memory per-IP sliding window. Serverless instances are ephemeral and
+// can run several in parallel, so this isn't a hard global cap — but on a
+// warm instance (the common case for back-to-back requests from the same
+// visitor) it catches a scripted hammer even if the Origin header above
+// were spoofed, which an in-browser request can never do.
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX_PER_WINDOW = 10
+const requestTimestampsByIp = new Map<string, number[]>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const recent = (requestTimestampsByIp.get(ip) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS)
+  recent.push(now)
+  requestTimestampsByIp.set(ip, recent)
+  return recent.length > RATE_LIMIT_MAX_PER_WINDOW
+}
+
+function clientIp(req: any): string {
+  const forwarded = req.headers['x-forwarded-for']
+  if (typeof forwarded === 'string' && forwarded.length > 0) return forwarded.split(',')[0].trim()
+  return req.socket?.remoteAddress || 'unknown'
+}
+
 // Defensive about how Vercel's Node runtime hands us a non-JSON body:
 // req.body may already be a populated Buffer/string for this content type
 // (observed for some content types), or the stream may still need reading
@@ -36,6 +74,14 @@ export default async function handler(req: any, res: any) {
 
   if (!elevenLabsAvailable()) {
     return res.status(503).json({ error: 'stt_unavailable' })
+  }
+
+  if (!isAllowedOrigin(req.headers.origin)) {
+    return res.status(403).json({ error: 'forbidden_origin' })
+  }
+
+  if (isRateLimited(clientIp(req))) {
+    return res.status(429).json({ error: 'rate_limited' })
   }
 
   const audioBuffer = await readRawBody(req)
