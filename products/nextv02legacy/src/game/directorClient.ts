@@ -181,9 +181,13 @@ export async function requestMemorySave(title: string, body: string): Promise<{ 
 }
 
 // --- NEXT v1 Slice 3 — memory clip review/save/share (M04-M06) ---
+// One endpoint (clip-manage.ts) for all of these — Vercel's Hobby plan
+// caps a deployment at 12 Serverless Functions, so what started as two
+// files (clip-update.ts + clip-share.ts) got merged there; nothing
+// about the five actions themselves changed.
 
-async function postClipUpdate(payload: Record<string, unknown>): Promise<ChapterClip> {
-  const res = await fetch('/api/clip-update', {
+async function postClipManage(payload: Record<string, unknown>): Promise<ChapterClip> {
+  const res = await fetch('/api/clip-manage', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -196,25 +200,25 @@ async function postClipUpdate(payload: Record<string, unknown>): Promise<Chapter
 }
 
 export function requestClipSave(chapterId: string) {
-  return postClipUpdate({ chapterId, action: 'save' })
+  return postClipManage({ chapterId, action: 'save' })
 }
 
 export function requestClipEditText(chapterId: string, title: string, slides: { caption: string }[]) {
-  return postClipUpdate({ chapterId, action: 'editText', title, slides })
+  return postClipManage({ chapterId, action: 'editText', title, slides })
 }
 
 export function requestClipRerollImage(chapterId: string, slideIndex: number) {
-  return postClipUpdate({ chapterId, action: 'rerollImage', slideIndex })
+  return postClipManage({ chapterId, action: 'rerollImage', slideIndex })
 }
 
 export async function requestClipShareCreate(
   chapterId: string,
   authorName: string | null,
 ): Promise<{ token: string; chapterId: string }> {
-  const res = await fetch('/api/clip-share', {
+  const res = await fetch('/api/clip-manage', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chapterId, action: 'create', authorName }),
+    body: JSON.stringify({ chapterId, action: 'shareCreate', authorName }),
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'unknown_error' }))
@@ -224,10 +228,10 @@ export async function requestClipShareCreate(
 }
 
 export async function requestClipShareRevoke(chapterId: string): Promise<void> {
-  const res = await fetch('/api/clip-share', {
+  const res = await fetch('/api/clip-manage', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chapterId, action: 'revoke' }),
+    body: JSON.stringify({ chapterId, action: 'shareRevoke' }),
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'unknown_error' }))

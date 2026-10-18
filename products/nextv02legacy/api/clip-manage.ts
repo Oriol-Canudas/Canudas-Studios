@@ -1,15 +1,35 @@
 // Self-contained — same convention as the other api/*.ts files.
 //
-// Three actions on an already-generated clip manifest, gated behind the
-// same ownership check: M04 "save" (confirm — distinct from creation,
-// per "creation, saving, and sharing are separate actions"), M05
-// "editText" (title/caption edits — never regenerates personal facts),
-// M05 "rerollImage" (one slide's illustration only, same prompt, a new
-// painting of it — the closest honest equivalent of an "alternate
-// illustration" without a full multi-option gallery this round).
+// All owner-authenticated mutations on an already-generated clip
+// manifest, in one file: this was originally two files (clip-update.ts
+// + clip-share.ts) but Vercel's Hobby plan caps a deployment at 12
+// Serverless Functions, and this project was at 13 — merging the two
+// (both are ownership-gated manifest mutations, logically one surface)
+// was the fix that cost nothing: no feature removed, no code deleted,
+// just one less function boundary. Five actions:
+//
+// M04 "save" (confirm — distinct from creation, per "creation, saving,
+// and sharing are separate actions"), M05 "editText" (title/caption
+// edits — never regenerates personal facts), M05 "rerollImage" (one
+// slide's illustration only, same stored prompt, a new painting of it —
+// the closest honest equivalent of an "alternate illustration" without
+// a full multi-option gallery this round).
+//
+// M06 "shareCreate"/"shareRevoke": no database migration is available
+// this round, so a share is a storage object, not a table row —
+// ${chapterId}/share.json in the existing chapter-clips bucket, holding
+// a FROZEN snapshot (title + slides as they were at share time) plus the
+// random token a recipient needs. Editing the chapter or regenerating
+// the clip afterward never touches this file — "editing the private
+// story must not silently change an already shared snapshot" — a new
+// share explicitly overwrites it. shareCreate is refused (409) unless
+// the clip is already confirmed. shareRevoke deletes the file outright:
+// no tombstone, and clip-view.ts's "missing" and "wrong token" responses
+// are already identical, so a revoked link reads exactly like one that
+// never existed.
 
 import { createClient } from '@supabase/supabase-js'
-import { createHmac, timingSafeEqual } from 'crypto'
+import { createHmac, timingSafeEqual, randomBytes } from 'crypto'
 
 const CLIP_BUCKET = 'chapter-clips'
 
@@ -56,6 +76,17 @@ interface ClipManifest {
   shareToken: string | null
 }
 
+interface ShareSnapshot {
+  token: string
+  title: string
+  authorName: string | null
+  slides: ClipSlide[]
+  revoked: boolean
+  createdAt: string
+}
+
+const ACTIONS = ['save', 'editText', 'rerollImage', 'shareCreate', 'shareRevoke'] as const
+
 function dbAvailable(): boolean {
   return Boolean(process.env.SUPABASE_URL) && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
@@ -77,7 +108,7 @@ function sanitizeText(value: unknown): string {
 }
 
 function logDiagnostic(data: Record<string, unknown>) {
-  console.log(JSON.stringify({ at: 'clip-update', ...data }))
+  console.log(JSON.stringify({ at: 'clip-manage', ...data }))
 }
 
 const ILLUSTRATION_STYLE =
@@ -124,7 +155,7 @@ export default async function handler(req: any, res: any) {
 
   const chapterId = sanitizeText(req.body?.chapterId)
   const action = req.body?.action
-  if (!chapterId || !['save', 'editText', 'rerollImage'].includes(action)) {
+  if (!chapterId || !ACTIONS.includes(action)) {
     return res.status(400).json({ error: 'invalid_request' })
   }
 
@@ -135,7 +166,6 @@ export default async function handler(req: any, res: any) {
 
   const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-  // Same ownership check as chapter-clip.ts, before anything else.
   const { data: chapter, error: fetchError } = await supabase
     .from('chapters')
     .select('senior_id')
@@ -148,6 +178,26 @@ export default async function handler(req: any, res: any) {
   }
 
   const manifestPath = `${chapterId}/manifest.json`
+  const sharePath = `${chapterId}/share.json`
+
+  // --- shareRevoke doesn't need the manifest to exist to succeed ---
+  if (action === 'shareRevoke') {
+    await supabase.storage.from(CLIP_BUCKET).remove([sharePath])
+    const { data: manifestFile } = await supabase.storage.from(CLIP_BUCKET).download(manifestPath)
+    if (manifestFile) {
+      const manifest = safeJsonParse<ClipManifest>(await manifestFile.text())
+      if (manifest) {
+        manifest.shared = false
+        manifest.shareToken = null
+        await supabase.storage
+          .from(CLIP_BUCKET)
+          .upload(manifestPath, JSON.stringify(manifest), { contentType: 'application/json', upsert: true })
+      }
+    }
+    logDiagnostic({ outcome: 'revoked', chapterId })
+    return res.status(200).json({ revoked: true })
+  }
+
   const { data: existingFile, error: downloadError } = await supabase.storage
     .from(CLIP_BUCKET)
     .download(manifestPath)
@@ -196,6 +246,32 @@ export default async function handler(req: any, res: any) {
     }
     const { data: pub } = supabase.storage.from(CLIP_BUCKET).getPublicUrl(path)
     manifest.slides[slideIndex] = { ...slide, imageUrl: pub.publicUrl }
+  } else if (action === 'shareCreate') {
+    if (!manifest.confirmed) {
+      logDiagnostic({ outcome: 'not_confirmed', chapterId })
+      return res.status(409).json({ error: 'clip_not_confirmed' })
+    }
+    const token = randomBytes(16).toString('hex')
+    const authorName = typeof req.body?.authorName === 'string' ? sanitizeText(req.body.authorName).trim() || null : null
+    const snapshot: ShareSnapshot = {
+      token,
+      title: manifest.title,
+      authorName,
+      slides: manifest.slides.map((s) => ({ imageUrl: s.imageUrl, caption: s.caption })),
+      revoked: false,
+      createdAt: new Date().toISOString(),
+    }
+    await supabase.storage.from(CLIP_BUCKET).upload(sharePath, JSON.stringify(snapshot), {
+      contentType: 'application/json',
+      upsert: true,
+    })
+    manifest.shared = true
+    manifest.shareToken = token
+    await supabase.storage
+      .from(CLIP_BUCKET)
+      .upload(manifestPath, JSON.stringify(manifest), { contentType: 'application/json', upsert: true })
+    logDiagnostic({ outcome: 'created', chapterId })
+    return res.status(200).json({ token, chapterId })
   }
 
   await supabase.storage.from(CLIP_BUCKET).upload(manifestPath, JSON.stringify(manifest), {
