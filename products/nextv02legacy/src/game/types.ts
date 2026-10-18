@@ -88,10 +88,21 @@ export interface MemoryChapter {
   createdAt: string
 }
 
+export type ClipSlideRole = 'cover' | 'place' | 'moment' | 'remains'
+
 export interface ClipSlide {
   imageUrl: string
   caption: string
   imagePrompt?: string
+  role?: ClipSlideRole
+}
+
+export type ClipRepresentation = 'atmosphere' | 'people'
+
+export interface ClipPeopleDetails {
+  who: string
+  approxAge: string
+  depiction: string
 }
 
 export interface ChapterClip {
@@ -100,6 +111,14 @@ export interface ChapterClip {
   confirmed: boolean
   shared: boolean
   shareToken: string | null
+  // The language the slideshow's own words were written in — always
+  // used for the player's controls and the recipient's landing page too,
+  // never guessed from a viewer's browser locale (a Catalan memory must
+  // never show English playback controls).
+  language: SeniorProfile['language']
+  representation: ClipRepresentation
+  peopleDetails: ClipPeopleDetails | null
+  era: string | null
 }
 
 // V01 — what a recipient actually receives: a frozen snapshot, never the
@@ -109,6 +128,7 @@ export interface ClipShareSnapshot {
   authorName: string | null
   slides: ClipSlide[]
   revoked: boolean
+  language: SeniorProfile['language']
 }
 
 export interface FamilyMember {

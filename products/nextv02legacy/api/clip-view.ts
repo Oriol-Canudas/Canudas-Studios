@@ -16,6 +16,7 @@ const CLIP_BUCKET = 'chapter-clips'
 interface ClipSlide {
   imageUrl: string
   caption: string
+  role?: 'cover' | 'place' | 'moment' | 'remains'
 }
 
 interface ShareSnapshot {
@@ -24,6 +25,7 @@ interface ShareSnapshot {
   authorName: string | null
   slides: ClipSlide[]
   revoked: boolean
+  language?: 'es' | 'ca' | 'en'
 }
 
 function dbAvailable(): boolean {
@@ -74,5 +76,8 @@ export default async function handler(req: any, res: any) {
     title: snapshot.title,
     authorName: snapshot.authorName,
     slides: snapshot.slides,
+    // Content-matched, never guessed from the recipient's browser locale
+    // — a clip generated before this field existed falls back safely.
+    language: snapshot.language || 'ca',
   })
 }

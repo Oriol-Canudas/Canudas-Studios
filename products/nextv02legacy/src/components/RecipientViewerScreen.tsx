@@ -9,16 +9,11 @@ import ClipPlayer from './ClipPlayer'
 // by main.tsx for /share/:chapterId/:token, bypassing the normal App
 // shell (SettingsMenu, BackgroundMusic, onboarding) entirely, since none
 // of that applies to someone who never opened NEXT itself.
-function detectLanguage(): SeniorProfile['language'] {
-  try {
-    const lang = navigator.language?.toLowerCase() ?? ''
-    if (lang.startsWith('ca')) return 'ca'
-    if (lang.startsWith('es')) return 'es'
-    return 'en'
-  } catch {
-    return 'en'
-  }
-}
+//
+// Language comes from the shared clip's own content (clip-view.ts's
+// `language` field), never guessed from the visitor's browser locale —
+// a Catalan memory must show Catalan controls to every recipient,
+// regardless of their own device's language.
 
 interface RecipientViewerScreenProps {
   chapterId: string
@@ -26,7 +21,7 @@ interface RecipientViewerScreenProps {
 }
 
 export default function RecipientViewerScreen({ chapterId, token }: RecipientViewerScreenProps) {
-  const [language] = useState(detectLanguage)
+  const [language, setLanguage] = useState<SeniorProfile['language']>('ca')
   const t = getStrings(language).memoryClip.v01
   const [status, setStatus] = useState<'loading' | 'unavailable' | 'ready'>('loading')
   const [title, setTitle] = useState('')
@@ -43,6 +38,7 @@ export default function RecipientViewerScreen({ chapterId, token }: RecipientVie
       setTitle(result.title ?? '')
       setAuthorName(result.authorName ?? null)
       setSlides(result.slides)
+      if (result.language) setLanguage(result.language)
       setStatus('ready')
     })
   }, [chapterId, token])
@@ -67,16 +63,28 @@ export default function RecipientViewerScreen({ chapterId, token }: RecipientVie
     return <ClipPlayer title={title} slides={slides} language={language} onClose={() => setPlaying(false)} />
   }
 
+  const cover = slides.find((s) => s.role === 'cover') ?? slides[0]
+
   return (
-    <div className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 gap-6 text-center">
-      <h1 className="font-display text-3xl text-ink leading-snug max-w-sm">{title}</h1>
-      {authorName && <p className="text-ink-soft text-base">{authorName}</p>}
-      <button
-        onClick={() => setPlaying(true)}
-        className="bg-terracotta text-surface rounded-xl px-8 py-3.5 text-base font-medium"
-      >
-        {t.start}
-      </button>
+    <div className="min-h-screen flex items-center justify-center md:p-8 bg-cream-deep">
+      <div className="relative w-full min-h-screen md:min-h-0 max-w-md mx-auto overflow-hidden md:aspect-[9/16] md:rounded-3xl md:shadow-2xl">
+        {cover && (
+          <img src={cover.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" aria-hidden />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
+        <div className="relative z-10 min-h-screen md:min-h-0 md:h-full flex flex-col items-center justify-end px-6 pb-16 pt-24 gap-6 text-center">
+          <div className="flex flex-col gap-2">
+            <h1 className="font-display text-3xl text-surface leading-snug max-w-sm drop-shadow-lg">{title}</h1>
+            {authorName && <p className="text-surface/85 text-base drop-shadow-lg">{t.by(authorName)}</p>}
+          </div>
+          <button
+            onClick={() => setPlaying(true)}
+            className="bg-terracotta text-surface rounded-xl px-8 py-3.5 text-base font-medium shadow-lg"
+          >
+            {t.start}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

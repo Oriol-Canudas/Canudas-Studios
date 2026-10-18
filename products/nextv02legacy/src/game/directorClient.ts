@@ -88,11 +88,27 @@ export async function requestChapterLibrary(): Promise<MemoryChapter[]> {
   return Array.isArray(data?.chapters) ? data.chapters : []
 }
 
-export async function requestChapterClip(chapterId: string): Promise<ChapterClip> {
+export interface ChapterClipRequestOptions {
+  representation: 'atmosphere' | 'people'
+  peopleDetails?: { who: string; approxAge: string; depiction: string } | null
+  // Explicit "Crear una altra versió" only — a plain re-open must never
+  // pass this and silently regenerate (see chapter-clip.ts).
+  regenerate?: boolean
+}
+
+export async function requestChapterClip(
+  chapterId: string,
+  options: ChapterClipRequestOptions,
+): Promise<ChapterClip> {
   const res = await fetch('/api/chapter-clip', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chapterId }),
+    body: JSON.stringify({
+      chapterId,
+      representation: options.representation,
+      peopleDetails: options.peopleDetails ?? null,
+      regenerate: options.regenerate ?? false,
+    }),
   })
 
   if (!res.ok) {
@@ -207,8 +223,8 @@ export function requestClipEditText(chapterId: string, title: string, slides: { 
   return postClipManage({ chapterId, action: 'editText', title, slides })
 }
 
-export function requestClipRerollImage(chapterId: string, slideIndex: number) {
-  return postClipManage({ chapterId, action: 'rerollImage', slideIndex })
+export function requestClipRerollImage(chapterId: string, slideIndex: number, reason?: string | null) {
+  return postClipManage({ chapterId, action: 'rerollImage', slideIndex, reason: reason ?? null })
 }
 
 export async function requestClipShareCreate(
@@ -244,6 +260,7 @@ export interface ClipViewResult {
   title?: string
   authorName?: string | null
   slides?: ClipSlide[]
+  language?: SeniorProfile['language']
 }
 
 // Public, unauthenticated — V01's recipient read. Never sends or needs

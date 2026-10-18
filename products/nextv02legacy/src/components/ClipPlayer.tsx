@@ -1,8 +1,20 @@
 import { useEffect, useState } from 'react'
 import { getStrings } from '../game/strings'
-import type { ClipSlide, SeniorProfile } from '../game/types'
+import type { ClipSlide, ClipSlideRole, SeniorProfile } from '../game/types'
 
 const SLIDE_DURATION_MS = 5500
+
+// Local-only contrast: the top of every frame stays near-untouched so the
+// image itself reads (a full-frame dark wash was the "uniform dark
+// treatment" this round fixes); only the band behind the caption/controls
+// darkens enough to stay legible. "remains" gets extra breathing room —
+// a quieter close deserves a lighter touch than a busy "moment" beat.
+const ROLE_GRADIENT: Record<ClipSlideRole, string> = {
+  cover: 'bg-gradient-to-t from-black/55 via-black/0 to-transparent',
+  place: 'bg-gradient-to-t from-black/50 via-black/0 to-transparent',
+  moment: 'bg-gradient-to-t from-black/60 via-black/5 to-transparent',
+  remains: 'bg-gradient-to-t from-black/45 via-black/0 to-transparent',
+}
 
 function prefersReducedMotion(): boolean {
   try {
@@ -23,7 +35,10 @@ interface ClipPlayerProps {
 // Mostrar el text, no auto-started audio (NEXT v1 ships no clip
 // soundtrack at all — see chapter-clip.ts's header comment), and honours
 // reduced motion by disabling both the Ken Burns pan and the automatic
-// slide advance, not just the CSS animation.
+// slide advance, not just the CSS animation. `language` always comes from
+// the clip's own content language (manifest/share snapshot), never a
+// viewer's browser locale — a Catalan memory must show Catalan controls
+// regardless of who's watching it.
 export default function ClipPlayer({ title, slides, language, onClose }: ClipPlayerProps) {
   const t = getStrings(language).clipPlayer
   const [index, setIndex] = useState(0)
@@ -31,6 +46,7 @@ export default function ClipPlayer({ title, slides, language, onClose }: ClipPla
   const [showText, setShowText] = useState(false)
   const [reducedMotion] = useState(prefersReducedMotion)
   const slide = slides[index]
+  const role: ClipSlideRole = slide.role ?? 'moment'
   const isLast = index >= slides.length - 1
 
   useEffect(() => {
@@ -64,15 +80,19 @@ export default function ClipPlayer({ title, slides, language, onClose }: ClipPla
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black flex items-center justify-center">
-      <div className="relative w-full h-full max-w-md mx-auto overflow-hidden">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center md:p-8"
+      style={{ background: 'radial-gradient(ellipse at center, #2a2320 0%, #15110f 100%)' }}
+    >
+      <div className="relative w-full h-full max-w-md mx-auto overflow-hidden md:h-auto md:aspect-[9/16] md:rounded-3xl md:shadow-2xl">
         <img
           key={slide.imageUrl}
           src={slide.imageUrl}
           alt=""
           className={reducedMotion ? 'absolute inset-0 w-full h-full object-cover' : 'clip-kenburns absolute inset-0 w-full h-full object-cover'}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/30" />
+        {/* Local contrast only — the band behind the caption/controls, not the whole frame. */}
+        <div className={`absolute inset-0 ${ROLE_GRADIENT[role]}`} />
 
         <div className="absolute top-0 left-0 right-0 flex gap-1 p-3">
           {slides.map((s, i) => (
@@ -94,30 +114,46 @@ export default function ClipPlayer({ title, slides, language, onClose }: ClipPla
           ))}
         </div>
 
-        <button onClick={onClose} className="absolute top-6 right-3 text-white text-2xl px-3 py-1" aria-label="Close">
+        <button
+          onClick={() => setShowText(true)}
+          className="absolute top-6 left-3 min-w-11 min-h-11 flex items-center justify-center text-surface text-xs font-medium bg-black/35 rounded-full px-3"
+        >
+          {t.showText}
+        </button>
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-3 min-w-11 min-h-11 flex items-center justify-center text-surface text-2xl bg-black/35 rounded-full"
+          aria-label="Close"
+        >
           ✕
         </button>
 
-        <p
-          key={`caption-${index}`}
-          className="absolute bottom-24 left-6 right-6 text-surface font-display text-2xl leading-snug drop-shadow-lg"
-        >
-          {slide.caption}
-        </p>
+        <div key={`caption-${index}`} className="absolute bottom-28 left-6 right-6 flex flex-col gap-1.5">
+          {role === 'cover' ? (
+            <>
+              <h2 className="text-surface font-display text-3xl leading-snug drop-shadow-lg">{title}</h2>
+              <p className="text-surface/90 text-base italic drop-shadow-lg">{slide.caption}</p>
+            </>
+          ) : (
+            <p className="text-surface font-display text-2xl leading-snug drop-shadow-lg">{slide.caption}</p>
+          )}
+        </div>
 
-        <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between gap-2">
+        <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-5">
           <button
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
             disabled={index === 0}
-            className="text-surface text-sm bg-black/30 rounded-full px-3 py-2 disabled:opacity-30"
+            aria-label={t.previous}
+            className="w-11 h-11 flex items-center justify-center text-surface text-xl bg-black/35 rounded-full disabled:opacity-30"
           >
-            {t.previous}
+            ‹
           </button>
           <button
             onClick={() => setPaused((p) => !p)}
-            className="text-surface text-sm bg-black/30 rounded-full px-3 py-2"
+            aria-label={paused ? t.resume : t.pause}
+            className="w-16 h-16 flex items-center justify-center text-surface text-2xl bg-black/45 rounded-full border border-surface/20"
           >
-            {paused ? t.resume : t.pause}
+            {paused ? '▶' : '❙❙'}
           </button>
           {isLast ? (
             <button
@@ -125,21 +161,20 @@ export default function ClipPlayer({ title, slides, language, onClose }: ClipPla
                 setIndex(0)
                 setPaused(false)
               }}
-              className="text-surface text-sm bg-black/30 rounded-full px-3 py-2"
+              aria-label={t.replay}
+              className="w-11 h-11 flex items-center justify-center text-surface text-lg bg-black/35 rounded-full"
             >
-              {t.replay}
+              ↻
             </button>
           ) : (
             <button
               onClick={() => setIndex((i) => Math.min(slides.length - 1, i + 1))}
-              className="text-surface text-sm bg-black/30 rounded-full px-3 py-2"
+              aria-label={t.next}
+              className="w-11 h-11 flex items-center justify-center text-surface text-xl bg-black/35 rounded-full"
             >
-              {t.next}
+              ›
             </button>
           )}
-          <button onClick={() => setShowText(true)} className="text-surface text-sm bg-black/30 rounded-full px-3 py-2">
-            {t.showText}
-          </button>
         </div>
       </div>
     </div>

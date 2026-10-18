@@ -62,10 +62,20 @@ function verifiedSeniorIdFromCookie(cookieHeader: string | undefined): string | 
   return seniorId
 }
 
+type ClipSlideRole = 'cover' | 'place' | 'moment' | 'remains'
+type ClipRepresentation = 'atmosphere' | 'people'
+
 interface ClipSlide {
   imageUrl: string
   caption: string
   imagePrompt?: string
+  role?: ClipSlideRole
+}
+
+interface ClipPeopleDetails {
+  who: string
+  approxAge: string
+  depiction: string
 }
 
 interface ClipManifest {
@@ -74,6 +84,10 @@ interface ClipManifest {
   confirmed: boolean
   shared: boolean
   shareToken: string | null
+  language: 'es' | 'ca' | 'en'
+  representation: ClipRepresentation
+  peopleDetails: ClipPeopleDetails | null
+  era: string | null
 }
 
 interface ShareSnapshot {
@@ -83,6 +97,7 @@ interface ShareSnapshot {
   slides: ClipSlide[]
   revoked: boolean
   createdAt: string
+  language: 'es' | 'ca' | 'en'
 }
 
 const ACTIONS = ['save', 'editText', 'rerollImage', 'shareCreate', 'shareRevoke'] as const
@@ -111,12 +126,37 @@ function logDiagnostic(data: Record<string, unknown>) {
   console.log(JSON.stringify({ at: 'clip-manage', ...data }))
 }
 
-const ILLUSTRATION_STYLE =
-  'Subtle painted realism: academic realist oil painting, fine controlled brushwork visible only on close inspection, warm amber/terracotta/umber palette, soft natural light. No frame, no border, no text, no watermark — fills the entire canvas.'
+// Same base as chapter-clip.ts — varied by role/era below, not a flat
+// sepia wash (see that file's header comment for why).
+const ILLUSTRATION_BASE =
+  'Subtle painted realism: academic realist oil painting, fine controlled brushwork visible only on close inspection. No frame, no border, no text, no watermark — fills the entire canvas. Warm but naturally varied colour — let real daylight, interiors, and seasons show their own colour; this is not a uniform sepia or antique filter.'
 
-async function generateImageBase64(prompt: string): Promise<string | null> {
+const ROLE_LIGHT: Record<ClipSlideRole, string> = {
+  cover: 'An intimate, evocative detail. Close, inviting framing with warm, gentle light.',
+  place: 'A wider environmental composition that situates the memory. Open, airy, natural daylight.',
+  moment: 'A closer, human-scale moment. Warm natural light, lived-in and immediate, not staged.',
+  remains: 'A quieter, more spacious composition with soft, gentle light and room to breathe.',
+}
+
+async function generateImageBase64(
+  prompt: string,
+  role: ClipSlideRole,
+  era: string | null,
+  correctionReason: string | null,
+): Promise<string | null> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 90000)
+  const fullPrompt = [
+    ILLUSTRATION_BASE,
+    ROLE_LIGHT[role] ?? ROLE_LIGHT.moment,
+    era ? `Period/era: ${era}. Keep it plausible for this era — no antique/vintage props unless the scene calls for them.` : '',
+    correctionReason
+      ? `The owner said the previous version of this image did not represent their memory correctly: "${correctionReason}". Avoid repeating that specific problem.`
+      : '',
+    `Scene to paint: ${prompt}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
   try {
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -126,7 +166,7 @@ async function generateImageBase64(prompt: string): Promise<string | null> {
       },
       body: JSON.stringify({
         model: 'gpt-image-1',
-        prompt: `${ILLUSTRATION_STYLE}\n\nScene to paint: ${prompt}`,
+        prompt: fullPrompt,
         size: '1024x1024',
         quality: 'medium',
       }),
@@ -231,7 +271,9 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'invalid_slide_index' })
     }
     const prompt = slide.imagePrompt || slide.caption
-    const b64 = await generateImageBase64(prompt)
+    const reason =
+      typeof req.body?.reason === 'string' && req.body.reason.trim() ? sanitizeText(req.body.reason).trim() : null
+    const b64 = await generateImageBase64(prompt, slide.role ?? 'moment', manifest.era, reason)
     if (!b64) {
       logDiagnostic({ outcome: 'reroll_failed', chapterId, slideIndex })
       return res.status(502).json({ error: 'reroll_failed' })
@@ -257,9 +299,13 @@ export default async function handler(req: any, res: any) {
       token,
       title: manifest.title,
       authorName,
-      slides: manifest.slides.map((s) => ({ imageUrl: s.imageUrl, caption: s.caption })),
+      slides: manifest.slides.map((s) => ({ imageUrl: s.imageUrl, caption: s.caption, role: s.role })),
       revoked: false,
       createdAt: new Date().toISOString(),
+      // A clip generated before this field existed has no manifest.language
+      // — fall back rather than writing an undefined value into the frozen
+      // snapshot (see MemoryClipScreen's matching fallback for the player).
+      language: manifest.language || 'ca',
     }
     await supabase.storage.from(CLIP_BUCKET).upload(sharePath, JSON.stringify(snapshot), {
       contentType: 'application/json',
