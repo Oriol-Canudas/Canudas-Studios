@@ -57,6 +57,11 @@ export type ScreenName =
   | 'sessionClose'
   | 'library'
   | 'familyTree'
+  // NEXT v1 stage 1 — E01 topic menu and the Aquells estius opening (E02-E05).
+  // Kept alongside the existing screens rather than replacing them; Home is
+  // the only one actually rewired this stage (see HomeScreen.tsx).
+  | 'topicMenu'
+  | 'summerOpening'
 
 export interface PendingQuestion {
   id: string

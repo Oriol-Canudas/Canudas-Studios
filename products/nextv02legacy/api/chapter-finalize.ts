@@ -15,11 +15,43 @@
 //    any) answered.
 
 import { createClient } from '@supabase/supabase-js'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5.5'
 const REQUEST_TIMEOUT_MS = 25000
 const MAX_FIELD_CHARS = 4000
 const MAX_HISTORY_TURNS = 60
+
+// Duplicated per-file by this project's self-contained api/*.ts convention
+// (see api/session.ts, which issues this cookie).
+function sessionSecret(): string {
+  return process.env.SESSION_SECRET || ''
+}
+function signSeniorId(seniorId: string): string {
+  return createHmac('sha256', sessionSecret()).update(seniorId).digest('hex')
+}
+function verifiedSeniorIdFromCookie(cookieHeader: string | undefined): string | null {
+  if (!cookieHeader || !sessionSecret()) return null
+  const match = cookieHeader.match(/(?:^|;\s*)next_session=([^;]+)/)
+  if (!match) return null
+  let raw: string
+  try {
+    raw = decodeURIComponent(match[1])
+  } catch {
+    return null
+  }
+  const sep = raw.lastIndexOf('.')
+  if (sep < 0) return null
+  const seniorId = raw.slice(0, sep)
+  const sig = raw.slice(sep + 1)
+  if (!/^[0-9a-f]{64}$/.test(sig)) return null
+  const expected = signSeniorId(seniorId)
+  const sigBuf = Buffer.from(sig, 'hex')
+  const expBuf = Buffer.from(expected, 'hex')
+  if (sigBuf.length !== expBuf.length) return null
+  if (!timingSafeEqual(sigBuf, expBuf)) return null
+  return seniorId
+}
 
 type TurnRole = 'director' | 'senior'
 
@@ -258,6 +290,11 @@ export default async function handler(req: any, res: any) {
     return res.status(503).json({ error: 'db_unavailable' })
   }
 
+  const seniorId = verifiedSeniorIdFromCookie(req.headers.cookie)
+  if (!seniorId) {
+    return res.status(401).json({ error: 'no_session' })
+  }
+
   const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
   const body = req.body ?? {}
 
@@ -272,7 +309,10 @@ export default async function handler(req: any, res: any) {
       .eq('id', chapterId)
       .maybeSingle()
 
-    if (fetchError || !chapter) {
+    // Same response for "doesn't exist" and "exists but isn't yours" —
+    // deliberately not distinguishing the two, so this never confirms to
+    // an unauthorized caller that a given chapterId is real.
+    if (fetchError || !chapter || chapter.senior_id !== seniorId) {
       logDiagnostic({ outcome: 'confirm_chapter_not_found', chapterId })
       return res.status(404).json({ error: 'chapter_not_found' })
     }
@@ -403,16 +443,10 @@ export default async function handler(req: any, res: any) {
       return res.status(502).json({ error: 'interpret_failed' })
     }
 
-    const { data: senior } = await supabase.from('seniors').select('id').limit(1).maybeSingle()
-    if (!senior) {
-      logDiagnostic({ outcome: 'no_senior_seeded' })
-      return res.status(500).json({ error: 'no_senior_seeded' })
-    }
-
     const { data: chapter, error: insertError } = await supabase
       .from('chapters')
       .insert({
-        senior_id: senior.id,
+        senior_id: seniorId,
         question_id: questionId,
         content_type: 'moment',
         title: sanitizeText(parsed.title),
@@ -429,7 +463,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const turnRows = history.map((t) => ({
-      senior_id: senior.id,
+      senior_id: seniorId,
       chapter_id: chapter.id,
       role: t.role,
       content: t.content,

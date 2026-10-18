@@ -63,6 +63,16 @@ export async function requestChapterFinalize(
   return (await res.json()) as ChapterDraft
 }
 
+// Idempotent — safe to call on every Home mount. Resolves (and, on a
+// visitor's first call ever, creates) her anonymous owner session; the
+// server sets the HttpOnly cookie, nothing here needs to store anything.
+export async function ensureSession(): Promise<{ seniorId: string; preferredName: string | null } | null> {
+  const res = await fetch('/api/session', { method: 'POST' })
+  if (!res.ok) return null
+  const data = await res.json()
+  return typeof data?.seniorId === 'string' ? { seniorId: data.seniorId, preferredName: data.preferredName ?? null } : null
+}
+
 export async function requestChapterLibrary(): Promise<MemoryChapter[]> {
   const res = await fetch('/api/chapters-list')
   if (!res.ok) return []

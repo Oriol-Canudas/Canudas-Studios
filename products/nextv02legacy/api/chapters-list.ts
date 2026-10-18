@@ -1,12 +1,44 @@
 // Self-contained — same convention as the other api/*.ts files (see
-// director-respond.ts's header comment). Backs the "Biblioteca de
-// records" screen: every confirmed chapter for the (single, for this
-// proof-of-concept stage) test senior, newest first.
+// director-respond.ts's header comment). Backs "El meu llibre": every
+// confirmed chapter belonging to the session's own senior, newest first
+// — scoped by api/session.ts's cookie, never the whole table.
 
 import { createClient } from '@supabase/supabase-js'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 function dbAvailable(): boolean {
   return Boolean(process.env.SUPABASE_URL) && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
+// Duplicated per-file by this project's self-contained api/*.ts convention
+// (see api/session.ts, which issues this cookie).
+function sessionSecret(): string {
+  return process.env.SESSION_SECRET || ''
+}
+function signSeniorId(seniorId: string): string {
+  return createHmac('sha256', sessionSecret()).update(seniorId).digest('hex')
+}
+function verifiedSeniorIdFromCookie(cookieHeader: string | undefined): string | null {
+  if (!cookieHeader || !sessionSecret()) return null
+  const match = cookieHeader.match(/(?:^|;\s*)next_session=([^;]+)/)
+  if (!match) return null
+  let raw: string
+  try {
+    raw = decodeURIComponent(match[1])
+  } catch {
+    return null
+  }
+  const sep = raw.lastIndexOf('.')
+  if (sep < 0) return null
+  const seniorId = raw.slice(0, sep)
+  const sig = raw.slice(sep + 1)
+  if (!/^[0-9a-f]{64}$/.test(sig)) return null
+  const expected = signSeniorId(seniorId)
+  const sigBuf = Buffer.from(sig, 'hex')
+  const expBuf = Buffer.from(expected, 'hex')
+  if (sigBuf.length !== expBuf.length) return null
+  if (!timingSafeEqual(sigBuf, expBuf)) return null
+  return seniorId
 }
 
 export default async function handler(req: any, res: any) {
@@ -19,11 +51,17 @@ export default async function handler(req: any, res: any) {
     return res.status(503).json({ error: 'db_unavailable' })
   }
 
+  const seniorId = verifiedSeniorIdFromCookie(req.headers.cookie)
+  if (!seniorId) {
+    return res.status(401).json({ error: 'no_session' })
+  }
+
   const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
   const { data, error } = await supabase
     .from('chapters')
     .select('id, title, testimony_text, illustration_url, created_at')
+    .eq('senior_id', seniorId)
     .eq('status', 'confirmed')
     .order('created_at', { ascending: false })
     .limit(100)

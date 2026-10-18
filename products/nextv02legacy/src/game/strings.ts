@@ -87,6 +87,12 @@ export const UI_STRINGS = {
     },
     home: {
       greeting: (name: string) => (name ? `Que bé veure't, ${name}` : 'Que bé tornar a estar aquí'),
+      // H01's approved copy: time-appropriate, name omitted if she skipped it.
+      timeGreeting: (name: string | null, hour: number) => {
+        const part = hour < 13 ? 'Bon dia' : hour < 20 ? 'Bona tarda' : 'Bon vespre'
+        return name ? `${part}, ${name}.` : `${part}.`
+      },
+      whatToday: 'Què et ve de gust avui?',
       familyGift: 'Un regal de la família',
       postpone: 'Més tard',
       justSavedLabel: 'Ho tens desat',
@@ -95,7 +101,9 @@ export const UI_STRINGS = {
       suggestionSubtitle: 'Fem una petita targeta amb un record que et vingui de gust conservar.',
       mindAction: 'Tinc una cosa al cap',
       inspireAction: 'Inspira’m',
-      libraryButton: 'Biblioteca de records',
+      libraryButton: 'El meu llibre',
+      explicamLabel: "Explica'm",
+      sorprenmeLabel: 'Sorprèn-me',
     },
     familyTree: {
       title: "L'arbre familiar",
@@ -115,6 +123,55 @@ export const UI_STRINGS = {
       resetConfirm: 'Sí, reiniciar',
       resetCancel: 'Cancel·lar',
       close: 'Tancar',
+    },
+    topicMenu: {
+      title: "Troba un fil",
+      subtitle: "Un lloc, una persona, un moment…",
+      summerLabel: 'Moments i aventures',
+      summerCta: 'Aquells estius →',
+      categories: {
+        llocs: 'Cases i llocs',
+        gent: 'La meva gent',
+        bandaSonora: 'Música i celebracions',
+        cosesQueSeFer: 'Feines i coses que sé fer',
+        maneraDeVeure: 'La meva mirada',
+      },
+      comingSoon: 'En preparació',
+      footer: 'Un primer tast. Més experiències en preparació.',
+      back: "Casa",
+    },
+    summerOpening: {
+      back: 'Temes',
+      backHome: 'Casa',
+      leave: 'Deixar-ho aquí',
+      contribute: 'Em ve un record',
+      contributeComingSoon: 'Aquesta part encara no hi és — arribarà a la propera etapa.',
+      ok: "D'acord",
+      e02: {
+        eyebrow: 'AQUELLS ESTIUS',
+        title: 'Hi ha estius que tornen per un detall.',
+        subtitle: 'Una olor, una veu, una cosa que fèiem cada dia.',
+        continue: 'Continuar',
+      },
+      e03: {
+        title: 'Marxar. Tornar. Quedar-se.',
+        subtitle: 'Per a uns, l’estiu era descobrir un lloc. Per a altres, tornar-hi. O veure el de sempre amb un altre ritme.',
+        continue: 'Continuar',
+      },
+      e04: {
+        title: 'De vegades torna una cosa petita.',
+        subtitle: 'Una sobretaula. Un trajecte. Una cosa que fèiem cada dia.',
+        prompt: 'Què t’ha vingut al cap?',
+        place: 'Un lloc',
+        person: 'Una persona',
+        activity: 'Una cosa que fèiem',
+        keepWatching: 'Prefereixo continuar mirant',
+      },
+      e05: {
+        title: 'Un estiu també pot cabre en un detall.',
+        subtitle: 'Una finestra oberta, una cadira al carrer, una sobretaula que s’allarga. Avui podem quedar-nos aquí.',
+        home: 'Tornar a casa',
+      },
     },
     library: {
       title: 'Biblioteca de records',
@@ -245,6 +302,11 @@ export const UI_STRINGS = {
     },
     home: {
       greeting: (name: string) => (name ? `Qué bien verte, ${name}` : 'Qué bien volver a estar aquí'),
+      timeGreeting: (name: string | null, hour: number) => {
+        const part = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'
+        return name ? `${part}, ${name}.` : `${part}.`
+      },
+      whatToday: '¿Qué te apetece hoy?',
       familyGift: 'Un regalo de la familia',
       postpone: 'Más tarde',
       justSavedLabel: 'Ya lo tienes guardado',
@@ -253,7 +315,9 @@ export const UI_STRINGS = {
       suggestionSubtitle: 'Hacemos una pequeña tarjeta con un recuerdo que te apetezca conservar.',
       mindAction: 'Tengo algo en mente',
       inspireAction: 'Inspírame',
-      libraryButton: 'Biblioteca de recuerdos',
+      libraryButton: 'Mi libro',
+      explicamLabel: 'Cuéntame',
+      sorprenmeLabel: 'Sorpréndeme',
     },
     familyTree: {
       title: 'El árbol familiar',
@@ -273,6 +337,55 @@ export const UI_STRINGS = {
       resetConfirm: 'Sí, reiniciar',
       resetCancel: 'Cancelar',
       close: 'Cerrar',
+    },
+    topicMenu: {
+      title: 'Encuentra un hilo',
+      subtitle: 'Un lugar, una persona, un momento…',
+      summerLabel: 'Momentos y aventuras',
+      summerCta: 'Aquellos veranos →',
+      categories: {
+        llocs: 'Casas y lugares',
+        gent: 'Mi gente',
+        bandaSonora: 'Música y celebraciones',
+        cosesQueSeFer: 'Oficios y cosas que sé hacer',
+        maneraDeVeure: 'Mi mirada',
+      },
+      comingSoon: 'En preparación',
+      footer: 'Una primera muestra. Más experiencias en preparación.',
+      back: 'Casa',
+    },
+    summerOpening: {
+      back: 'Temas',
+      backHome: 'Casa',
+      leave: 'Dejarlo aquí',
+      contribute: 'Me viene un recuerdo',
+      contributeComingSoon: 'Esta parte todavía no está — llegará en la próxima etapa.',
+      ok: 'De acuerdo',
+      e02: {
+        eyebrow: 'AQUELLOS VERANOS',
+        title: 'Hay veranos que vuelven por un detalle.',
+        subtitle: 'Un olor, una voz, algo que hacíamos cada día.',
+        continue: 'Continuar',
+      },
+      e03: {
+        title: 'Marchar. Volver. Quedarse.',
+        subtitle: 'Para unos, el verano era descubrir un lugar. Para otros, volver. O ver lo de siempre con otro ritmo.',
+        continue: 'Continuar',
+      },
+      e04: {
+        title: 'A veces vuelve algo pequeño.',
+        subtitle: 'Una sobremesa. Un trayecto. Algo que hacíamos cada día.',
+        prompt: '¿Qué te ha venido a la cabeza?',
+        place: 'Un lugar',
+        person: 'Una persona',
+        activity: 'Algo que hacíamos',
+        keepWatching: 'Prefiero seguir mirando',
+      },
+      e05: {
+        title: 'Un verano también puede caber en un detalle.',
+        subtitle: 'Una ventana abierta, una silla en la calle, una sobremesa que se alarga. Hoy podemos quedarnos aquí.',
+        home: 'Volver a casa',
+      },
     },
     library: {
       title: 'Biblioteca de recuerdos',
@@ -403,6 +516,11 @@ export const UI_STRINGS = {
     },
     home: {
       greeting: (name: string) => (name ? `Lovely to see you, ${name}` : 'Lovely to be back here'),
+      timeGreeting: (name: string | null, hour: number) => {
+        const part = hour < 13 ? 'Good morning' : hour < 20 ? 'Good afternoon' : 'Good evening'
+        return name ? `${part}, ${name}.` : `${part}.`
+      },
+      whatToday: 'What would you like today?',
       familyGift: 'A gift from your family',
       postpone: 'Later',
       justSavedLabel: "It's saved",
@@ -411,7 +529,9 @@ export const UI_STRINGS = {
       suggestionSubtitle: "We'll make a little card with a memory you'd like to keep.",
       mindAction: "I've got something on my mind",
       inspireAction: 'Inspire me',
-      libraryButton: 'Library of memories',
+      libraryButton: 'My book',
+      explicamLabel: 'Tell me',
+      sorprenmeLabel: 'Surprise me',
     },
     familyTree: {
       title: 'The family tree',
@@ -431,6 +551,55 @@ export const UI_STRINGS = {
       resetConfirm: 'Yes, restart',
       resetCancel: 'Cancel',
       close: 'Close',
+    },
+    topicMenu: {
+      title: 'Find a thread',
+      subtitle: 'A place, a person, a moment…',
+      summerLabel: 'Moments and adventures',
+      summerCta: 'Those summers →',
+      categories: {
+        llocs: 'Homes and places',
+        gent: 'My people',
+        bandaSonora: 'Music and celebrations',
+        cosesQueSeFer: 'Work and things I know how to do',
+        maneraDeVeure: 'The way I see things',
+      },
+      comingSoon: 'Coming soon',
+      footer: 'A first taste. More experiences in preparation.',
+      back: 'Home',
+    },
+    summerOpening: {
+      back: 'Topics',
+      backHome: 'Home',
+      leave: 'Leave it here',
+      contribute: 'A memory comes to mind',
+      contributeComingSoon: "This part isn't here yet — it's coming in the next stage.",
+      ok: 'OK',
+      e02: {
+        eyebrow: 'THOSE SUMMERS',
+        title: 'Some summers return through a detail.',
+        subtitle: 'A smell, a voice, something we did every day.',
+        continue: 'Continue',
+      },
+      e03: {
+        title: 'Leave. Return. Stay.',
+        subtitle: 'For some, summer meant discovering a place. For others, going back. Or seeing the usual place at a different pace.',
+        continue: 'Continue',
+      },
+      e04: {
+        title: 'Sometimes a small thing comes back.',
+        subtitle: 'A long lunch. A journey. Something we did every day.',
+        prompt: "What came to mind?",
+        place: 'A place',
+        person: 'A person',
+        activity: 'Something we did',
+        keepWatching: "I'd rather keep watching",
+      },
+      e05: {
+        title: 'A summer can also fit in one detail.',
+        subtitle: 'An open window, a chair in the street, a long lunch that stretches on. We can stay here today.',
+        home: 'Back home',
+      },
     },
     library: {
       title: 'Library of memories',

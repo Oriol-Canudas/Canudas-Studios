@@ -1,129 +1,66 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
+import { ensureSession } from '../game/directorClient'
 import ScreenBadge from './ScreenBadge'
 
+// H01 — rebuilt against the approved reference: the objects on the table
+// carry the functions (notebook → Explica'm, postcard → Sorprèn-me, book
+// → El meu llibre) instead of a menu floating over her portrait. Family
+// requests and the family tree are deliberately not wired in here this
+// stage — see store.ts's comment on openCategoryBrowser/openLibraryChapter
+// for where that code still lives, untouched, just not reachable from Home.
 export default function HomeScreen() {
-  const {
-    profile,
-    pendingQuestion,
-    loadPendingQuestion,
-    postponeQuestion,
-    lastSavedChapter,
-    startSession,
-    startSorpremMe,
-    openCategoryBrowser,
-    openLibraryChapter,
-    clearLastSavedChapter,
-    goTo,
-  } = useGameStore()
+  const { profile, goTo } = useGameStore()
   const t = getStrings(profile.language).home
-  const familyTreeStrings = getStrings(profile.language).familyTree
+  const [hour] = useState(() => new Date().getHours())
 
   useEffect(() => {
-    loadPendingQuestion()
-  }, [loadPendingQuestion])
+    ensureSession()
+  }, [])
 
-  function viewSavedChapter() {
-    if (!lastSavedChapter) return
-    openLibraryChapter(lastSavedChapter.id)
-    clearLastSavedChapter()
-  }
+  const name = profile.preferredName ? profile.preferredName : null
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       <ScreenBadge n={4} />
-      {/* The full-screen companion scene, edge to edge. A bottom-weighted
-          scrim keeps the translucent menu legible, matching Welcome's
-          anchored-down text treatment. */}
-      <div className="fixed inset-0 -z-10">
-        <img src="/director.jpg" alt="" className="w-full h-full object-cover object-top" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/25 to-transparent" />
-      </div>
+      <img src="/v1/home-objects.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-b from-cream/70 via-cream/10 to-cream/35" />
 
-      <div className="relative min-h-screen flex flex-col items-center px-6 pb-10 gap-4">
-        {/* Guaranteed clear zone, verified against director.jpg's actual
-            face position so the menu can never grow up into her face —
-            see the Home full-screen commit history for the measurement. */}
-        <div className="flex-1 min-h-[55vh] md:min-h-[76vh]" />
-
-        <header className="text-center fade-in-up">
-          <h1 className="font-display text-2xl text-cream drop-shadow-sm leading-snug">
-            {t.greeting(profile.preferredName)}
+      <div className="relative min-h-screen flex flex-col px-6 pt-10 pb-8">
+        <header className="mb-auto">
+          <h1 className="font-display text-3xl text-ink drop-shadow-sm leading-snug">
+            {t.timeGreeting(name, hour)}
           </h1>
+          <p className="text-ink-soft text-lg mt-1">{t.whatToday}</p>
         </header>
 
-        <div className="fade-in-up-delayed w-full max-w-sm flex flex-col gap-3">
-          {/* The one primary card, in priority order: a pending family
-              question > an acknowledgment of what she just saved > an
-              honest, outcome-clear suggestion. Never more than one. */}
-          {pendingQuestion ? (
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => startSession(pendingQuestion.text, pendingQuestion.id)}
-                className="gift-glow text-left bg-gold/20 backdrop-blur-xl border border-gold/40 rounded-2xl p-4 shadow-lg active:scale-[0.98] transition-transform"
-              >
-                <p className="text-xs uppercase tracking-wide text-gold font-semibold mb-1">✨ {t.familyGift}</p>
-                <p className="font-display text-lg text-cream leading-snug">{pendingQuestion.text}</p>
-              </button>
-              <button
-                onClick={() => postponeQuestion(pendingQuestion.id)}
-                className="text-cream/80 text-sm underline self-start ml-1"
-              >
-                {t.postpone}
-              </button>
-            </div>
-          ) : lastSavedChapter ? (
-            <button
-              onClick={viewSavedChapter}
-              className="text-left bg-terracotta/20 backdrop-blur-xl border border-terracotta/40 rounded-2xl p-4 shadow-lg active:scale-[0.98] transition-transform"
-            >
-              <p className="text-xs uppercase tracking-wide text-terracotta font-semibold mb-1">✨ {t.justSavedLabel}</p>
-              <p className="font-display text-lg text-cream leading-snug">{lastSavedChapter.title}</p>
-            </button>
-          ) : (
-            <button
-              onClick={startSorpremMe}
-              className="text-left bg-cream/15 backdrop-blur-xl border border-cream/30 rounded-2xl p-4 shadow-lg active:scale-[0.98] transition-transform"
-            >
-              <p className="font-display text-lg text-cream leading-snug">{t.suggestionTitle}</p>
-              <p className="text-cream/80 text-sm mt-0.5">{t.suggestionSubtitle}</p>
-            </button>
-          )}
+        {/* Explica'm — positioned near the open journal, left side of the scene */}
+        <button
+          onClick={() => goTo('topicMenu')}
+          className="self-start mt-[28vh] flex items-center gap-2 bg-surface/90 backdrop-blur-sm border border-ink/10 rounded-2xl px-5 py-3 shadow-md active:scale-[0.98] transition-transform"
+        >
+          <span className="text-xl">💬</span>
+          <span className="font-display text-lg text-ink">{t.explicamLabel}</span>
+        </button>
 
-          <button
-            onClick={() => goTo('conversationEntry')}
-            className="text-left bg-cream/15 backdrop-blur-xl border border-cream/30 rounded-2xl p-4 shadow-lg active:scale-[0.98] transition-transform"
-          >
-            <span className="font-display text-lg text-cream leading-snug">{t.mindAction}</span>
-          </button>
+        {/* Sorprèn-me — positioned near the postcard, upper right of the scene */}
+        <button
+          onClick={() => goTo('topicMenu')}
+          className="self-end -mt-2 flex items-center gap-2 bg-surface/90 backdrop-blur-sm border border-ink/10 rounded-2xl px-5 py-3 shadow-md active:scale-[0.98] transition-transform"
+        >
+          <span className="text-xl">☀️</span>
+          <span className="font-display text-lg text-ink">{t.sorprenmeLabel}</span>
+        </button>
 
-          {/* Three compact actions in a row — keeps the menu's total
-              height from growing down into her face on short viewports. */}
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              onClick={openCategoryBrowser}
-              className="flex flex-col items-center gap-1.5 bg-cream/10 backdrop-blur-xl border border-cream/20 rounded-2xl py-3 px-2 active:scale-[0.98] transition-transform"
-            >
-              <span className="text-xl">🧭</span>
-              <span className="text-cream/90 text-xs font-medium text-center leading-tight">{t.inspireAction}</span>
-            </button>
-            <button
-              onClick={() => goTo('library')}
-              className="flex flex-col items-center gap-1.5 bg-cream/10 backdrop-blur-xl border border-cream/20 rounded-2xl py-3 px-2 active:scale-[0.98] transition-transform"
-            >
-              <span className="text-xl">📖</span>
-              <span className="text-cream/90 text-xs font-medium text-center leading-tight">{t.libraryButton}</span>
-            </button>
-            <button
-              onClick={() => goTo('familyTree')}
-              className="flex flex-col items-center gap-1.5 bg-cream/10 backdrop-blur-xl border border-cream/20 rounded-2xl py-3 px-2 active:scale-[0.98] transition-transform"
-            >
-              <span className="text-xl">🌳</span>
-              <span className="text-cream/90 text-xs font-medium text-center leading-tight">{familyTreeStrings.button}</span>
-            </button>
-          </div>
-        </div>
+        {/* El meu llibre — positioned near the book, lower right of the scene */}
+        <button
+          onClick={() => goTo('library')}
+          className="self-end mt-auto flex items-center gap-2 bg-surface/90 backdrop-blur-sm border border-ink/10 rounded-2xl px-5 py-3 shadow-md active:scale-[0.98] transition-transform"
+        >
+          <span className="text-xl">📖</span>
+          <span className="font-display text-lg text-ink">{t.libraryButton}</span>
+        </button>
       </div>
     </div>
   )

@@ -13,6 +13,8 @@ import LibraryScreen from './components/LibraryScreen'
 import FamilyTreeScreen from './components/FamilyTreeScreen'
 import SettingsMenu from './components/SettingsMenu'
 import BackgroundMusic from './components/BackgroundMusic'
+import TopicMenuScreen from './components/TopicMenuScreen'
+import SummerOpeningScreen from './components/SummerOpeningScreen'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
@@ -38,6 +40,10 @@ function renderScreen(screen: ReturnType<typeof useGameStore.getState>['screen']
       return <LibraryScreen />
     case 'familyTree':
       return <FamilyTreeScreen />
+    case 'topicMenu':
+      return <TopicMenuScreen />
+    case 'summerOpening':
+      return <SummerOpeningScreen />
     case 'conversationEntry':
       return <ConversationEntryScreen />
     case 'categoryBrowser':
