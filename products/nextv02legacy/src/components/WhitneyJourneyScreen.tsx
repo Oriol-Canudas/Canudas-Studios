@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from '../game/store'
 import { getStrings } from '../game/strings'
+import { suspendBackgroundMusic, resumeBackgroundMusic } from '../game/backgroundMusic'
 import ScreenBadge from './ScreenBadge'
 
 // S02-S07 — the Whitney Houston / Dolly Parton discovery journey.
@@ -25,6 +26,17 @@ function youtubeWatchUrl(id: string) {
 
 function Player({ videoId, playLabel, pauseLabel }: { videoId: string; playLabel: string; pauseLabel: string }) {
   const [playing, setPlaying] = useState(false)
+
+  // Keep the ambient backdrop out of the way of her own listening — same
+  // suspend/resume mechanism the voice recorder uses. Count-based, so S06's
+  // two simultaneous players (Whitney + Dolly) don't resume ambient music
+  // just because one of them was paused while the other keeps playing.
+  useEffect(() => {
+    if (!playing) return
+    suspendBackgroundMusic()
+    return () => resumeBackgroundMusic()
+  }, [playing])
+
   return (
     <div className="flex flex-col gap-2">
       {playing ? (

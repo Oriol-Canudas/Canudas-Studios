@@ -8,10 +8,11 @@ const VOLUME = 0.18
 
 let audio: HTMLAudioElement | null = null
 let desiredPlaying = false
-// True while ClipPlayer (or anything else with its own soundtrack) has
-// asked us to stay out of the way — distinct from `desiredPlaying`, which
-// tracks whether she wants ambient music on at all.
-let suspended = false
+// A count, not a flag: more than one thing can want ambient music out of
+// the way at once (e.g. the Whitney and Dolly embeds both playing in
+// S06) — resuming only when the last of them lets go avoids one player's
+// pause silently un-suspending ambient music under the other.
+let suspendCount = 0
 
 function ensureAudio(): HTMLAudioElement {
   if (!audio) {
@@ -24,7 +25,7 @@ function ensureAudio(): HTMLAudioElement {
 
 function applyState() {
   const el = ensureAudio()
-  if (desiredPlaying && !suspended) {
+  if (desiredPlaying && suspendCount === 0) {
     el.play().catch(() => {
       // Blocked until a user gesture unlocks audio — fine, the next
       // gesture-triggered call (unlockOnFirstGesture) will retry.
@@ -40,12 +41,12 @@ export function setBackgroundMusicEnabled(enabled: boolean) {
 }
 
 export function suspendBackgroundMusic() {
-  suspended = true
+  suspendCount += 1
   applyState()
 }
 
 export function resumeBackgroundMusic() {
-  suspended = false
+  suspendCount = Math.max(0, suspendCount - 1)
   applyState()
 }
 
