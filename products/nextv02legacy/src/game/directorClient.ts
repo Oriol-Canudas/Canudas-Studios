@@ -7,6 +7,8 @@ import type {
   ChapterDraft,
   MemoryChapter,
   ChapterClip,
+  ClipSlide,
+  ClipShareSnapshot,
   FamilyMember,
 } from './types'
 
@@ -101,6 +103,18 @@ export async function requestChapterClip(chapterId: string): Promise<ChapterClip
   return (await res.json()) as ChapterClip
 }
 
+// M01 must ask before anything is generated — this only ever checks for
+// an already-cached clip, never triggers generation.
+export async function requestExistingClip(chapterId: string): Promise<ChapterClip | null> {
+  const res = await fetch('/api/chapter-clip', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chapterId, checkOnly: true }),
+  })
+  if (!res.ok) return null
+  return (await res.json()) as ChapterClip
+}
+
 export async function requestFamilyTree(): Promise<FamilyMember[]> {
   const res = await fetch('/api/family-tree')
   if (!res.ok) return []
@@ -165,3 +179,77 @@ export async function requestMemorySave(title: string, body: string): Promise<{ 
   }
   return (await res.json()) as { id: string; title: string }
 }
+
+// --- NEXT v1 Slice 3 — memory clip review/save/share (M04-M06) ---
+
+async function postClipUpdate(payload: Record<string, unknown>): Promise<ChapterClip> {
+  const res = await fetch('/api/clip-update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'unknown_error' }))
+    throw new Error(error.error ?? `request_failed_${res.status}`)
+  }
+  return (await res.json()) as ChapterClip
+}
+
+export function requestClipSave(chapterId: string) {
+  return postClipUpdate({ chapterId, action: 'save' })
+}
+
+export function requestClipEditText(chapterId: string, title: string, slides: { caption: string }[]) {
+  return postClipUpdate({ chapterId, action: 'editText', title, slides })
+}
+
+export function requestClipRerollImage(chapterId: string, slideIndex: number) {
+  return postClipUpdate({ chapterId, action: 'rerollImage', slideIndex })
+}
+
+export async function requestClipShareCreate(
+  chapterId: string,
+  authorName: string | null,
+): Promise<{ token: string; chapterId: string }> {
+  const res = await fetch('/api/clip-share', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chapterId, action: 'create', authorName }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'unknown_error' }))
+    throw new Error(error.error ?? `request_failed_${res.status}`)
+  }
+  return await res.json()
+}
+
+export async function requestClipShareRevoke(chapterId: string): Promise<void> {
+  const res = await fetch('/api/clip-share', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chapterId, action: 'revoke' }),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'unknown_error' }))
+    throw new Error(error.error ?? `request_failed_${res.status}`)
+  }
+}
+
+export interface ClipViewResult {
+  available: boolean
+  title?: string
+  authorName?: string | null
+  slides?: ClipSlide[]
+}
+
+// Public, unauthenticated — V01's recipient read. Never sends or needs
+// the session cookie.
+export async function requestClipView(chapterId: string, token: string): Promise<ClipViewResult> {
+  const res = await fetch(`/api/clip-view?chapterId=${encodeURIComponent(chapterId)}&token=${encodeURIComponent(token)}`)
+  if (!res.ok) return { available: false }
+  return (await res.json()) as ClipViewResult
+}
+
+// Referenced only for its type re-export convenience — ClipShareSnapshot
+// itself is never fetched client-side (clip-view.ts flattens it).
+export type { ClipShareSnapshot }

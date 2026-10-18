@@ -104,4 +104,11 @@ h1, h2, h3 {
   .fade-in-up-delayed {
     animation: none;
   }
+  .clip-kenburns {
+    animation: none;
+  }
+  .clip-progress-fill {
+    animation: none !important;
+    width: 100% !important;
+  }
 }

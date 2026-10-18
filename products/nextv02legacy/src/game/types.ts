@@ -66,6 +66,8 @@ export type ScreenName =
   // Explica'm's topic menu.
   | 'surpriseMenu'
   | 'whitneyJourney'
+  // NEXT v1 Slice 3 — the memory-clip create/review/share flow (M01-M06).
+  | 'memoryClip'
 
 export interface PendingQuestion {
   id: string
@@ -89,11 +91,24 @@ export interface MemoryChapter {
 export interface ClipSlide {
   imageUrl: string
   caption: string
+  imagePrompt?: string
 }
 
 export interface ChapterClip {
+  title: string
   slides: ClipSlide[]
-  musicUrl: string | null
+  confirmed: boolean
+  shared: boolean
+  shareToken: string | null
+}
+
+// V01 — what a recipient actually receives: a frozen snapshot, never the
+// owner's private book or raw conversation.
+export interface ClipShareSnapshot {
+  title: string
+  authorName: string | null
+  slides: ClipSlide[]
+  revoked: boolean
 }
 
 export interface FamilyMember {

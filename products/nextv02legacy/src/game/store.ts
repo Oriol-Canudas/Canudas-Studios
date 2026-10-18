@@ -8,6 +8,7 @@ import type {
   PendingQuestion,
   ChapterDraft,
   SavedChapterSummary,
+  MemoryChapter,
 } from './types'
 import { requestDirectorTurn, requestPendingQuestion, requestChapterFinalize } from './directorClient'
 
@@ -126,6 +127,8 @@ interface GameState {
   // Set right before navigating to Library so it can auto-open this one
   // chapter instead of just showing the grid.
   openChapterId: string | null
+  // The chapter MemoryClipScreen (M01-M06) is currently working with.
+  memoryClipChapter: MemoryChapter | null
   activeQuestionId: string | null
   // Set when a session starts from a category-browser template — read back
   // at chapter-confirm time so the backend knows whether to also run
@@ -171,6 +174,7 @@ interface GameState {
   setLastSavedChapter: (chapter: SavedChapterSummary) => void
   clearLastSavedChapter: () => void
   openLibraryChapter: (chapterId: string) => void
+  openMemoryClip: (chapter: MemoryChapter) => void
   clearOpenChapterId: () => void
   startResumeStory: (chapterId: string, excerpt: string) => void
   startSession: (openingTopic: string, questionId?: string | null, templateId?: string | null) => Promise<void>
@@ -194,6 +198,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   postponedQuestionIds: loadPostponedQuestionIds(),
   lastSavedChapter: null,
   openChapterId: null,
+  memoryClipChapter: null,
   activeQuestionId: null,
   activeTemplateId: null,
   resumeChapterId: null,
@@ -292,6 +297,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   setLastSavedChapter: (chapter) => set({ lastSavedChapter: chapter }),
   clearLastSavedChapter: () => set({ lastSavedChapter: null }),
   openLibraryChapter: (chapterId) => set({ openChapterId: chapterId, screen: 'library' }),
+  openMemoryClip: (chapter) => set({ memoryClipChapter: chapter, screen: 'memoryClip' }),
   clearOpenChapterId: () => set({ openChapterId: null }),
 
   // L04 — "Afegir un record" from an existing story's detail. Routes

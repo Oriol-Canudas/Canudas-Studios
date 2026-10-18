@@ -17,6 +17,7 @@ import TopicMenuScreen from './components/TopicMenuScreen'
 import SummerOpeningScreen from './components/SummerOpeningScreen'
 import SurpriseMenuScreen from './components/SurpriseMenuScreen'
 import WhitneyJourneyScreen from './components/WhitneyJourneyScreen'
+import MemoryClipScreen from './components/MemoryClipScreen'
 
 export default function App() {
   const screen = useGameStore((s) => s.screen)
@@ -50,6 +51,8 @@ function renderScreen(screen: ReturnType<typeof useGameStore.getState>['screen']
       return <SurpriseMenuScreen />
     case 'whitneyJourney':
       return <WhitneyJourneyScreen />
+    case 'memoryClip':
+      return <MemoryClipScreen />
     case 'conversationEntry':
       return <ConversationEntryScreen />
     case 'categoryBrowser':

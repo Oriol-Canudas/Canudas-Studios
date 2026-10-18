@@ -3,16 +3,19 @@
 //
 // Turns one already-confirmed chapter into a short slideshow: 3 slides
 // (a generated illustration + a short warm caption drawn only from what
-// she actually said) plus one of a small pool of pre-generated warm
-// instrumental tracks (see pickSharedMusicPath below for why it's a
-// shared pool rather than a live per-chapter music call), played back
-// client-side by ClipPlayer.tsx — there's no real video-encoding step
-// here, by design (see the conversation this was scoped in: a Vercel
-// function can't reliably render video, and building a whole separate
-// rendering service wasn't worth it yet for a proof-of-concept-scale
-// product). The result is cached as a manifest.json in the chapter-clips
-// storage bucket, keyed by chapter id, so re-opening a clip is instant
-// and never re-spends image generation credits.
+// she actually said) — there's no real video-encoding step here, by
+// design (see the conversation this was scoped in: a Vercel function
+// can't reliably render video, and building a whole separate rendering
+// service wasn't worth it yet for a proof-of-concept-scale product). The
+// result is cached as a manifest.json in the chapter-clips storage
+// bucket, keyed by chapter id, so re-opening a clip is instant and never
+// re-spends image generation credits.
+//
+// NEXT v1: no background music. The approved spec is explicit ("No
+// audio soundtrack or licensed song embedded by default") — this used to
+// attach a shared instrumental track and ClipPlayer auto-played it on
+// mount with zero consent, which was also a direct "do not auto-start
+// music" violation. Both removed; see ClipPlayer.tsx.
 
 import { createClient } from '@supabase/supabase-js'
 import { createHmac, timingSafeEqual } from 'crypto'
@@ -52,28 +55,27 @@ function verifiedSeniorIdFromCookie(cookieHeader: string | undefined): string | 
   return seniorId
 }
 
-// A small pool of warm, nostalgic instrumental tracks generated once
-// up front (not per-chapter — the ElevenLabs key here is scoped to
-// Text-to-Speech only, not Music, so a live per-chapter generation call
-// isn't available) and shared across every clip. Picked deterministically
-// per chapter so the same chapter always gets the same track.
-const SHARED_MUSIC_COUNT = 3
-
-function pickSharedMusicPath(chapterId: string): string {
-  let hash = 0
-  for (const char of chapterId) hash = (hash * 31 + char.charCodeAt(0)) % 997
-  const index = (hash % SHARED_MUSIC_COUNT) + 1
-  return `_shared/music-${index}.mp3`
-}
-
 interface ClipSlide {
   imageUrl: string
   caption: string
+  // Kept so a later "reroll this image" (clip-update.ts) can regenerate
+  // the same scene again without inventing a new one or touching the
+  // caption's facts.
+  imagePrompt?: string
 }
 
 interface ClipManifest {
+  title: string
   slides: ClipSlide[]
-  musicUrl: string | null
+  // M04 "Guardar al meu llibre" — distinct from generation itself, per
+  // "creation, saving, and sharing are separate actions." Sharing (see
+  // clip-share.ts) requires this to be true first.
+  confirmed: boolean
+  // Mirrors whether clip-share.ts currently has an active link for this
+  // chapter, so the owner sees real share status when reopening a saved
+  // clip without a separate lookup.
+  shared: boolean
+  shareToken: string | null
 }
 
 function dbAvailable(): boolean {
@@ -257,6 +259,12 @@ export default async function handler(req: any, res: any) {
     }
   }
 
+  // M01 needs to ask for consent before anything is generated — a plain
+  // existence check must never itself trigger generation.
+  if (req.body?.checkOnly === true) {
+    return res.status(404).json({ error: 'not_generated' })
+  }
+
   if (!aiAvailable()) {
     return res.status(503).json({ error: 'ai_unavailable' })
   }
@@ -294,7 +302,11 @@ export default async function handler(req: any, res: any) {
       continue
     }
     const { data: pub } = supabase.storage.from(CLIP_BUCKET).getPublicUrl(path)
-    slides.push({ imageUrl: pub.publicUrl, caption: sanitizeText(plan[i].caption) })
+    slides.push({
+      imageUrl: pub.publicUrl,
+      caption: sanitizeText(plan[i].caption),
+      imagePrompt: sanitizeText(plan[i].imagePrompt),
+    })
   }
 
   if (slides.length === 0) {
@@ -302,16 +314,13 @@ export default async function handler(req: any, res: any) {
     return res.status(502).json({ error: 'illustration_failed' })
   }
 
-  const { data: musicPub } = supabase.storage.from(CLIP_BUCKET).getPublicUrl(pickSharedMusicPath(chapterId))
-  const musicUrl = musicPub.publicUrl
-
-  const manifest: ClipManifest = { slides, musicUrl }
+  const manifest: ClipManifest = { title: chapter.title, slides, confirmed: false, shared: false, shareToken: null }
 
   await supabase.storage.from(CLIP_BUCKET).upload(manifestPath, JSON.stringify(manifest), {
     contentType: 'application/json',
     upsert: true,
   })
 
-  logDiagnostic({ outcome: 'generated', chapterId, slideCount: slides.length, hasMusic: Boolean(musicUrl), latencyMs: Date.now() - startedAt })
+  logDiagnostic({ outcome: 'generated', chapterId, slideCount: slides.length, latencyMs: Date.now() - startedAt })
   return res.status(200).json(manifest)
 }
