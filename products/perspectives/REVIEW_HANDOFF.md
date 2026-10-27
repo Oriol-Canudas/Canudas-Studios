@@ -439,6 +439,78 @@ that instruction wasn't the one found missing here).
   content decision, not an engine one.
 - Ready for Codex review: yes.
 
+## Claude result — updated 2026-10-27 (documentation catch-up + selftest-all fix + live AI re-verification) by Claude
+
+A process/doc round, not a feature round — flagged by a separate
+read-only agentic-architecture audit, which found that this file,
+README.md, CURRENT_BUILD_STATE.md, PRODUCTION_LOG.md and CHARACTERS.md
+all stopped being updated on 2026-10-11 while the engine kept changing
+through 2026-10-12. The entire multi-case generalization — a second
+case, "The Last Ascent" (`src/game/caseAscent.ts`); `caseData.ts` turned
+into a swappable one-line registry pointer; `scripts/select-case.mjs`'s
+build-time case switcher so separate Vercel projects can serve different
+cases from the same commit; proactive contact and `altUnlock` made
+generic beyond Tom/Sofia/Elena — shipped with zero entry in any of
+those five docs. This round:
+
+1. Caught the docs up (README.md, CURRENT_BUILD_STATE.md,
+   PRODUCTION_LOG.md) with the facts above — see CURRENT_BUILD_STATE.md's
+   own 2026-10-27 entry for the full list, not repeated here.
+2. Added `scripts/selftest-all.mjs` (`npm run selftest`): runs both
+   `scripts/selftest.ts` (Case 002) and `scripts/selftest.ascent.ts`
+   (Ascent) in one command, temporarily pointing `caseData.ts` at each
+   case's file in turn and restoring it to its original content
+   afterward (confirmed via `git status --short` showing no diff after
+   the run). Confirmed, by actually running it first, that
+   `scripts/selftest.ts` currently crashes outright with an unrelated
+   `TypeError` when run directly while `caseData.ts` points at Ascent
+   (today's checked-in default) — there was no single command that
+   validated both cases, exactly the gap this fixes.
+3. Independently re-verified the live AI path with a real request, not
+   a trust of the prior "confirmed live and working" language: `POST
+   https://gamexperspectives.vercel.app/api/witness-chat` with
+   `{"action":"converse","witnessId":"rae","message":"Can you walk me
+   through what happened up on the ridge that day?", ...}` → HTTP 200,
+   `_model: "gpt-4o-mini"`, genuine case-specific generated dialogue
+   ("...The storm was closing in, and we had to make quick decisions
+   about our safety and the summit push..."), `validationFallback:
+   false`. This matters specifically because of the 2026-10-11
+   production incident recorded above in this same file — "it's live"
+   had been wrongly asserted before without a real check.
+
+Why
+- The audit's own framing: the repo's real failure mode so far hasn't
+  been a missing feature, it's been unverified success claims and
+  documentation drift. This round fixes both, directly, rather than
+  proposing more process for later.
+
+Files
+- New `scripts/selftest-all.mjs`; `package.json` (`selftest` script);
+  `README.md`, `CURRENT_BUILD_STATE.md`, `PRODUCTION_LOG.md` (doc-only).
+
+### Verification
+
+1. **Fixture**: `npm run selftest` → both suites pass (Case 002's
+   125/125-equivalent suite and Ascent's own suite), `caseData.ts`
+   byte-for-byte unchanged after (`git status --short` empty).
+2. **Live, on the deployed endpoint**: real `/api/witness-chat` call,
+   result quoted above — not inferred from a build/deploy succeeding.
+3. **Human product validation**: not applicable — no gameplay/UI/
+   narrative changes this round.
+
+### Known limitations / decision needed
+
+- `DECISIONS.md` and `CHARACTERS.md` were deliberately left untouched —
+  `CHARACTERS.md` is already explicitly Case-002-scoped and doesn't
+  claim otherwise; the doc-lag itself isn't really a new "decision" for
+  `DECISIONS.md`'s log.
+- This round is process/documentation only — it doesn't touch, and
+  isn't a substitute for, the still-fully-owed human product
+  validation on either case.
+- Ready for Codex review: yes — low-risk to verify (read the three
+  updated docs for accuracy against the actual code; optionally re-run
+  `npm run selftest` and the live curl independently).
+
 ## Codex review — fill after testing the reported build
 
 - Status: pending; no new browser test performed during handoff setup.

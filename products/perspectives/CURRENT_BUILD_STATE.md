@@ -43,6 +43,51 @@ just incomplete.
 Oriol still needs to trigger Codex's review pass — no automatic agent
 notification is configured.
 
+## Documentation catch-up + live re-verification (2026-10-27)
+
+A full read-only repo audit (for a separate agentic-architecture proposal)
+surfaced that **every doc in this folder except ARCHITECTURE.md stopped
+being updated on 2026-10-11, while the engine kept changing through
+2026-10-12** — specifically, the entire multi-case generalization shipped
+with zero corresponding updates here, in README.md, PRODUCTION_LOG.md,
+REVIEW_HANDOFF.md, or CHARACTERS.md. For the record, what actually exists
+now and wasn't written down anywhere:
+
+- **A second complete case, "The Last Ascent"** (`src/game/caseAscent.ts`),
+  mechanically distinct from Case 002 — it has a real `TIME_PRESSURE`
+  clock (Case 002 has none) and its `TIMELINE` is deliberately empty
+  because its story happens during play rather than before it.
+- **`src/game/caseData.ts` is now a swappable one-line re-export pointer**,
+  not a locked single case — every component imports case data from that
+  path, never from a specific case file, so switching the whole app to a
+  different case locally is a one-line change.
+- **`scripts/select-case.mjs`** runs automatically before every build
+  (`prebuild`) and overwrites that same line from an `ACTIVE_CASE` env
+  var, so separate Vercel projects can deploy the identical commit/branch
+  and each still serve a different case.
+- Proactive witness-initiated contact and the `altUnlock` conversational
+  route both now exist generically across cases, not just as Tom/Sofia/
+  Elena-specific mechanics.
+
+Also independently re-verified, with real evidence rather than a build/
+deploy claim: a live POST to `https://gamexperspectives.vercel.app/api/witness-chat`
+(`action: "converse"`, `witnessId: "rae"`) returned HTTP 200 with
+`_model: "gpt-4o-mini"`, genuine case-specific generated dialogue, and
+`validationFallback: false` — the AI path is actually working in
+production right now, checked directly rather than inferred. This matters
+given the production incident recorded below (2026-10-11 entry): the
+fact that it "worked" was wrongly assumed more than once before, so this
+entry exists specifically to not repeat that pattern.
+
+Also added: `npm run selftest` (`scripts/selftest-all.mjs`) — runs both
+`scripts/selftest.ts` (Case 002) and `scripts/selftest.ascent.ts` (Ascent)
+in one command regardless of which case `caseData.ts` currently points
+at, restoring it to its original content afterward. Before this existed,
+running `scripts/selftest.ts` while `caseData.ts` pointed at Ascent
+crashed outright with a confusing `TypeError` — confirmed by actually
+running it — instead of failing with a useful message; there was no
+single command that validated both cases together.
+
 ## Ownership
 
 - **Claude**: production lead for implementation.
@@ -61,7 +106,12 @@ steps.
 
 ## Current product target
 
-**Perspectives POC — Case 002: "The Last Message"**
+**Perspectives POC — two cases, one active at a time: Case 002: "The Last
+Message" and "The Last Ascent"** (see "Documentation catch-up" above for
+how switching works). The product-target framing and validation questions
+below were written against Case 002 specifically; they still apply to
+Ascent in spirit, but Ascent hasn't had its own dedicated validation pass
+written up.
 
 Core loop: `Hear → Examine → Reason → Hear again → Verdict → Reveal`
 

@@ -7,6 +7,7 @@
     "dev": "vite",
     "prebuild": "node scripts/select-case.mjs",
     "build": "tsc -b && vite build",
+    "selftest": "node scripts/selftest-all.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

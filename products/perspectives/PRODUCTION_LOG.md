@@ -818,3 +818,61 @@ Current limitations / next step
   prompt-chasing (likely the line is already maximally colloquial), but
   flagged as open rather than silently accepted. See REVIEW_HANDOFF.md's
   2026-10-11 entry for the full reasoning and the rest of the trade-offs.
+
+## 2026-10-27 — Documentation catch-up, selftest-all fix, live AI re-verification
+
+What changed
+- Ran a full read-only repo audit (for a separate agentic-architecture
+  proposal) and found this log, README.md, CURRENT_BUILD_STATE.md,
+  REVIEW_HANDOFF.md and CHARACTERS.md had all stopped being updated on
+  2026-10-11, while the engine kept changing through 2026-10-12 — the
+  entire multi-case generalization (a second case, "The Last Ascent";
+  `caseData.ts` turned into a swappable registry pointer;
+  `scripts/select-case.mjs`'s build-time case switcher; proactive contact
+  and `altUnlock` generalized beyond Tom/Sofia/Elena) shipped with no
+  entry anywhere in these docs. This round catches the docs up to that
+  reality — see CURRENT_BUILD_STATE.md's 2026-10-27 entry for the
+  details, not repeated here.
+- New `scripts/selftest-all.mjs` (`npm run selftest`): runs
+  `scripts/selftest.ts` (Case 002) and `scripts/selftest.ascent.ts`
+  (Ascent) in one command, temporarily pointing `caseData.ts` at each in
+  turn and restoring its original content when done — confirmed by
+  checksum/`git status` to leave the file byte-for-byte unchanged.
+  Neither suite runs meaningfully unless `caseData.ts` points at its
+  matching case, and there was previously no single command that
+  exercised both.
+- Independently re-verified the live AI path with a real request rather
+  than trusting a prior "confirmed live and working" claim: POST to
+  `https://gamexperspectives.vercel.app/api/witness-chat`
+  (`action: "converse"`, `witnessId: "rae"`) → HTTP 200, `_model:
+  "gpt-4o-mini"`, genuine case-specific generated dialogue,
+  `validationFallback: false`.
+
+Why
+- The audit's single most important finding: `api/witness-chat.ts` once
+  returned `FUNCTION_INVOCATION_FAILED` on every live request while
+  being reported "confirmed live and working" more than once (see the
+  2026-10-11 production-incident entry in REVIEW_HANDOFF.md). The actual
+  lesson from that incident is "don't claim live without checking live,"
+  and it had not yet been turned into a habit or a tool — this round
+  does both: one real check now, plus `selftest-all.mjs` so the
+  inactive case's suite can't silently rot unnoticed the way Case 002's
+  effectively had (confirmed: running `scripts/selftest.ts` directly
+  while `caseData.ts` pointed at Ascent crashed outright with an
+  unrelated `TypeError`, not a clean failure).
+
+Files
+- New `scripts/selftest-all.mjs`; `package.json` (`selftest` script);
+  `README.md`, `CURRENT_BUILD_STATE.md` (doc sync, no engine changes).
+
+How to test
+- `npm run selftest` → both suites run and pass; `caseData.ts` unchanged
+  after (`git status --short src/game/caseData.ts` is empty).
+
+Current limitations / next step
+- `CHARACTERS.md` and `DECISIONS.md` were not touched this round —
+  `CHARACTERS.md` is explicitly Case-002-scoped already and doesn't
+  claim otherwise; `DECISIONS.md` is a historical decision log and the
+  doc-lag itself isn't really a new "decision" to record there.
+- This was a documentation/process round, not a feature round — no
+  gameplay, narrative, or UI changes.
