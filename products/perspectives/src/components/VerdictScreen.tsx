@@ -108,8 +108,26 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
             </span>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/[0.04] p-4">
-            <p className="text-base font-medium text-red-200">{CASE_META.finalWarning}</p>
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-400/15 bg-red-400/[0.03] px-3.5 py-2.5">
+            <span className="shrink-0 text-base">{"⚠️"}</span>
+            <p className="text-sm text-red-200/90">{CASE_META.finalWarning}</p>
+          </div>
+
+          {/* A simple progress readout instead of one long undifferentiated
+              form — "2 of 4 answered," plus a dot per axis matching the
+              same style IntroSequence already uses for its own beats. */}
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-white/50">
+              {VERDICT_AXES.filter((axis) => choices[axis.id] != null).length} of {VERDICT_AXES.length} answered
+            </p>
+            <div className="flex gap-1.5">
+              {VERDICT_AXES.map((axis) => (
+                <span
+                  key={axis.id}
+                  className={`h-1.5 w-6 rounded-full ${choices[axis.id] != null ? "bg-amber-300" : "bg-white/15"}`}
+                />
+              ))}
+            </div>
           </div>
 
           {VERDICT_AXES.map((axis) => (

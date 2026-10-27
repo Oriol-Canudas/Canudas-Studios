@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import { CONFRONTATION_WITNESS_ID, EVIDENCE, EVIDENCE_BY_ID, EVIDENCE_FACTS, REVELATIONS, SOCIAL_GRAPH, TIME_PRESSURE, WITNESS_BY_ID, WITNESSES } from "./caseData";
+import { CONFRONT_OPENERS, CONFRONTATION_WITNESS_IDS, EVIDENCE, EVIDENCE_BY_ID, EVIDENCE_FACTS, REVELATIONS, SOCIAL_GRAPH, TIME_PRESSURE, WITNESS_BY_ID, WITNESSES } from "./caseData";
 import { track } from "./analytics";
 import { playSfx } from "./audio";
 import { converseWithWitness, defaultCueFor, generateRelayReaction } from "./interpreter";
-import { runConfrontTurn } from "./confrontation";
+import { runConfrontTurn, runGenericConfrontTurn } from "./confrontation";
 import {
   getDefensiveLine,
   getDeflection,
@@ -133,9 +133,11 @@ interface GameState {
   approachTally: Record<WitnessId, Record<string, number>>;
   /** Opt-in per witness (WitnessConfig.demeanorEffects.endsSessionOn) — once true, that witness's freeform conversation is over for this playthrough. */
   sessionEnded: Record<WitnessId, boolean>;
-  /** The confrontation scene — "Untouchable" only (CONFRONTATION_WITNESS_ID). Empty/unused for every other case. */
+  /** The confrontation scene — "Untouchable" only (CONFRONTATION_WITNESS_IDS). Empty/unused for every other case. */
   confrontHistory: ChatMessage[];
   confrontPending: boolean;
+  /** Index into CONFRONTATION_WITNESS_IDS — which confrontation in the sequence is currently active. */
+  confrontIndex: number;
   board: BoardEntry[];
   verdict: PlayerVerdict | null;
   revealed: boolean;
@@ -157,10 +159,12 @@ interface GameState {
   retryFreeformMessage: (witnessId: WitnessId) => Promise<void>;
   setDraft: (witnessId: WitnessId, text: string) => void;
   submitVerdict: (v: PlayerVerdict) => void;
-  /** Fires the confrontation scene's opening line — "Untouchable" only, see CONFRONTATION_WITNESS_ID. A no-op if the active case doesn't define one. */
+  /** Fires the confrontation scene's opening line for the currently-active witness in CONFRONTATION_WITNESS_IDS. A no-op if the active case defines none. */
   beginConfrontation: () => Promise<void>;
-  /** The player's reply within the confrontation scene — "Untouchable" only. */
+  /** The player's reply within the confrontation scene, to whichever witness is currently active. */
   sendConfrontMessage: (text: string) => Promise<void>;
+  /** Moves to the next witness in CONFRONTATION_WITNESS_IDS (clears the transcript, fires their opener) — a no-op past the end of the list. */
+  advanceConfrontation: () => Promise<void>;
   reset: () => void;
 }
 
@@ -963,6 +967,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   sessionEnded: emptySessionEnded(),
   confrontHistory: [],
   confrontPending: false,
+  confrontIndex: 0,
   board: [],
   verdict: null,
   revealed: false,
@@ -1411,6 +1416,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       sessionEnded: emptySessionEnded(),
       confrontHistory: [],
       confrontPending: false,
+      confrontIndex: 0,
       board: [],
       verdict: null,
       revealed: false,
@@ -1419,14 +1425,25 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   beginConfrontation: async () => {
-    if (!CONFRONTATION_WITNESS_ID) return; // this case has no confrontation scene
     const state = get();
-    if (state.confrontHistory.length > 0 || state.confrontPending) return; // idempotent — only ever opens once
+    const activeId = CONFRONTATION_WITNESS_IDS[state.confrontIndex];
+    if (!activeId) return; // this case has no confrontation scene, or the sequence is exhausted
+    if (state.confrontHistory.length > 0 || state.confrontPending) return; // idempotent — only ever opens once per witness
+
+    // A non-Marcus witness in the sequence (e.g. Priya) gets an authored
+    // opener, grounded in real state, never AI-generated for the framing
+    // beat specifically — see CONFRONT_OPENERS's own doc comment.
+    const authoredOpener = CONFRONT_OPENERS[activeId];
+    if (authoredOpener) {
+      set({ confrontHistory: [{ role: "witness", text: authoredOpener(state as never) }] });
+      return;
+    }
+
     const finalCall = state.verdict?.choices["finalCall"];
     if (!finalCall) return;
 
     set({ confrontPending: true });
-    const outcome = await runConfrontTurn(finalCall, state.demeanor[CONFRONTATION_WITNESS_ID], [], "", true);
+    const outcome = await runConfrontTurn(finalCall, state.demeanor[activeId], [], "", true);
     set({
       confrontHistory: [{ role: "witness", text: outcome.dialogue, cue: outcome.cue ?? undefined, source: outcome.source }],
       confrontPending: false,
@@ -1434,13 +1451,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   sendConfrontMessage: async (text) => {
-    if (!CONFRONTATION_WITNESS_ID) return;
     const state = get();
+    const activeId = CONFRONTATION_WITNESS_IDS[state.confrontIndex];
+    if (!activeId) return;
     if (state.confrontPending) return;
     const trimmed = text.trim();
     if (!trimmed) return;
-    const finalCall = state.verdict?.choices["finalCall"];
-    if (!finalCall) return;
 
     const playerMessage: ChatMessage = { role: "player", text: trimmed };
     set({ confrontHistory: [...state.confrontHistory, playerMessage], confrontPending: true });
@@ -1449,11 +1465,29 @@ export const useGameStore = create<GameState>((set, get) => ({
       .confrontHistory.filter((m) => m.role === "player" || m.role === "witness")
       .map((m) => ({ role: m.role, text: m.text }));
 
-    const outcome = await runConfrontTurn(finalCall, get().demeanor[CONFRONTATION_WITNESS_ID], history, trimmed, true);
+    // Marcus keeps the bespoke finalCall x demeanor-bucket engine
+    // (runConfrontTurn, server-enforced to witnessId "marcus"); any other
+    // witness in the sequence uses the generic freeform engine instead
+    // (runGenericConfrontTurn) — same one every ordinary witness chat
+    // already goes through, just without topic/evidence gating.
+    const outcome =
+      activeId === "marcus"
+        ? await (async () => {
+            const finalCall = state.verdict?.choices["finalCall"];
+            if (!finalCall) return { dialogue: "...", cue: null, source: "fallback" as const };
+            return runConfrontTurn(finalCall, get().demeanor[activeId], history, trimmed, true);
+          })()
+        : await runGenericConfrontTurn(activeId, history, trimmed);
+
     const latest = get();
     set({
       confrontHistory: [...latest.confrontHistory, { role: "witness", text: outcome.dialogue, cue: outcome.cue ?? undefined, source: outcome.source }],
       confrontPending: false,
     });
+  },
+
+  advanceConfrontation: async () => {
+    set((s) => ({ confrontIndex: s.confrontIndex + 1, confrontHistory: [], confrontPending: false }));
+    await get().beginConfrontation();
   },
 }));

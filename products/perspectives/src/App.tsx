@@ -16,7 +16,7 @@ import BreakthroughToast from "./components/BreakthroughToast";
 import { useGameStore } from "./game/store";
 import { track } from "./game/analytics";
 import { playAmbient, stopAmbient } from "./game/audio";
-import { CASE_INTRO_MODE, CONFRONTATION_WITNESS_ID, WITNESS_BY_ID } from "./game/caseData";
+import { CASE_INTRO_MODE, CONFRONTATION_WITNESS_IDS, WITNESS_BY_ID } from "./game/caseData";
 import { CASE_INTRO_SLIDES, CHARACTER_INTRO_SLIDES } from "./game/introSlides";
 import type { WitnessId } from "./game/types";
 
@@ -70,7 +70,7 @@ export default function App() {
         <TimeClock />
         <VerdictScreen
           onBack={() => setScreen("game")}
-          onSubmitted={() => setScreen(CONFRONTATION_WITNESS_ID ? "confront" : "reveal")}
+          onSubmitted={() => setScreen(CONFRONTATION_WITNESS_IDS.length > 0 ? "confront" : "reveal")}
         />
       </>
     );

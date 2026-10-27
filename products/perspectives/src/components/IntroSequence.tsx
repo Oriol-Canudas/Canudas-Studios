@@ -200,8 +200,12 @@ export default function IntroSequence({
       {/* Darken only the lower band the caption sits in, plus a light top
           scrim for the skip label — the face (upper ~60% of a portrait
           crop) stays clear. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/85" />
-      <div className="absolute inset-x-0 bottom-16 flex justify-center px-8">
+      <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/90" />
+      {/* Single bottom-anchored column, normal document flow — caption,
+          controls and dots stack and push each other up/down as needed,
+          so a long multi-line caption can never overlap the controls the
+          way two independently-offset absolute blocks could. */}
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3 px-8 pb-6">
         <div
           className={`text-center transition-opacity ease-in-out ${visible ? "opacity-100" : "opacity-0"}`}
           style={{ transitionDuration: `${fadeMs}ms` }}
@@ -225,25 +229,25 @@ export default function IntroSequence({
             <p className="mt-1.5 text-center text-sm italic text-white/60 drop-shadow-lg">{slide.cue}</p>
           )}
         </div>
-      </div>
-      {richControls && (
-        <div className="absolute inset-x-0 bottom-20 flex items-center justify-center gap-5">
-          <button
-            onClick={goPrevious}
-            disabled={index === 0}
-            className="text-sm text-white/50 transition-opacity disabled:opacity-30"
-          >
-            {"← Previous"}
-          </button>
-          <button onClick={togglePause} className="text-sm text-white/50">
-            {paused ? "▶ Resume" : "❚❚ Pause"}
-          </button>
+        {richControls && (
+          <div className="flex items-center justify-center gap-5">
+            <button
+              onClick={goPrevious}
+              disabled={index === 0}
+              className="text-sm text-white/50 transition-opacity disabled:opacity-30"
+            >
+              {"← Previous"}
+            </button>
+            <button onClick={togglePause} className="text-sm text-white/50">
+              {paused ? "▶ Resume" : "❚❚ Pause"}
+            </button>
+          </div>
+        )}
+        <div className="flex justify-center gap-1.5">
+          {slides.map((_, i) => (
+            <span key={i} className={`h-1 w-5 rounded-full ${i === index ? "bg-amber-300" : "bg-white/20"}`} />
+          ))}
         </div>
-      )}
-      <div className="absolute inset-x-0 bottom-6 flex justify-center gap-1.5">
-        {slides.map((_, i) => (
-          <span key={i} className={`h-1 w-5 rounded-full ${i === index ? "bg-amber-300" : "bg-white/20"}`} />
-        ))}
       </div>
       <p className="absolute right-5 top-[calc(env(safe-area-inset-top)+16px)] text-sm text-white/40">Tap to skip</p>
     </div>

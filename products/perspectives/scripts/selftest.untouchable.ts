@@ -20,7 +20,7 @@ import {
   WITNESSES,
   buildVerdictContext,
   buildRevealNarrative,
-  CONFRONTATION_WITNESS_ID,
+  CONFRONTATION_WITNESS_IDS,
   SOCIAL_GRAPH,
 } from "../src/game/caseUntouchable";
 import { gradeVerdict } from "../src/game/verdictGrading";
@@ -48,7 +48,10 @@ function grade(choices: Record<string, string>) {
 
 console.log("\n=== Sanity: every topic's chip text resolves back to itself, witnesses have what they need ===");
 {
-  assert(CONFRONTATION_WITNESS_ID === "marcus", "This case defines a confrontation scene, centered on Marcus");
+  assert(
+    CONFRONTATION_WITNESS_IDS[0] === "marcus" && CONFRONTATION_WITNESS_IDS.includes("priya"),
+    "This case's confrontation sequence starts with Marcus and also includes Priya"
+  );
   assert(Object.keys(SOCIAL_GRAPH).length > 0, "This case defines a non-empty ambient social graph");
   for (const w of WITNESSES) {
     for (const topic of w.topics) {
@@ -279,6 +282,28 @@ console.log("\n=== Playthrough 6: the confrontation scene's selector and its sce
 
   const empty = validateHoldsBothTruths("   ");
   assert(!empty.ok, "An empty reply fails validation outright");
+}
+
+console.log("\n=== Playthrough 7: the confrontation sequence actually advances from Marcus to Priya ===");
+{
+  useGameStore.getState().reset();
+  useGameStore.getState().submitVerdict({ theory: "", choices: { finalCall: "proceed_with_pip" } });
+
+  await useGameStore.getState().beginConfrontation();
+  let state = useGameStore.getState();
+  assert(state.confrontIndex === 0, "Confrontation sequence starts at index 0 (Marcus)");
+  assert(state.confrontHistory.length === 1 && state.confrontHistory[0].role === "witness", "Marcus's opener fired (AI unavailable here, so this is his authored fallback line, exactly like any other turn in this environment)");
+
+  await useGameStore.getState().advanceConfrontation();
+  state = useGameStore.getState();
+  assert(state.confrontIndex === 1, "advanceConfrontation moved to index 1 (Priya)");
+  assert(CONFRONTATION_WITNESS_IDS[state.confrontIndex] === "priya", "Index 1 is Priya, matching CONFRONTATION_WITNESS_IDS's order");
+  assert(
+    state.confrontHistory.length === 1 && state.confrontHistory[0].text.includes("everything I reported was real"),
+    "Priya's authored opener fired, and — since Sam's overheard-remark relay was never triggered in this fresh playthrough — it's specifically her 'timingTellConfirmed: false' line, not her cracked one"
+  );
+
+  useGameStore.getState().reset();
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

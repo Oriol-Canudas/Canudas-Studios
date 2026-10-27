@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../game/store";
-import { WITNESS_BY_ID, CONFRONTATION_WITNESS_ID, CONFRONT_SCENE_IMAGE } from "../game/caseData";
+import { WITNESS_BY_ID, CONFRONTATION_WITNESS_IDS, CONFRONT_SCENE_IMAGE } from "../game/caseData";
 import Portrait from "./Portrait";
 import TypewriterText from "./TypewriterText";
 
@@ -10,16 +10,22 @@ interface ConfrontationSceneProps {
 
 /**
  * The confrontation scene — "Untouchable" (Case 003) only. Bridges
- * Verdict -> Reveal: see CASE_003_SCENE_STRUCTURE.md. App.tsx only
- * renders this when the active case defines CONFRONTATION_WITNESS_ID;
- * every other case skips straight from verdict to reveal, unchanged.
+ * Verdict -> Reveal: see CASE_003_SCENE_STRUCTURE.md. Walks through
+ * CONFRONTATION_WITNESS_IDS in order (Marcus, then Priya) — advancing
+ * between them clears the transcript and fires the next one's opener;
+ * `onDone` only fires once the whole sequence is exhausted. App.tsx only
+ * renders this when the active case defines a non-empty
+ * CONFRONTATION_WITNESS_IDS; every other case skips straight from
+ * verdict to reveal, unchanged.
  */
 export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) {
   const [draft, setDraft] = useState("");
   const confrontHistory = useGameStore((s) => s.confrontHistory);
   const confrontPending = useGameStore((s) => s.confrontPending);
+  const confrontIndex = useGameStore((s) => s.confrontIndex);
   const beginConfrontation = useGameStore((s) => s.beginConfrontation);
   const sendConfrontMessage = useGameStore((s) => s.sendConfrontMessage);
+  const advanceConfrontation = useGameStore((s) => s.advanceConfrontation);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,15 +37,20 @@ export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) 
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [confrontHistory, confrontPending]);
 
-  if (!CONFRONTATION_WITNESS_ID) {
+  const activeId = CONFRONTATION_WITNESS_IDS[confrontIndex];
+  if (!activeId) {
     // Defensive only — App.tsx never mounts this component when the
-    // active case has no confrontation scene.
+    // active case has no confrontation scene, and the "last witness"
+    // button below calls onDone directly rather than advancing past
+    // the end of the list.
     onDone();
     return null;
   }
 
-  const witness = WITNESS_BY_ID[CONFRONTATION_WITNESS_ID];
+  const witness = WITNESS_BY_ID[activeId];
   const hasExchanged = confrontHistory.filter((m) => m.role === "player").length > 0;
+  const isLastWitness = confrontIndex === CONFRONTATION_WITNESS_IDS.length - 1;
+  const nextWitness = !isLastWitness ? WITNESS_BY_ID[CONFRONTATION_WITNESS_IDS[confrontIndex + 1]] : null;
 
   return (
     <div className="min-h-screen bg-[#0a0a0d] flex flex-col">
@@ -52,6 +63,11 @@ export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) 
       <div className="flex-1 overflow-y-auto px-5 py-8">
         <div className="mx-auto flex max-w-md flex-col gap-4">
           <p className="text-center text-xs uppercase tracking-[0.3em] text-amber-300/80">The conversation that closes this</p>
+          {CONFRONTATION_WITNESS_IDS.length > 1 && (
+            <p className="text-center text-[11px] text-white/30">
+              Conversation {confrontIndex + 1} of {CONFRONTATION_WITNESS_IDS.length}
+            </p>
+          )}
           <div className="flex justify-center">
             <Portrait name={witness.name} accentColor={witness.accentColor} image={witness.portraitImage} size="lg" />
           </div>
@@ -88,7 +104,7 @@ export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) 
           <div className="flex gap-2">
             <input
               className="flex-1 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-base text-white placeholder:text-white/30"
-              placeholder="Say something, or just let him respond."
+              placeholder="Say something, or let them respond."
               value={draft}
               disabled={confrontPending}
               onChange={(e) => setDraft(e.target.value)}
@@ -111,11 +127,11 @@ export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) 
             </button>
           </div>
           <button
-            onClick={onDone}
+            onClick={isLastWitness ? onDone : () => void advanceConfrontation()}
             disabled={!hasExchanged && confrontHistory.length === 0}
             className="text-center text-sm text-white/50 underline disabled:opacity-40"
           >
-            Close the case
+            {isLastWitness ? "Close the case" : `Talk to ${nextWitness?.name ?? "the next person"}`}
           </button>
         </div>
       </div>

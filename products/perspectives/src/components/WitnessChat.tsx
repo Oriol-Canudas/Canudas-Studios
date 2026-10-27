@@ -241,10 +241,23 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
   );
 
   const lastWitnessSource = [...messages].reverse().find((m) => m.role === "witness")?.source;
+  // The persistent background now follows demeanor too — previously
+  // demeanorImages only ever lit up the one-shot EmotionReveal flash,
+  // never the ongoing view. Same lookup EmotionReveal already uses, so
+  // this is proven-safe data, just read in a second place.
+  const backgroundImage = witness.demeanorImages?.[currentDemeanor] ?? witness.portraitImage;
 
   return (
-    <div className="flex h-full flex-col pb-[calc(env(safe-area-inset-bottom)+0px)]">
-      <div className="flex items-center gap-3 border-b border-white/10 bg-black/40 px-4 py-3">
+    <div className="relative flex h-full flex-col pb-[calc(env(safe-area-inset-bottom)+0px)]">
+      {/* Full-bleed portrait behind everything — "make the image of the
+          character clearly bigger," per feedback, instead of a small
+          header avatar. Fixed in place (doesn't scroll with the log). */}
+      <div className="absolute inset-0 z-0">
+        <img src={backgroundImage} alt="" className="h-full w-full object-cover object-top" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/92" />
+      </div>
+
+      <div className="relative z-10 flex items-center gap-3 border-b border-white/10 bg-black/30 px-4 py-3 backdrop-blur-md">
         <button onClick={onBack} className="text-2xl text-white/70 active:text-white">
           {"←"}
         </button>
@@ -258,8 +271,8 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
         <DemeanorBadge demeanor={currentDemeanor} />
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#0a0a0d] px-4 py-4">
-        <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] p-3.5 text-base leading-relaxed text-white/60">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 py-4">
+        <div className="mb-4 rounded-xl border border-white/10 bg-black/45 p-3.5 text-base leading-relaxed text-white/90 backdrop-blur-md">
           {witness.context}
         </div>
 
@@ -268,7 +281,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
             if (m.role === "evidence") {
               return (
                 <div key={i} className="flex justify-center">
-                  <div className="max-w-[90%] rounded-xl border border-amber-300/25 bg-amber-300/[0.07] px-4 py-2.5 text-center text-sm text-amber-100/90">
+                  <div className="max-w-[90%] rounded-xl border border-amber-300/25 bg-black/55 px-4 py-2.5 text-center text-sm text-amber-100/90 backdrop-blur-sm">
                     {"\u{1F4C4} Presented: "}
                     {m.text}
                   </div>
@@ -278,7 +291,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
             if (m.role === "relay") {
               return (
                 <div key={i} className="flex justify-center">
-                  <div className="max-w-[90%] rounded-xl border border-sky-300/25 bg-sky-300/[0.07] px-4 py-2.5 text-center text-sm text-sky-100/90">
+                  <div className="max-w-[90%] rounded-xl border border-sky-300/25 bg-black/55 px-4 py-2.5 text-center text-sm text-sky-100/90 backdrop-blur-sm">
                     {"\u{1F5E3}️ You tell them: "}
                     {m.text}
                   </div>
@@ -304,12 +317,12 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
                   </button>
                 ) : (
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-[17px] leading-relaxed ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-[17px] leading-relaxed backdrop-blur-sm ${
                       isPlayer
                         ? isFailedPlayerMsg
-                          ? "border border-red-400/40 bg-red-400/10 text-red-100 rounded-br-sm"
+                          ? "border border-red-400/40 bg-red-400/20 text-red-100 rounded-br-sm"
                           : "bg-amber-400 text-black rounded-br-sm"
-                        : "bg-white/10 text-white rounded-bl-sm"
+                        : "bg-black/55 text-white rounded-bl-sm"
                     }`}
                   >
                     {i === animatingIndex ? (
@@ -357,10 +370,10 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
         </div>
       </div>
 
-      {/* A subtly lighter, warm-tinted panel — distinguishes "how you ask"
-          (chips + input) from "what was said" (the conversation above),
-          which otherwise read as one continuous dark surface. */}
-      <div className="border-t border-white/10 bg-[#171319] px-3 pb-3 pt-2">
+      {/* Translucent panel over the portrait — distinguishes "how you ask"
+          (chips + input) from "what was said" (the conversation above)
+          while keeping the character's face visible behind it. */}
+      <div className="relative z-10 border-t border-white/10 bg-black/50 px-3 pb-3 pt-2 backdrop-blur-md">
         {isFreeform && lastWitnessSource === "fallback" && (
           <p className="mb-1.5 text-center text-[11px] text-white/30">Guided matching active — live AI not connected</p>
         )}
@@ -369,7 +382,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
             stage's requiresEvidence) as a suggestion too — never a new
             authored fact, just the same one shown a second way. */}
         {suggestedEvidence && (
-          <div className="mb-2 flex items-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.06] px-3 py-2">
+          <div className="mb-2 flex items-center gap-2 rounded-xl border border-sky-400/20 bg-black/55 px-3 py-2 backdrop-blur-sm">
             <span className="text-base leading-none">{"🔎"}</span>
             <p className="flex-1 text-sm leading-snug text-sky-100">
               You might want to examine{" "}
@@ -405,7 +418,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
                 type="button"
                 onClick={() => setSuggestionsOpen(true)}
                 disabled={busy}
-                className="rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-sm text-white/55 transition-colors disabled:opacity-50"
+                className="rounded-full border border-white/15 bg-black/45 px-3.5 py-2 text-sm text-white/55 backdrop-blur-sm transition-colors disabled:opacity-50"
               >
                 {"\u{1F4A1} Suggestions"}
               </button>
@@ -427,7 +440,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
                       key={t.id}
                       onClick={() => handleSuggestionTap(t)}
                       disabled={busy}
-                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-gradient-to-br from-white/[0.06] to-white/[0.02] px-4 py-3.5 text-left text-[15px] text-white/85 transition-colors disabled:opacity-50 active:bg-white/[0.08]"
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/20 bg-black/55 px-4 py-3.5 text-left text-[15px] text-white/85 backdrop-blur-sm transition-colors disabled:opacity-50 active:bg-black/65"
                     >
                       <span>{t.chipKeyword ?? t.chipLabel}</span>
                       <span aria-hidden="true" className="shrink-0 text-white/35">→</span>
@@ -461,7 +474,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
             onClick={() => setEvidencePickerOpen(true)}
             aria-label="Present evidence"
             disabled={busy}
-            className="shrink-0 rounded-full border border-white/15 bg-white/[0.05] p-3 text-lg text-white/70 active:text-white disabled:opacity-50"
+            className="shrink-0 rounded-full border border-white/15 bg-black/45 p-3 text-lg text-white/70 backdrop-blur-sm active:text-white disabled:opacity-50"
           >
             {"\u{1F4C4}"}
           </button>
@@ -471,7 +484,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
               onClick={() => setRelayPickerOpen(true)}
               aria-label="Tell them what you've learned"
               disabled={busy}
-              className="shrink-0 rounded-full border border-sky-300/25 bg-sky-300/[0.06] p-3 text-lg text-sky-200 active:text-white disabled:opacity-50"
+              className="shrink-0 rounded-full border border-sky-300/25 bg-black/45 p-3 text-lg text-sky-200 backdrop-blur-sm active:text-white disabled:opacity-50"
             >
               {"\u{1F5E3}️"}
             </button>
@@ -483,7 +496,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
             placeholder={isFreeform ? "Ask in your own words — English or Català" : "Ask in your own words, or tap a suggestion"}
             aria-label={`Ask ${witness.name} a question`}
             disabled={busy}
-            className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-4 py-3 text-[17px] text-white placeholder:text-white/35 outline-none focus:border-amber-300/50 disabled:opacity-60"
+            className="flex-1 rounded-full border border-white/15 bg-black/45 px-4 py-3 text-[17px] text-white backdrop-blur-sm placeholder:text-white/40 outline-none focus:border-amber-300/50 disabled:opacity-60"
           />
           <button
             type="submit"

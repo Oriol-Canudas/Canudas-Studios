@@ -52,7 +52,7 @@ export const CASE_META = {
   statementHeadline: "Before you decide, say what you believe should happen — and why.",
   statementPlaceholder: "Tell the room what you believe happened, and why…",
   decisionHeader: "Deliver your decision",
-  finalWarning: "This is final — it moves straight into the conversation that closes the review.",
+  finalWarning: "This is final — it moves straight into the conversations that close the review.",
   submitLabel: "Deliver your decision",
   revealKicker: "Decision delivered",
 };
@@ -944,8 +944,34 @@ export const SOCIAL_GRAPH: Record<WitnessId, WitnessId[]> = {
   marcus: ["sam"],
 };
 
-/** Which witness this case's confrontation scene is built around — see CASE_003_SCENE_STRUCTURE.md. Every other case exports `null` here (case002.ts/caseAscent.ts), so App.tsx's routing is a pure no-op for them. */
-export const CONFRONTATION_WITNESS_ID: string | null = "marcus";
+/**
+ * The sequence of witnesses this case's confrontation scene runs through,
+ * in order — Marcus first (the subject of the review, the bespoke
+ * finalCall x demeanor-bucket engine), then Priya (her own reckoning with
+ * what her timing actually cost her credibility, via the ordinary
+ * freeform engine — see CONFRONT_OPENERS below and
+ * src/game/confrontation.ts's runGenericConfrontTurn). Every other case
+ * exports `[]` here (case002.ts/caseAscent.ts), so App.tsx's routing and
+ * ConfrontationScene are a pure no-op for them.
+ */
+export const CONFRONTATION_WITNESS_IDS: string[] = ["marcus", "priya"];
+
+/**
+ * Authored opening line for any non-Marcus witness in the confrontation
+ * sequence — grounded in their established characterization, never
+ * AI-generated for the opening beat specifically (the framing matters
+ * too much to risk). Keyed by witness id; a witness with no entry here
+ * (Marcus) uses the AI-generated finalCall-based opener instead, via
+ * runConfrontTurn. Every other case exports `{}`.
+ */
+export const CONFRONT_OPENERS: Record<string, (state: UntouchableStateSlice) => string> = {
+  priya: (state) => {
+    const ctx = buildVerdictContext(state);
+    return ctx.timingTellConfirmed
+      ? "You know, don't you. About why I actually did this now."
+      : "I assume you're here about the outcome. For what it's worth — everything I reported was real. All of it.";
+  },
+};
 
 export const EVIDENCE_BY_ID: Record<string, EvidenceItem> = Object.fromEntries(
   EVIDENCE.map((e) => [e.id, e])
@@ -993,43 +1019,46 @@ export const CASE_INTRO_SLIDES: IntroSlide[] = [
     line: "Tonight, someone senior enough to matter noticed something about the timing that didn't sit right.",
   },
   {
-    image: "/scenes/untouchable/home.jpg",
+    image: "/scenes/untouchable/evidence.jpg",
     speakerName: "Priya",
     speakerColor: WITNESS_BY_ID.priya.accentColor,
     line: "This isn't new, Marcus. You know it isn't.",
     voiceUrl: "/audio/untouchable/priya_01.mp3",
   },
   {
-    image: "/scenes/untouchable/home.jpg",
+    image: "/scenes/untouchable/evidence.jpg",
     speakerName: "Marcus",
     speakerColor: WITNESS_BY_ID.marcus.accentColor,
     line: "I know you've never once come looking for it before. Not until now.",
     voiceUrl: "/audio/untouchable/marcus_01.mp3",
   },
   {
-    image: "/scenes/untouchable/home.jpg",
+    image: "/scenes/untouchable/evidence.jpg",
     speakerName: "Priya",
     speakerColor: WITNESS_BY_ID.priya.accentColor,
     line: "Maybe nobody made me look before.",
     voiceUrl: "/audio/untouchable/priya_02.mp3",
   },
   {
-    image: "/scenes/untouchable/home.jpg",
+    image: "/scenes/untouchable/evidence.jpg",
     speakerName: "Marcus",
     speakerColor: WITNESS_BY_ID.marcus.accentColor,
     line: "Or maybe you finally needed a reason, and I was standing right there.",
     cue: "She doesn't answer that one right away.",
     voiceUrl: "/audio/untouchable/marcus_02.mp3",
   },
-  { image: "/scenes/untouchable/home.jpg", line: "Neither of them is lying, exactly. That's what makes this hard." },
-  { image: "/scenes/untouchable/home.jpg", line: "You're the one who has to find out what that actually means." },
-  { image: "/scenes/untouchable/home.jpg", line: "And say it to him yourself." },
+  { image: "/scenes/untouchable/verdict.jpg", line: "Neither of them is lying, exactly. That's what makes this hard." },
+  { image: "/scenes/untouchable/verdict.jpg", line: "You're the one who has to find out what that actually means." },
+  { image: "/scenes/untouchable/verdict.jpg", line: "And say it to him yourself." },
 ];
 
 /** Opts into the dramatized-scene presentation — see IntroSequence.tsx and case002.ts's CASE_INTRO_MODE comment. */
 export const CASE_INTRO_MODE = {
   autoPaceByWords: true,
-  singleImage: "/scenes/untouchable/home.jpg",
+  // No singleImage — per Oriol's feedback, a little visual variety across
+  // the scene (home -> evidence -> verdict) reads better than one static
+  // frame for all 10 beats. Still a continuous dramatized scene, just
+  // with real scene changes instead of a slideshow of unrelated shots.
   richControls: true,
   musicUrl: "/audio/untouchable/intro_music.mp3",
 };

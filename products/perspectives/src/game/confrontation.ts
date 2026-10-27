@@ -67,6 +67,56 @@ async function fetchJsonWithTimeout(body: unknown, timeoutMs: number): Promise<R
   }
 }
 
+/**
+ * Generic confrontation turn for any SECOND (non-Marcus) witness in a
+ * case's CONFRONTATION_WITNESS_IDS sequence — e.g. Priya in "Untouchable".
+ * Unlike runConfrontTurn, this is not bound to a finalCall/demeanor-bucket
+ * variant matrix and doesn't hit the server's marcus-only "confront"
+ * action; it reuses the same generic "converse" action every ordinary
+ * freeform witness chat already goes through (api/witness-chat.ts), with
+ * no topic/evidence gating — this is a closing conversation after the
+ * investigation phase is over, not a gated one. Falls back the same way
+ * every other AI call in this codebase does: silently, to a neutral line,
+ * never a broken scene.
+ */
+export async function runGenericConfrontTurn(
+  witnessId: string,
+  history: { role: string; text: string }[],
+  message: string
+): Promise<ConfrontTurnOutcome> {
+  const fallbackLine = "...I don't really know what else to say to that.";
+  try {
+    const res = await fetchJsonWithTimeout(
+      {
+        action: "converse",
+        witnessId,
+        message: message.slice(0, MAX_MESSAGE_CHARS) || "...",
+        history: history.slice(-MAX_HISTORY_MESSAGES),
+        topics: [],
+        knownEvidenceIds: [],
+        evidenceTitles: {},
+        witnessStages: {},
+        askCounts: {},
+        defensiveTopicIds: [],
+        conversationMemory: [],
+        defensiveLines: [],
+        deflections: [],
+      },
+      REQUEST_TIMEOUT_MS
+    );
+    if (!res.ok) throw new Error(`converse http ${res.status}`);
+    const data = await res.json();
+    const dialogue = typeof data.dialogue === "string" && data.dialogue.trim() ? data.dialogue : fallbackLine;
+    return {
+      dialogue,
+      cue: typeof data.cue === "string" && data.cue.trim() ? { action: data.cue } : null,
+      source: data.dialogue ? "ai" : "fallback",
+    };
+  } catch {
+    return { dialogue: fallbackLine, cue: null, source: "fallback" };
+  }
+}
+
 export async function runConfrontTurn(
   finalCall: string,
   demeanor: string,
