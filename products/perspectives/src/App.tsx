@@ -9,17 +9,18 @@ import CaseBoard from "./components/CaseBoard";
 import TabBar, { type TabId } from "./components/TabBar";
 import VerdictScreen from "./components/VerdictScreen";
 import RevealScreen from "./components/RevealScreen";
+import ConfrontationScene from "./components/ConfrontationScene";
 import SoundToggle from "./components/SoundToggle";
 import TimeClock from "./components/TimeClock";
 import BreakthroughToast from "./components/BreakthroughToast";
 import { useGameStore } from "./game/store";
 import { track } from "./game/analytics";
 import { playAmbient, stopAmbient } from "./game/audio";
-import { WITNESS_BY_ID } from "./game/caseData";
+import { CONFRONTATION_WITNESS_ID, WITNESS_BY_ID } from "./game/caseData";
 import { CASE_INTRO_SLIDES, CHARACTER_INTRO_SLIDES } from "./game/introSlides";
 import type { WitnessId } from "./game/types";
 
-type Screen = "introCase" | "home" | "introCast" | "game" | "verdict" | "reveal";
+type Screen = "introCase" | "home" | "introCast" | "game" | "verdict" | "confront" | "reveal";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("introCase");
@@ -67,7 +68,19 @@ export default function App() {
       <>
         <SoundToggle />
         <TimeClock />
-        <VerdictScreen onBack={() => setScreen("game")} onSubmitted={() => setScreen("reveal")} />
+        <VerdictScreen
+          onBack={() => setScreen("game")}
+          onSubmitted={() => setScreen(CONFRONTATION_WITNESS_ID ? "confront" : "reveal")}
+        />
+      </>
+    );
+  }
+
+  if (screen === "confront") {
+    return (
+      <>
+        <SoundToggle />
+        <ConfrontationScene onDone={() => setScreen("reveal")} />
       </>
     );
   }

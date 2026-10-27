@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import { EVIDENCE, EVIDENCE_BY_ID, EVIDENCE_FACTS, REVELATIONS, TIME_PRESSURE, WITNESS_BY_ID, WITNESSES } from "./caseData";
+import { CONFRONTATION_WITNESS_ID, EVIDENCE, EVIDENCE_BY_ID, EVIDENCE_FACTS, REVELATIONS, SOCIAL_GRAPH, TIME_PRESSURE, WITNESS_BY_ID, WITNESSES } from "./caseData";
 import { track } from "./analytics";
 import { playSfx } from "./audio";
 import { converseWithWitness, defaultCueFor, generateRelayReaction } from "./interpreter";
+import { runConfrontTurn } from "./confrontation";
 import {
   getDefensiveLine,
   getDeflection,
@@ -121,6 +122,20 @@ interface GameState {
   demeanorTurnCount: Record<WitnessId, number>;
   /** demeanorTurnCount's value at the last time a witness's demeanor actually visibly changed. */
   lastDemeanorChangeTurn: Record<WitnessId, number>;
+  /**
+   * Running count of the player's classified approach per witness (reuses
+   * the intent classification every freeform turn already produces —
+   * never a new inference). Case-generic, but only actually consumed by a
+   * case that exports a non-empty SOCIAL_GRAPH (today: "Untouchable" —
+   * see caseUntouchable.ts and openWitness below). Zero behavior change
+   * for a case that doesn't use it.
+   */
+  approachTally: Record<WitnessId, Record<string, number>>;
+  /** Opt-in per witness (WitnessConfig.demeanorEffects.endsSessionOn) — once true, that witness's freeform conversation is over for this playthrough. */
+  sessionEnded: Record<WitnessId, boolean>;
+  /** The confrontation scene — "Untouchable" only (CONFRONTATION_WITNESS_ID). Empty/unused for every other case. */
+  confrontHistory: ChatMessage[];
+  confrontPending: boolean;
   board: BoardEntry[];
   verdict: PlayerVerdict | null;
   revealed: boolean;
@@ -142,6 +157,10 @@ interface GameState {
   retryFreeformMessage: (witnessId: WitnessId) => Promise<void>;
   setDraft: (witnessId: WitnessId, text: string) => void;
   submitVerdict: (v: PlayerVerdict) => void;
+  /** Fires the confrontation scene's opening line — "Untouchable" only, see CONFRONTATION_WITNESS_ID. A no-op if the active case doesn't define one. */
+  beginConfrontation: () => Promise<void>;
+  /** The player's reply within the confrontation scene — "Untouchable" only. */
+  sendConfrontMessage: (text: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -206,6 +225,18 @@ function emptyDefensiveTopics(): Record<WitnessId, Set<string>> {
 function emptyDrafts(): Record<WitnessId, string> {
   const out = {} as Record<WitnessId, string>;
   for (const w of WITNESSES) out[w.id] = "";
+  return out;
+}
+
+function emptyApproachTally(): Record<WitnessId, Record<string, number>> {
+  const out = {} as Record<WitnessId, Record<string, number>>;
+  for (const w of WITNESSES) out[w.id] = {};
+  return out;
+}
+
+function emptySessionEnded(): Record<WitnessId, boolean> {
+  const out = {} as Record<WitnessId, boolean>;
+  for (const w of WITNESSES) out[w.id] = false;
   return out;
 }
 
@@ -285,6 +316,20 @@ function resolveDemeanorUpdate(
     return { demeanor: proposed, changed: true };
   }
   return { demeanor: current, changed: false };
+}
+
+/**
+ * Opt-in (WitnessConfig.demeanorEffects.endsSessionOn) — whether a demeanor
+ * change that just actually took effect should end this witness's
+ * session. Returns `{}` (a true no-op patch) for every witness that
+ * doesn't configure it, which is every witness in every case before
+ * "Untouchable".
+ */
+function sessionEndPatch(state: GameState, witnessId: WitnessId, changed: boolean, newDemeanor: Demeanor): Partial<GameState> {
+  if (!changed) return {};
+  const ends = WITNESS_BY_ID[witnessId]?.demeanorEffects?.endsSessionOn;
+  if (!ends || !ends.includes(newDemeanor)) return {};
+  return { sessionEnded: { ...state.sessionEnded, [witnessId]: true } };
 }
 
 /** Whether `topic.stages[stageIndex]` would be reached through its NORMAL gates alone (no relay/intent) — used only to tell "reached via altUnlock" apart from "was reachable anyway," never to decide the actual unlock. */
@@ -376,6 +421,7 @@ function advanceTopic(
     ? { ...state.lastDemeanorChangeTurn, [id]: newTurnCount }
     : state.lastDemeanorChangeTurn;
   if (resolved.changed) playSfx("demeanor");
+  const sessionEndPatchForAdvance = sessionEndPatch(state, id, resolved.changed, resolved.demeanor);
 
   // A transient "breakthrough" signal — never explicitly cleared here;
   // the toast component owns its own display timer and self-dismisses
@@ -406,6 +452,7 @@ function advanceTopic(
       demeanorTurnCount: { ...state.demeanorTurnCount, [id]: newTurnCount },
       lastDemeanorChangeTurn: nextLastChangeTurn,
       ...celebrationPatch,
+      ...sessionEndPatchForAdvance,
     },
   };
 }
@@ -432,6 +479,7 @@ function countTurnAndResolveDemeanor(state: GameState, witnessId: WitnessId, pro
     lastDemeanorChangeTurn: resolved.changed
       ? { ...state.lastDemeanorChangeTurn, [witnessId]: newTurnCount }
       : state.lastDemeanorChangeTurn,
+    ...sessionEndPatch(state, witnessId, resolved.changed, resolved.demeanor),
   };
 }
 
@@ -567,6 +615,42 @@ function resolveFreeformTurn(state: GameState, witnessId: WitnessId, interp: Int
 
   const isDefensive = state.defensiveTopics[witnessId].has(topic.id);
   const alreadyEngaged = (state.witnessStages[witnessId][topic.id] ?? -1) >= 0;
+
+  // New, opt-in per witness (WitnessConfig.demeanorEffects.lockNextTopicOnSustained
+  // — see types.ts, consumed today only by "Untouchable"'s Marcus/Priya):
+  // once a witness has sat in one specific demeanor for the same cooldown
+  // window that governs de-escalation, WITHOUT it lifting, the next
+  // genuinely new topic they're asked about locks defensive immediately —
+  // they're too worked up right now to engage with something new, not
+  // just the thing that upset them. Never fires on a topic already
+  // engaged (that's the normal ladder's job) or on a repair attempt
+  // (handled above, before this check).
+  const lockDemeanor = witness.demeanorEffects?.lockNextTopicOnSustained;
+  const sustainedTurns = (state.demeanorTurnCount[witnessId] ?? 0) - (state.lastDemeanorChangeTurn[witnessId] ?? 0);
+  if (
+    lockDemeanor &&
+    !alreadyEngaged &&
+    !isDefensive &&
+    state.demeanor[witnessId] === lockDemeanor &&
+    sustainedTurns >= DEMEANOR_COOLDOWN_TURNS
+  ) {
+    return {
+      text: getDefensiveLine(witness),
+      topicId: topic.id,
+      eventKind: "defensive_lock",
+      clearDefensive: false,
+      setDefensive: true,
+      event: {
+        witnessId,
+        t: Date.now(),
+        kind: "defensive_lock",
+        topicId: topic.id,
+        citedEvidenceIds: [],
+        summary: `${witness.name} has been ${lockDemeanor} too long to engage with a new topic ("${topic.chipLabel}") right now — locked defensive without ever being accused on it.`,
+      },
+      patch: countTurnAndResolveDemeanor(state, witnessId, undefined),
+    };
+  }
 
   // A. Unsupported accusation on a topic never yet admitted anything —
   // lock it, stonewall, do not touch the authored stage ladder at all.
@@ -756,10 +840,27 @@ async function runFreeformTurn(witnessId: WitnessId, text: string, set: SetFn, g
         defensiveTopicIds: Array.from(preState.defensiveTopics[witnessId]),
         relayedFacts,
         conversationMemory,
+        demeanor: preState.demeanor[witnessId],
       },
       true
     );
     const validated = validateInterpretation(outcome.result, witness, new Set(knownEvidenceIds));
+
+    // Ambient-reactivity signal (see SOCIAL_GRAPH/openWitness below) — a
+    // running tally of the player's CLASSIFIED approach, reusing the
+    // intent the engine already computed above rather than inferring
+    // anything new from the raw text itself.
+    const tallyState = get();
+    const tallyPatch = {
+      approachTally: {
+        ...tallyState.approachTally,
+        [witnessId]: {
+          ...tallyState.approachTally[witnessId],
+          [validated.intent]: (tallyState.approachTally[witnessId]?.[validated.intent] ?? 0) + 1,
+        },
+      },
+    };
+    set(tallyPatch);
 
     const stateForResolution = get();
     const resolution = resolveFreeformTurn(stateForResolution, witnessId, validated);
@@ -858,6 +959,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   demeanor: initialDemeanor(),
   demeanorTurnCount: emptyDemeanorTurnCount(),
   lastDemeanorChangeTurn: emptyLastDemeanorChangeTurn(),
+  approachTally: emptyApproachTally(),
+  sessionEnded: emptySessionEnded(),
+  confrontHistory: [],
+  confrontPending: false,
   board: [],
   verdict: null,
   revealed: false,
@@ -905,21 +1010,45 @@ export const useGameStore = create<GameState>((set, get) => ({
     const witness = WITNESS_BY_ID[id];
     if (!witness) return;
 
-    const delivered = state.deliveredProactiveContacts[id] ?? new Set<string>();
+    // Ambient reactivity (SOCIAL_GRAPH) — only ever colors a witness's
+    // STARTING demeanor, before any real turn with them, and only once:
+    // a believable "who'd plausibly talk to whom" edge, crossed with how
+    // the player has come across to a witness they HAVE already met.
+    // Never invents a fact, never touches anyone already in conversation.
+    // Empty SOCIAL_GRAPH (every case before "Untouchable") makes this a
+    // true no-op.
+    if ((state.demeanorTurnCount[id] ?? 0) === 0) {
+      const neighbors = SOCIAL_GRAPH[id] ?? [];
+      let ambientDemeanor: Demeanor | null = null;
+      for (const neighbor of neighbors) {
+        const tally = state.approachTally[neighbor];
+        if (!tally) continue;
+        const empathetic = tally["empathetic_appeal"] ?? 0;
+        const accusatory = tally["accusation"] ?? 0;
+        if (empathetic >= 2 && accusatory === 0) ambientDemeanor = "composed";
+        else if (accusatory >= 2) ambientDemeanor = "nervous";
+      }
+      if (ambientDemeanor && ambientDemeanor !== state.demeanor[id]) {
+        set({ demeanor: { ...state.demeanor, [id]: ambientDemeanor } });
+      }
+    }
+
+    const freshState = get();
+    const delivered = freshState.deliveredProactiveContacts[id] ?? new Set<string>();
     const topic = witness.topics.find(
       (t) =>
         t.proactive &&
         !delivered.has(t.id) &&
-        isProactiveContactEligible(t, state.witnessStages, state.discoveredEvidence, state.relayedRevelations)
+        isProactiveContactEligible(t, freshState.witnessStages, freshState.discoveredEvidence, freshState.relayedRevelations)
     );
     if (!topic) return;
 
-    const { message, patch } = deliverProactiveContact(state, id, topic);
+    const { message, patch } = deliverProactiveContact(freshState, id, topic);
     track("proactive_contact_delivered", { witnessId: id, topicId: topic.id });
     set({
       ...patch,
-      chatHistory: { ...state.chatHistory, [id]: [...state.chatHistory[id], message] },
-      deliveredProactiveContacts: { ...state.deliveredProactiveContacts, [id]: new Set(delivered).add(topic.id) },
+      chatHistory: { ...freshState.chatHistory, [id]: [...freshState.chatHistory[id], message] },
+      deliveredProactiveContacts: { ...freshState.deliveredProactiveContacts, [id]: new Set(delivered).add(topic.id) },
     });
   },
 
@@ -943,6 +1072,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const state = get();
     if (timeIsUp(state)) return; // the clock ran out — no further investigation, only the verdict remains
+    if (state.sessionEnded[id]) return; // opt-in per witness (demeanorEffects.endsSessionOn) — this witness is done for this playthrough
     const topic = topicIdHint
       ? witness.topics.find((t) => t.id === topicIdHint) ?? null
       : matchTopic(witness, questionText);
@@ -1142,6 +1272,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       demeanorTurnCount: { ...state.demeanorTurnCount, [witnessId]: newTurnCount },
       lastDemeanorChangeTurn: nextLastChangeTurn,
       ...(relayContradictionText ? { celebration: { kind: "contradiction" as const, message: relayContradictionText } } : {}),
+      ...sessionEndPatch(state, witnessId, resolved.changed, resolved.demeanor),
     };
 
     if (!reaction.generative || !witness.freeformEnabled) {
@@ -1212,6 +1343,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   sendFreeformMessage: async (witnessId, rawText) => {
     const state = get();
     if (timeIsUp(state)) return;
+    if (state.sessionEnded[witnessId]) return; // opt-in per witness (demeanorEffects.endsSessionOn) — this witness is done for this playthrough
     if (state.pendingWitnesses.has(witnessId)) return; // duplicate-submission guard
     const trimmed = rawText.trim();
     if (!trimmed) return;
@@ -1275,10 +1407,53 @@ export const useGameStore = create<GameState>((set, get) => ({
       demeanor: initialDemeanor(),
       demeanorTurnCount: emptyDemeanorTurnCount(),
       lastDemeanorChangeTurn: emptyLastDemeanorChangeTurn(),
+      approachTally: emptyApproachTally(),
+      sessionEnded: emptySessionEnded(),
+      confrontHistory: [],
+      confrontPending: false,
       board: [],
       verdict: null,
       revealed: false,
       boardEntryKeys: new Set(),
+    });
+  },
+
+  beginConfrontation: async () => {
+    if (!CONFRONTATION_WITNESS_ID) return; // this case has no confrontation scene
+    const state = get();
+    if (state.confrontHistory.length > 0 || state.confrontPending) return; // idempotent — only ever opens once
+    const finalCall = state.verdict?.choices["finalCall"];
+    if (!finalCall) return;
+
+    set({ confrontPending: true });
+    const outcome = await runConfrontTurn(finalCall, state.demeanor[CONFRONTATION_WITNESS_ID], [], "", true);
+    set({
+      confrontHistory: [{ role: "witness", text: outcome.dialogue, cue: outcome.cue ?? undefined, source: outcome.source }],
+      confrontPending: false,
+    });
+  },
+
+  sendConfrontMessage: async (text) => {
+    if (!CONFRONTATION_WITNESS_ID) return;
+    const state = get();
+    if (state.confrontPending) return;
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const finalCall = state.verdict?.choices["finalCall"];
+    if (!finalCall) return;
+
+    const playerMessage: ChatMessage = { role: "player", text: trimmed };
+    set({ confrontHistory: [...state.confrontHistory, playerMessage], confrontPending: true });
+
+    const history = get()
+      .confrontHistory.filter((m) => m.role === "player" || m.role === "witness")
+      .map((m) => ({ role: m.role, text: m.text }));
+
+    const outcome = await runConfrontTurn(finalCall, get().demeanor[CONFRONTATION_WITNESS_ID], history, trimmed, true);
+    const latest = get();
+    set({
+      confrontHistory: [...latest.confrontHistory, { role: "witness", text: outcome.dialogue, cue: outcome.cue ?? undefined, source: outcome.source }],
+      confrontPending: false,
     });
   },
 }));

@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 const KNOWN_CASES = {
   case002: "./case002",
   ascent: "./caseAscent",
+  untouchable: "./caseUntouchable",
 };
 
 const activeCase = process.env.ACTIVE_CASE;

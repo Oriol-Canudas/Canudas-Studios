@@ -215,6 +215,18 @@ export interface WitnessConfig {
   demeanorLines?: Partial<Record<Demeanor, string>>;
   /** Whether this witness gets the AI-backed free-form conversation (interpret → authorize → generate → validate) rather than chip-only deterministic matching. Opt-in per witness; everyone defaults to deterministic-only. */
   freeformEnabled?: boolean;
+  /**
+   * Opt-in per witness (see "Untouchable"'s Marcus/Priya) — gives
+   * demeanor real mechanical weight beyond portrait/flavor-line/badge.
+   * Absent/undefined is a complete no-op, zero behavior change for every
+   * witness in every case before this one.
+   */
+  demeanorEffects?: {
+    /** Once this demeanor has held for DEMEANOR_COOLDOWN_TURNS real turns without de-escalating, the next not-yet-engaged topic the player opens gets locked defensive immediately too — a real cost for staying combative, not just flavor. */
+    lockNextTopicOnSustained?: Demeanor;
+    /** Once this demeanor is reached, the witness can end the session early (after one more real turn) rather than staying available indefinitely. */
+    endsSessionOn?: Demeanor[];
+  };
   /** One-line teaser shown on the cast-intro slide (see introSlides.ts) — e.g. their public position or relationship to the case. Case-authored, not derived. */
   introHook?: string;
 }

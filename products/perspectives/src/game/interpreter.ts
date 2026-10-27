@@ -175,6 +175,16 @@ export interface ConverseContext {
   relayedFacts: { id: string; label: string }[];
   /** Compact, structured summary of prior turns with this witness (what was asked, what kind of event it produced) — not raw transcript, not a new subsystem, just a projection of the existing conversationEventLog. Lets the model notice "you already asked me that" or a tone shift on its own. */
   conversationMemory: string[];
+  /**
+   * This witness's CURRENT authored demeanor (e.g. "defensive", "shaken")
+   * — fed to the server as a tone hint only. It never changes what's
+   * authorized (that's still the disclosure ladder, untouched) — only how
+   * the generated dialogue's register sounds, same spirit as the cue the
+   * model already writes. Optional: a case that doesn't want this (every
+   * case before "Untouchable") simply doesn't need to pass it, and the
+   * server treats an absent/unrecognized value as "no tone hint."
+   */
+  demeanor?: string;
 }
 
 export interface ConverseOutcome {
@@ -242,6 +252,7 @@ export async function converseWithWitness(ctx: ConverseContext, aiEnabled: boole
         defensiveTopicIds: ctx.defensiveTopicIds,
         relayedFacts: ctx.relayedFacts,
         conversationMemory: ctx.conversationMemory,
+        demeanor: ctx.demeanor,
         // Authored flavor for a locked/off-topic turn — without these the
         // server has nothing but a generic "evade" instruction to work
         // from, which is how a locked topic ended up generating "it's
