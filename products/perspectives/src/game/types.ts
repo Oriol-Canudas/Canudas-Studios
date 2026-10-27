@@ -271,6 +271,8 @@ export interface RevealNarrative {
   changed: string[];
   /** How the final choice, discoveries, and commitments actually played out together. */
   outcome: string[];
+  /** Optional case-specific image shown above `outcome` — e.g. a distinct visual for a branch with real narrative weight. Undefined for every case that doesn't set one. */
+  outcomeImage?: string;
 }
 
 /**

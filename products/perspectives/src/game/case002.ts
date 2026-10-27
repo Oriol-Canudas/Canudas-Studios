@@ -1213,6 +1213,7 @@ export const WITNESS_BY_ID: Record<string, WitnessConfig> = Object.fromEntries(
 /** This case uses neither the ambient social-graph reactivity nor the confrontation scene — see caseUntouchable.ts for both, added for Case 003. Null/empty here is a genuine "this case doesn't use it," not a placeholder. */
 export const SOCIAL_GRAPH: Record<string, string[]> = {};
 export const CONFRONTATION_WITNESS_ID: string | null = null;
+export const CONFRONT_SCENE_IMAGE: string | undefined = undefined;
 
 export const EVIDENCE_BY_ID: Record<string, EvidenceItem> = Object.fromEntries(
   EVIDENCE.map((e) => [e.id, e])

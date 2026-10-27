@@ -978,6 +978,8 @@ export const REVEAL_SLIDES: IntroSlide[] = [
 export const HOME_HERO_IMAGE = "/scenes/untouchable/home.jpg";
 export const EXAMINE_HERO_IMAGE = "/scenes/untouchable/evidence.jpg";
 export const VERDICT_HERO_IMAGE = "/scenes/untouchable/verdict.jpg";
+export const CONFRONT_SCENE_IMAGE = "/scenes/untouchable/confront.jpg";
+export const EPILOGUE_SCENE_IMAGE = "/scenes/untouchable/epilogue.jpg";
 
 // ───────────────────────────── Verdict ─────────────────────────────────
 //
@@ -1184,5 +1186,6 @@ export function buildRevealNarrative(
     discovered,
     changed,
     outcome,
+    outcomeImage: escalate === "escalate" ? EPILOGUE_SCENE_IMAGE : undefined,
   };
 }

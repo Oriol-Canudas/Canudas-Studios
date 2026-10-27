@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../game/store";
-import { WITNESS_BY_ID, CONFRONTATION_WITNESS_ID } from "../game/caseData";
+import { WITNESS_BY_ID, CONFRONTATION_WITNESS_ID, CONFRONT_SCENE_IMAGE } from "../game/caseData";
 import Portrait from "./Portrait";
 import TypewriterText from "./TypewriterText";
 
@@ -43,6 +43,12 @@ export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) 
 
   return (
     <div className="min-h-screen bg-[#0a0a0d] flex flex-col">
+      {CONFRONT_SCENE_IMAGE && (
+        <div className="relative h-40 w-full overflow-hidden shrink-0">
+          <img src={CONFRONT_SCENE_IMAGE} alt="" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0d] via-[#0a0a0d]/50 to-transparent" />
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto px-5 py-8">
         <div className="mx-auto flex max-w-md flex-col gap-4">
           <p className="text-center text-xs uppercase tracking-[0.3em] text-amber-300/80">The conversation that closes this</p>

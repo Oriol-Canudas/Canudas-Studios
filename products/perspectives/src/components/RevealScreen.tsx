@@ -213,6 +213,11 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
           </div>
           <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[0.04] p-4">
             <p className="text-base font-medium text-amber-200">How it played out</p>
+            {narrative.outcomeImage && (
+              <div className="mt-3 overflow-hidden rounded-xl">
+                <img src={narrative.outcomeImage} alt="" className="w-full object-cover" />
+              </div>
+            )}
             <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/85">
               {narrative.outcome.map((line, i) => (
                 <li key={i}>• {line}</li>
