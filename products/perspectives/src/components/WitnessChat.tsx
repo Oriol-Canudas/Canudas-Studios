@@ -421,15 +421,16 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
                     Hide
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col gap-2">
                   {visibleTopics.map((t) => (
                     <button
                       key={t.id}
                       onClick={() => handleSuggestionTap(t)}
                       disabled={busy}
-                      className="whitespace-nowrap rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-sm text-white/60 transition-colors disabled:opacity-50"
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/15 bg-gradient-to-br from-white/[0.06] to-white/[0.02] px-4 py-3.5 text-left text-[15px] text-white/85 transition-colors disabled:opacity-50 active:bg-white/[0.08]"
                     >
-                      {t.chipLabel}
+                      <span>{t.chipKeyword ?? t.chipLabel}</span>
+                      <span aria-hidden="true" className="shrink-0 text-white/35">→</span>
                     </button>
                   ))}
                   {unaskedReachableTopics.length > MAX_VISIBLE_CHIPS && (
@@ -437,7 +438,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
                       type="button"
                       onClick={() => setSuggestionPage((p) => p + 1)}
                       disabled={busy}
-                      className="whitespace-nowrap rounded-full border border-white/10 px-3 py-2 text-sm text-white/35 transition-colors disabled:opacity-50 active:text-white/60"
+                      className="self-start whitespace-nowrap rounded-full border border-white/10 px-3 py-2 text-sm text-white/35 transition-colors disabled:opacity-50 active:text-white/60"
                     >
                       {"↻ Show more"}
                     </button>

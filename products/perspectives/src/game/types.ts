@@ -117,6 +117,15 @@ export interface TestimonyTopic {
   id: string;
   /** Human label shown as a suggested-question chip. */
   chipLabel: string;
+  /**
+   * Optional short keyword/phrase shown on the chip INSTEAD of chipLabel,
+   * for easier scanning — e.g. "The timing" rather than "Why did you
+   * initiate this PIP now?". Tapping the chip still fills the draft with
+   * the full chipLabel sentence, unchanged; this only affects what's
+   * printed on the chip itself. Falls back to chipLabel when unset, so
+   * every case authored before this field keeps its exact current look.
+   */
+  chipKeyword?: string;
   /** Keywords/synonyms used to match free-form player questions to this topic. */
   keywords: string[];
   stages: TestimonyStage[];
@@ -273,6 +282,13 @@ export interface RevealNarrative {
   outcome: string[];
   /** Optional case-specific image shown above `outcome` — e.g. a distinct visual for a branch with real narrative weight. Undefined for every case that doesn't set one. */
   outcomeImage?: string;
+  /**
+   * Optional collapsed "Another side of the story" detail at the end of
+   * the outcome block, matching Concert's own reveal-block pattern.
+   * Grounded, conditional content only — never a static line. Undefined
+   * for every case that doesn't set one.
+   */
+  anotherSide?: string;
 }
 
 /**

@@ -812,6 +812,8 @@ export const WITNESS_BY_ID: Record<string, WitnessConfig> = Object.fromEntries(W
 export const SOCIAL_GRAPH: Record<string, string[]> = {};
 export const CONFRONTATION_WITNESS_ID: string | null = null;
 export const CONFRONT_SCENE_IMAGE: string | undefined = undefined;
+export const CAST_SCENE_IMAGE: string | undefined = undefined;
+export const CAST_SCENE_HOTSPOTS: Record<string, { x: number; y: number; width: number; height: number }> = {};
 export const EVIDENCE_BY_ID: Record<string, EvidenceItem> = Object.fromEntries(EVIDENCE.map((e) => [e.id, e]));
 
 /**
@@ -856,6 +858,9 @@ export const REVELATIONS: Record<RevelationId, RevelationDef> = {
 };
 
 // ───────────────────────────── Intro / reveal cinematics ─────────────────
+
+/** See case002.ts's own CASE_INTRO_MODE comment — empty here means IntroSequence's current fixed-timer, per-slide-image behavior, unchanged. */
+export const CASE_INTRO_MODE: { autoPaceByWords?: boolean; singleImage?: string; richControls?: boolean } = {};
 
 export const CASE_INTRO_SLIDES: IntroSlide[] = [
   { image: "/scenes/ascent/injured_climber.jpg", line: "Ingrid just fell." },

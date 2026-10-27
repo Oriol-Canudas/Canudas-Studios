@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { WITNESSES } from "../game/caseData";
+import { WITNESSES, CAST_SCENE_IMAGE, CAST_SCENE_HOTSPOTS } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isProactiveContactEligible } from "../game/witnessEngine";
 import type { WitnessId } from "../game/types";
@@ -35,6 +35,73 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [witnessStages, discoveredEvidence, relayedRevelations, deliveredProactiveContacts, alertedProactiveContacts]);
+
+  function wantsToTalkFor(w: (typeof WITNESSES)[number]) {
+    const delivered = deliveredProactiveContacts[w.id];
+    return w.topics.find(
+      (t) =>
+        t.proactive &&
+        !delivered?.has(t.id) &&
+        isProactiveContactEligible(t, witnessStages, discoveredEvidence, relayedRevelations)
+    );
+  }
+
+  // Opt-in immersive mode — a single candid scene with a clickable zone
+  // per person instead of a row list. Only set for cases that author
+  // CAST_SCENE_IMAGE (currently Untouchable); every other case falls
+  // through to the original list below, unchanged.
+  if (CAST_SCENE_IMAGE) {
+    return (
+      <div className="pb-28">
+        <div className="px-5 pt-6">
+          <h2 className="text-2xl font-semibold text-white">The people involved</h2>
+          <p className="mt-1 text-base text-white/55">Tap someone to start the conversation.</p>
+        </div>
+        <div className="relative mt-5 w-full overflow-hidden" style={{ aspectRatio: "16 / 9" }}>
+          <img src={CAST_SCENE_IMAGE} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/20" />
+          {WITNESSES.map((w) => {
+            const hotspot = CAST_SCENE_HOTSPOTS[w.id];
+            if (!hotspot) return null;
+            const wantsToTalk = wantsToTalkFor(w);
+            return (
+              <div
+                key={w.id}
+                className="absolute flex flex-col justify-end"
+                style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%`, width: `${hotspot.width}%`, height: `${hotspot.height}%` }}
+              >
+                <button
+                  onClick={() => onSelect(w.id)}
+                  className="absolute inset-0 transition-colors active:bg-white/10"
+                  aria-label={`Talk to ${w.name}`}
+                >
+                  {wantsToTalk && (
+                    <span className="absolute inset-0 animate-pulse rounded-lg ring-2 ring-amber-300/70" />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onInspect(w.id);
+                  }}
+                  aria-label={`Inspect ${w.name}`}
+                  className="pointer-events-auto absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-xs text-white/80 backdrop-blur-sm"
+                >
+                  i
+                </button>
+                <div className="pointer-events-none mb-1.5 flex justify-center">
+                  <span className="rounded-full bg-black/65 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                    {w.name}
+                    {wantsToTalk && " 💬"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-5 pb-28 pt-6">

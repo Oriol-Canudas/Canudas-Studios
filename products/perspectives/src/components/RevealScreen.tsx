@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { playSfx } from "../game/audio";
 import {
   CASE_META,
@@ -43,6 +43,28 @@ const JUDGMENT_LABEL: Record<Judgment, string> = {
   wrong: "Incorrect",
   insufficient: "Called insufficient",
 };
+
+/**
+ * Numbered, expandable reveal block — matches Concert's own `.reveal-block`
+ * pattern (a serif accent-colored index, a heading, generous spacing, a
+ * bottom divider) instead of a plain bulleted list under a small header.
+ */
+function RevealBlock({ num, heading, lines, children }: { num: string; heading: string; lines: string[]; children?: ReactNode }) {
+  return (
+    <div className="flex gap-4 border-b border-white/10 pb-7">
+      <span className="shrink-0 pt-0.5 font-serif text-lg text-amber-300">{num}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xl font-semibold text-white">{heading}</p>
+        <div className="mt-2.5 space-y-2.5 text-[15px] leading-relaxed text-white/80">
+          {lines.map((line, i) => (
+            <p key={i}>{line}</p>
+          ))}
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 const MEANINGFUL_EVENT_KINDS = new Set([
   "defensive_lock",
@@ -186,44 +208,23 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
       )}
 
       {narrative && (
-        <div className="mt-4 space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-base font-medium text-white/70">Before you arrived</p>
-            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/80">
-              {narrative.before.map((line, i) => (
-                <li key={i}>• {line}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-base font-medium text-white/70">What you discovered</p>
-            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/80">
-              {narrative.discovered.map((line, i) => (
-                <li key={i}>• {line}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-base font-medium text-white/70">What you changed</p>
-            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/80">
-              {narrative.changed.map((line, i) => (
-                <li key={i}>• {line}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[0.04] p-4">
-            <p className="text-base font-medium text-amber-200">How it played out</p>
+        <div className="mt-6 flex flex-col gap-1">
+          <RevealBlock num="01" heading="What was already true" lines={narrative.before} />
+          <RevealBlock num="02" heading="What you found" lines={narrative.discovered} />
+          <RevealBlock num="03" heading="What you changed" lines={narrative.changed} />
+          <RevealBlock num="04" heading="How it played out" lines={narrative.outcome}>
             {narrative.outcomeImage && (
               <div className="mt-3 overflow-hidden rounded-xl">
                 <img src={narrative.outcomeImage} alt="" className="w-full object-cover" />
               </div>
             )}
-            <ul className="mt-2 space-y-2 text-[17px] leading-relaxed text-white/85">
-              {narrative.outcome.map((line, i) => (
-                <li key={i}>• {line}</li>
-              ))}
-            </ul>
-          </div>
+            {narrative.anotherSide && (
+              <details className="mt-3 text-white/60">
+                <summary className="cursor-pointer py-2 text-sm text-amber-300/80">Another side of the story</summary>
+                <p className="mt-1.5 text-sm leading-relaxed">{narrative.anotherSide}</p>
+              </details>
+            )}
+          </RevealBlock>
         </div>
       )}
 

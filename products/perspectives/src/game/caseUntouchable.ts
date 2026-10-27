@@ -279,6 +279,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_pip",
         chipLabel: "What do you make of this PIP?",
+        chipKeyword: "The PIP",
         keywords: ["pip", "review", "performance plan", "why am i here", "this process"],
         stages: [
           {
@@ -293,6 +294,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "working_for_him",
         chipLabel: "What's it like working for you?",
+        chipKeyword: "Working for you",
         keywords: ["work for you", "working for you", "your team", "manage", "manager", "your style"],
         stages: [
           {
@@ -313,6 +315,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "jordan_and_dana",
         chipLabel: "What happened with Jordan? With Dana?",
+        chipKeyword: "Jordan & Dana",
         keywords: ["jordan", "dana", "left the team", "transferred", "why did they leave"],
         stages: [
           {
@@ -334,6 +337,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_timing",
         chipLabel: "Does the timing of this bother you?",
+        chipKeyword: "The timing",
         keywords: ["timing", "why now", "suddenly", "out of nowhere"],
         stages: [
           {
@@ -357,6 +361,7 @@ export const WITNESSES: WitnessConfig[] = [
         // actually being told what Sam overheard.
         id: "priyas_motive",
         chipLabel: "Why do you think Priya is doing this now?",
+        chipKeyword: "Why Priya, now",
         keywords: ["priya", "her motive", "why her", "clean reason"],
         stages: [
           {
@@ -380,6 +385,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_harm_itself",
         chipLabel: "Do you think you've actually hurt people here?",
+        chipKeyword: "Have you hurt people",
         keywords: ["hurt people", "harm", "sorry", "responsibility", "your fault"],
         stages: [
           {
@@ -463,6 +469,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "why_now",
         chipLabel: "Why did you initiate this PIP now?",
+        chipKeyword: "Why now",
         keywords: ["why now", "why did you", "initiate", "this pip", "start this"],
         stages: [
           {
@@ -477,6 +484,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_client_loss",
         chipLabel: "What happened with the client you lost?",
+        chipKeyword: "The client loss",
         keywords: ["client loss", "the client", "lost the account", "postmortem"],
         stages: [
           {
@@ -497,6 +505,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_harm_evidence",
         chipLabel: "What's your actual evidence this is a real pattern?",
+        chipKeyword: "Your evidence",
         keywords: ["evidence", "proof", "how do you know", "pattern", "what do you have"],
         stages: [
           {
@@ -511,6 +520,7 @@ export const WITNESSES: WitnessConfig[] = [
         // not as her own revelation source — see Theo's the_old_file for
         // where it's actually discovered.
         chipLabel: "Did you know about the complaint from three years ago?",
+        chipKeyword: "The old complaint",
         keywords: ["three years ago", "old complaint", "before", "earlier complaint", "already happened"],
         stages: [
           {
@@ -534,6 +544,7 @@ export const WITNESSES: WitnessConfig[] = [
         // off the vague "culture concerns" framing, per the design doc.
         id: "say_it_plainly",
         chipLabel: "Can you just say plainly what he actually did?",
+        chipKeyword: "What he actually did",
         keywords: ["say it plainly", "say plainly", "specifically", "what did he actually do", "be specific"],
         stages: [
           {
@@ -600,6 +611,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "why_i_left",
         chipLabel: "Why did you really leave?",
+        chipKeyword: "Why you left",
         keywords: ["why did you leave", "really leave", "new opportunity", "real reason"],
         stages: [
           {
@@ -619,6 +631,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "what_happened",
         chipLabel: "What specifically happened?",
+        chipKeyword: "What happened",
         keywords: ["specifically", "what happened", "give me an example", "specific incident"],
         stages: [
           {
@@ -634,6 +647,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_review_now",
         chipLabel: "What do you think about this review happening now?",
+        chipKeyword: "This review",
         keywords: ["review now", "this review", "finally happening", "think about it"],
         stages: [
           {
@@ -689,6 +703,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_complaint",
         chipLabel: "Tell me about the complaint you filed.",
+        chipKeyword: "Your complaint",
         keywords: ["complaint", "what happened", "filed", "ten days ago", "recent"],
         stages: [
           {
@@ -708,6 +723,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_pattern",
         chipLabel: "Is this part of a pattern, or a one-off?",
+        chipKeyword: "Pattern or one-off",
         keywords: ["pattern", "one-off", "happened before", "only time", "other times"],
         stages: [
           {
@@ -728,6 +744,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "jordan",
         chipLabel: "What do you know about Jordan leaving?",
+        chipKeyword: "Jordan leaving",
         keywords: ["jordan", "jordan leaving", "eight months ago", "what happened to jordan"],
         stages: [
           {
@@ -742,6 +759,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_old_file",
         chipLabel: "There was a complaint about Marcus three years ago.",
+        chipKeyword: "The old complaint",
         keywords: ["three years ago", "old complaint", "before", "already happened once", "earlier complaint"],
         stages: [
           {
@@ -801,6 +819,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "his_take",
         chipLabel: "What's your honest read on all this?",
+        chipKeyword: "Your honest read",
         keywords: ["your take", "your read", "honest read", "honest opinion", "what do you think"],
         stages: [
           {
@@ -815,6 +834,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "the_timing_question",
         chipLabel: "Does the timing of this ever seem strange to you?",
+        chipKeyword: "The timing",
         keywords: ["timing", "strange timing", "coincidence", "why now"],
         stages: [
           {
@@ -835,6 +855,7 @@ export const WITNESSES: WitnessConfig[] = [
       {
         id: "what_he_overheard",
         chipLabel: "Is there something you haven't told HR yet?",
+        chipKeyword: "What haven't you said",
         keywords: ["haven't told", "something you're not saying", "overheard", "what did you hear"],
         stages: [
           {
@@ -885,6 +906,24 @@ export const WITNESSES: WitnessConfig[] = [
 export const WITNESS_BY_ID: Record<string, WitnessConfig> = Object.fromEntries(
   WITNESSES.map((w) => [w.id, w])
 );
+
+/**
+ * Immersive cast-selection scene (opt-in — see HearScreen.tsx). A single
+ * candid photo of all 5 witnesses sharing the office, not a posed group
+ * portrait, with a clickable hotspot per person instead of a plain row
+ * list. Coordinates are percentages of the image, left-to-right matching
+ * how they actually landed in the generated scene: Theo, Dana, Marcus,
+ * Priya, Sam. Case 002/Ascent leave CAST_SCENE_IMAGE unset and HearScreen
+ * renders its original row list unchanged.
+ */
+export const CAST_SCENE_IMAGE = "/scenes/untouchable/cast.jpg";
+export const CAST_SCENE_HOTSPOTS: Record<string, { x: number; y: number; width: number; height: number }> = {
+  theo: { x: 0, y: 28, width: 19, height: 72 },
+  dana: { x: 19, y: 12, width: 19, height: 88 },
+  marcus: { x: 38, y: 8, width: 22, height: 92 },
+  priya: { x: 60, y: 12, width: 20, height: 88 },
+  sam: { x: 80, y: 8, width: 20, height: 92 },
+};
 
 /**
  * Ambient reactivity — distinct from REVELATIONS' explicit, player-chosen
@@ -938,14 +977,62 @@ export const REVELATIONS: Record<RevelationId, RevelationDef> = {
 
 // ───────────────────────────── Intro / reveal cinematics ─────────────────
 
+// Dramatized, word-paced opening — Marcus and Priya actually talk to each
+// other (not at the player), matching Concert's own OPENING pattern. Plays
+// over one continuous scene (see CASE_INTRO_MODE's singleImage below), not
+// a slideshow — image is still required per-slide for IntroSlide's type,
+// but is ignored by IntroSequence whenever singleImage is set.
 export const CASE_INTRO_SLIDES: IntroSlide[] = [
   { image: "/scenes/untouchable/home.jpg", line: "Marcus Hale has three weeks left on a Performance Improvement Plan." },
-  { image: "/scenes/untouchable/evidence.jpg", line: "Three years of top numbers bought him three years of looking the other way." },
-  { image: "/scenes/untouchable/evidence.jpg", line: "Something about the timing of this review doesn't sit right with someone senior enough to ask about it." },
-  { image: "/portraits/untouchable/marcus.jpg", line: "He says he's being used." },
-  { image: "/portraits/untouchable/marcus.jpg", line: "He might be right. That doesn't mean he's wrong about anything else." },
-  { image: "/scenes/untouchable/verdict.jpg", line: "You're the one who has to decide what that actually means. And tell him yourself." },
+  {
+    image: "/scenes/untouchable/home.jpg",
+    line: "Three years of the best numbers on the floor bought him three years where nobody asked the harder question.",
+  },
+  {
+    image: "/scenes/untouchable/home.jpg",
+    line: "Tonight, someone senior enough to matter noticed something about the timing that didn't sit right.",
+  },
+  {
+    image: "/scenes/untouchable/home.jpg",
+    speakerName: "Priya",
+    speakerColor: WITNESS_BY_ID.priya.accentColor,
+    line: "This isn't new, Marcus. You know it isn't.",
+    voiceUrl: "/audio/untouchable/priya_01.mp3",
+  },
+  {
+    image: "/scenes/untouchable/home.jpg",
+    speakerName: "Marcus",
+    speakerColor: WITNESS_BY_ID.marcus.accentColor,
+    line: "I know you've never once come looking for it before. Not until now.",
+    voiceUrl: "/audio/untouchable/marcus_01.mp3",
+  },
+  {
+    image: "/scenes/untouchable/home.jpg",
+    speakerName: "Priya",
+    speakerColor: WITNESS_BY_ID.priya.accentColor,
+    line: "Maybe nobody made me look before.",
+    voiceUrl: "/audio/untouchable/priya_02.mp3",
+  },
+  {
+    image: "/scenes/untouchable/home.jpg",
+    speakerName: "Marcus",
+    speakerColor: WITNESS_BY_ID.marcus.accentColor,
+    line: "Or maybe you finally needed a reason, and I was standing right there.",
+    cue: "She doesn't answer that one right away.",
+    voiceUrl: "/audio/untouchable/marcus_02.mp3",
+  },
+  { image: "/scenes/untouchable/home.jpg", line: "Neither of them is lying, exactly. That's what makes this hard." },
+  { image: "/scenes/untouchable/home.jpg", line: "You're the one who has to find out what that actually means." },
+  { image: "/scenes/untouchable/home.jpg", line: "And say it to him yourself." },
 ];
+
+/** Opts into the dramatized-scene presentation — see IntroSequence.tsx and case002.ts's CASE_INTRO_MODE comment. */
+export const CASE_INTRO_MODE = {
+  autoPaceByWords: true,
+  singleImage: "/scenes/untouchable/home.jpg",
+  richControls: true,
+  musicUrl: "/audio/untouchable/intro_music.mp3",
+};
 
 export const CHARACTER_INTRO_OUTRO: IntroSlide = {
   image: "/scenes/untouchable/evidence.jpg",
@@ -1181,11 +1268,21 @@ export function buildRevealNarrative(
     outcome.push("You kept the substance and changed the process — trying to hold the harm and the bad-faith trigger as two separate, equally real problems, instead of letting one cancel the other.");
   }
 
+  // Sam's own reaction never resolves just because the review happened —
+  // grounded in his established Private truth (his trust in leadership's
+  // good faith is the thing this case actually tests), genuinely
+  // conditional on the real escalateComplicity choice, never a static line.
+  const anotherSide =
+    escalate === "escalate"
+      ? "Sam hasn't said this to anyone, but he's watching now — whether escalating the old complaint actually changes anything, or just gets filed next to the first one. He wanted to believe leadership was acting in good faith. He's waiting to find out if that was ever true."
+      : "Sam never raised his own doubts about the timing out loud — he talked himself out of it, the same quiet way the company talked itself out of looking three years ago. Some part of him still wonders if he should have pushed.";
+
   return {
     before: [GROUND_TRUTH.harmPattern, GROUND_TRUTH.triggerMotive, GROUND_TRUTH.institutionalComplicity],
     discovered,
     changed,
     outcome,
     outcomeImage: escalate === "escalate" ? EPILOGUE_SCENE_IMAGE : undefined,
+    anotherSide,
   };
 }

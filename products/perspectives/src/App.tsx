@@ -16,7 +16,7 @@ import BreakthroughToast from "./components/BreakthroughToast";
 import { useGameStore } from "./game/store";
 import { track } from "./game/analytics";
 import { playAmbient, stopAmbient } from "./game/audio";
-import { CONFRONTATION_WITNESS_ID, WITNESS_BY_ID } from "./game/caseData";
+import { CASE_INTRO_MODE, CONFRONTATION_WITNESS_ID, WITNESS_BY_ID } from "./game/caseData";
 import { CASE_INTRO_SLIDES, CHARACTER_INTRO_SLIDES } from "./game/introSlides";
 import type { WitnessId } from "./game/types";
 
@@ -45,7 +45,7 @@ export default function App() {
   }, [screen]);
 
   if (screen === "introCase") {
-    return <IntroSequence slides={CASE_INTRO_SLIDES} onDone={() => setScreen("home")} />;
+    return <IntroSequence slides={CASE_INTRO_SLIDES} onDone={() => setScreen("home")} {...CASE_INTRO_MODE} />;
   }
 
   if (screen === "home") {

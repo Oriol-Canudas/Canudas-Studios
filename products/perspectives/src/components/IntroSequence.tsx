@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { playAmbient } from "../game/audio";
+import { useEffect, useRef, useState } from "react";
+import { playAmbient, isMuted, onMuteChange } from "../game/audio";
 import { prefersReducedMotion } from "../game/motion";
 
 export interface IntroSlide {
@@ -9,25 +9,124 @@ export interface IntroSlide {
   /** Large heading — used for character names. Omit for plain narrative beats. */
   title?: string;
   line: string;
+  /**
+   * Optional speaker attribution for a dramatized beat — a pre-resolved
+   * display name (e.g. "Marcus"), never a witness id, so this component
+   * stays fully generic and never needs to import case data itself.
+   */
+  speakerName?: string;
+  /** Pre-resolved accent color (hex) for the speaker label — typically that witness's own accentColor. */
+  speakerColor?: string;
+  /** Optional italic stage direction shown beneath the line, matching Concert's `.cue` treatment. */
+  cue?: string;
+  /**
+   * Optional recorded voice line for this beat — played once when the
+   * beat appears, independent of the word-paced caption timer (a short
+   * clip finishing early just leaves the caption up in silence; that's
+   * fine). Undefined (default): no voice, silent captions exactly as
+   * every case behaved before this field existed.
+   */
+  voiceUrl?: string;
 }
 
 interface IntroSequenceProps {
   slides: IntroSlide[];
   onDone: () => void;
   slideMs?: number;
+  /**
+   * When true, ignores `slideMs` and paces each beat by its own word count
+   * (line + cue combined) instead — adapted from Concert's own
+   * `openingDuration` formula. Off by default: every case that doesn't set
+   * this keeps today's fixed-timer pacing exactly as-is.
+   */
+  autoPaceByWords?: boolean;
+  /**
+   * When set, renders this ONE image behind the whole sequence instead of
+   * swapping to a new image per slide — reads as one continuous scene
+   * rather than a slideshow. Undefined (default): unchanged per-slide
+   * image-swap behavior.
+   */
+  singleImage?: string;
+  /**
+   * When true, adds Pause/Resume and a Previous control alongside the
+   * existing tap-to-skip. Off by default — no new UI appears for any case
+   * that doesn't explicitly opt in.
+   */
+  richControls?: boolean;
+  /**
+   * Optional looping music bed for this sequence, distinct from the
+   * game's main ambient loop — starts muted-respecting on mount, stops
+   * on unmount/done. Undefined (default): no music, same as every case
+   * that doesn't set it.
+   */
+  musicUrl?: string;
 }
 
 const DEFAULT_SLIDE_MS = 3400;
 const FADE_MS = 450;
 
-export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_MS }: IntroSequenceProps) {
+/** Adapted from Concert's own `openingDuration(beat)` — longer lines get more time instead of a flat per-slide timer. */
+function wordPacedMs(slide: IntroSlide): number {
+  const words = `${slide.line} ${slide.cue ?? ""}`.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(words <= 10 ? 10500 : 12000, words * 400 + 4000);
+}
+
+export default function IntroSequence({
+  slides,
+  onDone,
+  slideMs = DEFAULT_SLIDE_MS,
+  autoPaceByWords = false,
+  singleImage,
+  richControls = false,
+  musicUrl,
+}: IntroSequenceProps) {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const [imageErrored, setImageErrored] = useState(false);
+  const [paused, setPaused] = useState(false);
   // A snapshot, not live-reactive — the OS setting doesn't change mid-session.
   const fadeMs = useState(() => (prefersReducedMotion() ? 0 : FADE_MS))[0];
+  const voiceRef = useRef<HTMLAudioElement | null>(null);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+
+  const slide = slides[index];
+  const durationMs = autoPaceByWords ? wordPacedMs(slide) : slideMs;
+
+  // Voice line per beat — plays once when the beat appears. A plain
+  // HTMLAudioElement, same convention as the rest of the project's audio
+  // (see game/audio.ts) rather than a second audio system.
+  useEffect(() => {
+    voiceRef.current?.pause();
+    if (!slide.voiceUrl || isMuted()) return;
+    const el = new Audio(slide.voiceUrl);
+    voiceRef.current = el;
+    el.volume = 0.9;
+    el.play().catch(() => {});
+    return () => el.pause();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
+
+  // Optional music bed for the whole sequence — independent lifecycle
+  // from the per-beat voice lines, stopped on unmount.
+  useEffect(() => {
+    if (!musicUrl || typeof Audio === "undefined") return;
+    const el = new Audio(musicUrl);
+    el.loop = true;
+    el.volume = isMuted() ? 0 : 0.22;
+    musicRef.current = el;
+    el.play().catch(() => {});
+    const unsubscribe = onMuteChange((m) => {
+      if (musicRef.current) musicRef.current.volume = m ? 0 : 0.22;
+    });
+    return () => {
+      el.pause();
+      unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [musicUrl]);
 
   useEffect(() => {
+    if (richControls && paused) return;
     const t = setTimeout(() => {
       if (index < slides.length - 1) {
         setVisible(false);
@@ -38,16 +137,14 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
       } else {
         onDone();
       }
-    }, slideMs);
+    }, durationMs);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, slides.length]);
+  }, [index, slides.length, paused]);
 
   // Reset per-slide — an error on one image must not make every later
   // slide skip straight to the no-art fallback too.
   useEffect(() => setImageErrored(false), [index]);
-
-  const slide = slides[index];
 
   // The mount-time autoplay attempt in App.tsx has no real user gesture
   // behind it, so strict browsers (mobile Safari, Chrome's autoplay
@@ -59,6 +156,21 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
     onDone();
   }
 
+  function goPrevious(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (index === 0) return;
+    setVisible(false);
+    setTimeout(() => {
+      setIndex((i) => Math.max(0, i - 1));
+      setVisible(true);
+    }, fadeMs);
+  }
+
+  function togglePause(e: React.MouseEvent) {
+    e.stopPropagation();
+    setPaused((p) => !p);
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black" onClick={handleTap}>
       {imageErrored ? (
@@ -66,6 +178,16 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
         // a plain dark gradient reads as deliberate staging, never as a
         // broken image icon.
         <div className="h-full w-full bg-gradient-to-br from-[#1a1a22] via-[#0f0f14] to-black" />
+      ) : singleImage ? (
+        // One continuous scene for the whole sequence — never swapped
+        // per-slide, so this reads as a single evolving moment rather
+        // than a slideshow. Only the caption below still fades per beat.
+        <img
+          src={singleImage}
+          alt=""
+          onError={() => setImageErrored(true)}
+          className="h-full w-full object-cover object-top opacity-70"
+        />
       ) : (
         <img
           src={slide.image}
@@ -84,6 +206,14 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
           className={`text-center transition-opacity ease-in-out ${visible ? "opacity-100" : "opacity-0"}`}
           style={{ transitionDuration: `${fadeMs}ms` }}
         >
+          {slide.speakerName && (
+            <p
+              className="mb-1.5 text-xs font-semibold uppercase tracking-[0.3em] drop-shadow-lg"
+              style={{ color: slide.speakerColor ?? "#fbbf24" }}
+            >
+              {slide.speakerName}
+            </p>
+          )}
           {slide.eyebrow && (
             <p className="mb-1.5 text-xs uppercase tracking-[0.3em] text-amber-300/90">{slide.eyebrow}</p>
           )}
@@ -91,8 +221,25 @@ export default function IntroSequence({ slides, onDone, slideMs = DEFAULT_SLIDE_
             <p className="mb-1 text-2xl font-semibold text-white drop-shadow-lg">{slide.title}</p>
           )}
           <p className="text-center text-lg font-medium leading-snug text-white drop-shadow-lg">{slide.line}</p>
+          {slide.cue && (
+            <p className="mt-1.5 text-center text-sm italic text-white/60 drop-shadow-lg">{slide.cue}</p>
+          )}
         </div>
       </div>
+      {richControls && (
+        <div className="absolute inset-x-0 bottom-20 flex items-center justify-center gap-5">
+          <button
+            onClick={goPrevious}
+            disabled={index === 0}
+            className="text-sm text-white/50 transition-opacity disabled:opacity-30"
+          >
+            {"← Previous"}
+          </button>
+          <button onClick={togglePause} className="text-sm text-white/50">
+            {paused ? "▶ Resume" : "❚❚ Pause"}
+          </button>
+        </div>
+      )}
       <div className="absolute inset-x-0 bottom-6 flex justify-center gap-1.5">
         {slides.map((_, i) => (
           <span key={i} className={`h-1 w-5 rounded-full ${i === index ? "bg-amber-300" : "bg-white/20"}`} />

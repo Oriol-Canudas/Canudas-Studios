@@ -1214,6 +1214,8 @@ export const WITNESS_BY_ID: Record<string, WitnessConfig> = Object.fromEntries(
 export const SOCIAL_GRAPH: Record<string, string[]> = {};
 export const CONFRONTATION_WITNESS_ID: string | null = null;
 export const CONFRONT_SCENE_IMAGE: string | undefined = undefined;
+export const CAST_SCENE_IMAGE: string | undefined = undefined;
+export const CAST_SCENE_HOTSPOTS: Record<string, { x: number; y: number; width: number; height: number }> = {};
 
 export const EVIDENCE_BY_ID: Record<string, EvidenceItem> = Object.fromEntries(
   EVIDENCE.map((e) => [e.id, e])
@@ -1262,6 +1264,15 @@ export const REVELATIONS: Record<RevelationId, RevelationDef> = {
 };
 
 // ───────────────────────────── Intro / reveal cinematics ─────────────────
+
+/**
+ * Opt-in intro presentation flags read by App.tsx and spread onto
+ * IntroSequence's props. Empty here on purpose — no case needs to set
+ * every field false; an empty object just means "use IntroSequence's
+ * own defaults," i.e. today's fixed-timer, per-slide-image behavior,
+ * unchanged. See caseUntouchable.ts for a case that opts in.
+ */
+export const CASE_INTRO_MODE: { autoPaceByWords?: boolean; singleImage?: string; richControls?: boolean } = {};
 
 /** Beat 1: the mystery hook, shown once per session before the case file. */
 export const CASE_INTRO_SLIDES: IntroSlide[] = [
