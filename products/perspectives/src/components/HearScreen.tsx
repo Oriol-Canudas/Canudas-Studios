@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import { WITNESSES, CAST_SCENE_IMAGE, CAST_SCENE_HOTSPOTS } from "../game/caseData";
+import { WITNESSES, EVIDENCE, CAST_SCENE_IMAGE, CAST_SCENE_HOTSPOTS } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isProactiveContactEligible } from "../game/witnessEngine";
 import { DEMEANOR_HEX } from "../game/demeanor";
+import { computeNextStep, type NextStepSuggestion } from "../game/nextStep";
 import type { WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
@@ -10,6 +11,26 @@ import DemeanorBadge from "./DemeanorBadge";
 interface HearScreenProps {
   onSelect: (id: WitnessId) => void;
   onInspect: (id: WitnessId) => void;
+}
+
+function NextStepHint({ suggestion, onSelect }: { suggestion: NextStepSuggestion | null; onSelect: (id: WitnessId) => void }) {
+  if (!suggestion) return null;
+  const clickable = suggestion.kind === "talk";
+  return (
+    <button
+      onClick={clickable ? () => onSelect(suggestion.witnessId) : undefined}
+      disabled={!clickable}
+      className={`mt-4 flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left ${
+        clickable
+          ? "border-amber-300/25 bg-amber-300/[0.06] active:scale-[0.99] transition-transform"
+          : "border-white/10 bg-white/[0.03]"
+      }`}
+    >
+      <span className="shrink-0 text-base">{"💡"}</span>
+      <span className="text-sm leading-snug text-white/80">{suggestion.text}</span>
+      {clickable && <span className="ml-auto shrink-0 text-amber-300/80">{"→"}</span>}
+    </button>
+  );
 }
 
 export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
@@ -47,6 +68,17 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
     );
   }
 
+  // One always-current "what should I do now?" nudge — see nextStep.ts.
+  // Purely derived from state every case already tracks, so this costs
+  // nothing to show for any case, authored or not.
+  const nextStep = computeNextStep({
+    witnesses: WITNESSES,
+    evidence: EVIDENCE,
+    wantsToTalk: (id) => Boolean(wantsToTalkFor(WITNESSES.find((w) => w.id === id)!)),
+    hasSpokenTo: (id) => (chatHistory[id]?.length ?? 0) > 0,
+    discoveredEvidence,
+  });
+
   // Opt-in immersive mode — a single candid scene with a clickable zone
   // per person instead of a row list. Only set for cases that author
   // CAST_SCENE_IMAGE (currently Untouchable); every other case falls
@@ -57,6 +89,7 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
         <div className="px-5 pt-6">
           <h2 className="text-2xl font-semibold text-white">The people involved</h2>
           <p className="mt-1 text-base text-white/55">Tap someone to start the conversation.</p>
+          <NextStepHint suggestion={nextStep} onSelect={onSelect} />
         </div>
         <div className="relative mt-5 w-full overflow-hidden" style={{ aspectRatio: "16 / 9" }}>
           <img src={CAST_SCENE_IMAGE} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -144,6 +177,7 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
     <div className="px-5 pb-28 pt-6">
       <h2 className="text-2xl font-semibold text-white">Witnesses</h2>
       <p className="mt-1 text-base text-white/55">Tap a portrait for details, or the row to question them.</p>
+      <NextStepHint suggestion={nextStep} onSelect={onSelect} />
 
       <div className="mt-5 space-y-3">
         {WITNESSES.map((w) => {

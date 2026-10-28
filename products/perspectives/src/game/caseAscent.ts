@@ -67,6 +67,11 @@ export const CASE_META = {
   finalWarning: "This is final — it commits the team to a plan and reveals how it plays out.",
   submitLabel: "Make the call",
   revealKicker: "Decision made",
+  // Untouchable (Case 003)-only overrides — this case's own EvidenceScreen
+  // wording ("Evidence"/"Request") is correct as-is, so this stays undefined.
+  examineLabel: undefined as string | undefined,
+  pendingLabel: undefined as string | undefined,
+  pendingCta: undefined as string | undefined,
 };
 
 /**

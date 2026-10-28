@@ -40,6 +40,13 @@ export interface EvidenceItem {
   summary: string;
   /** Full content shown once opened. Can be multi-line. */
   details: string[];
+  /**
+   * Optional thumbnail/hero image for this document. Undefined (default):
+   * EvidenceScreen falls back to its emoji category icon on the card and
+   * plain header styling in the detail view — every case that doesn't
+   * author images keeps behaving exactly as before this field existed.
+   */
+  image?: string;
 }
 
 export type BoardEntryType = "fact" | "claim" | "contradiction" | "lead";

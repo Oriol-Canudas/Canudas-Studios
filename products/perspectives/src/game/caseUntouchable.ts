@@ -55,6 +55,12 @@ export const CASE_META = {
   finalWarning: "This is final — it moves straight into the conversations that close the review.",
   submitLabel: "Deliver your decision",
   revealKicker: "Decision delivered",
+  // This is an HR review, not a criminal case — EvidenceScreen's default
+  // "Evidence"/"Request" wording reads forensic/noir, wrong register for
+  // a workplace complaint file. See perspectives_case003_hr_tone_and_proactivity.
+  examineLabel: "Records" as string | undefined,
+  pendingLabel: "Review" as string | undefined,
+  pendingCta: "Tap to review" as string | undefined,
 };
 
 /**
@@ -131,6 +137,7 @@ export const EVIDENCE: EvidenceItem[] = [
     id: "E01_old_complaint",
     title: "The old complaint file",
     category: "records",
+    image: "/evidence/untouchable/old_complaint.jpg",
     summary: "An informal complaint about Marcus, filed three years ago.",
     details: [
       "Filed three years ago by a team member whose name is redacted in this copy of the file.",
@@ -143,6 +150,7 @@ export const EVIDENCE: EvidenceItem[] = [
     id: "E02_dana_exit_interview",
     title: "Dana's exit interview",
     category: "records",
+    image: "/evidence/untouchable/exit_interview.jpg",
     summary: "Dana's own exit interview from two years ago.",
     details: [
       "Reason for leaving (official): \"new opportunity.\"",
@@ -154,6 +162,7 @@ export const EVIDENCE: EvidenceItem[] = [
     id: "E03_pip_timeline",
     title: "The PIP paperwork timeline",
     category: "records",
+    image: "/evidence/untouchable/pip_timeline.jpg",
     summary: "Calendar and email metadata around the PIP's initiation.",
     details: [
       "6 weeks ago: the client-loss postmortem meeting. Marcus's pushback on the attributed cause is logged in the meeting notes.",
@@ -165,6 +174,7 @@ export const EVIDENCE: EvidenceItem[] = [
     id: "E04_overheard_remark",
     title: "The overheard remark",
     category: "testimony",
+    image: "/evidence/untouchable/overheard_remark.jpg",
     summary: "Something Sam heard Priya say, not yet shared with HR.",
     details: [
       "Not a document — this entry only exists once Sam actually tells you what he overheard.",
@@ -175,6 +185,7 @@ export const EVIDENCE: EvidenceItem[] = [
     id: "E05_performance_data",
     title: "Marcus's performance data",
     category: "records",
+    image: "/evidence/untouchable/performance_data.jpg",
     summary: "Quarterly sales performance, last three years.",
     details: [
       "Consistently top-quartile on the team for the last three years running.",
@@ -186,6 +197,7 @@ export const EVIDENCE: EvidenceItem[] = [
     id: "E06_theo_complaint",
     title: "Theo's complaint",
     category: "records",
+    image: "/evidence/untouchable/theo_complaint.jpg",
     summary: "A recent, informal complaint — not yet in the official PIP file.",
     details: [
       "Filed ten days ago, describes a specific incident: credit for Theo's work claimed in front of the team, followed by a dismissive remark when Theo raised it privately.",

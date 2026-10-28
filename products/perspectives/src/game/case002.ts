@@ -44,6 +44,11 @@ export const CASE_META = {
   finalWarning: "This is final — it closes the case and reveals the truth.",
   submitLabel: "Deliver verdict",
   revealKicker: "Verdict delivered",
+  // Untouchable (Case 003)-only overrides — a crime case's own EvidenceScreen
+  // wording ("Evidence"/"Request") is correct as-is, so this stays undefined.
+  examineLabel: undefined as string | undefined,
+  pendingLabel: undefined as string | undefined,
+  pendingCta: undefined as string | undefined,
   prosecutionTheory: [
     "Elena and Daniel had been together for years.",
     "Daniel had moved on with Sofia.",
