@@ -926,6 +926,55 @@ export const CAST_SCENE_HOTSPOTS: Record<string, { x: number; y: number; width: 
 };
 
 /**
+ * A short passive, movie-style beat shown once per witness, the FIRST
+ * time the player opens their conversation — before the directed-question
+ * interface, not instead of it. Marcus and Priya already got a full
+ * dramatized introduction in the case's own opening scene, so theirs here
+ * is a single complementary beat, not a repeat; Dana, Theo and Sam haven't
+ * been introduced at all yet, so theirs run two beats. Every line here is
+ * grounded in that witness's established characterization (CASE_003_DESIGN.md)
+ * — nothing new is revealed, only atmosphere and stance. Case002/Ascent
+ * export an empty object (see their own WITNESS_INTRO_SLIDES no-op) so
+ * every other witness in every other case keeps going straight into the
+ * conversation exactly as it always has.
+ */
+export const WITNESS_INTRO_SLIDES: Record<string, IntroSlide[]> = {
+  marcus: [
+    {
+      image: "/portraits/untouchable/marcus.jpg",
+      line: "You already know what Marcus says about this. What you don't know yet is what he's not saying.",
+    },
+  ],
+  priya: [
+    {
+      image: "/portraits/untouchable/priya.jpg",
+      line: "She's the one who flagged this review. Ask her why, and watch how fast the answer comes.",
+    },
+  ],
+  dana: [
+    { image: "/portraits/untouchable/dana.jpg", line: "Dana left two years ago. Officially, for a better opportunity." },
+    {
+      image: "/portraits/untouchable/dana.jpg",
+      line: "She has nothing left to lose here — which might be exactly why she's worth hearing out.",
+    },
+  ],
+  theo: [
+    {
+      image: "/portraits/untouchable/theo.jpg",
+      line: "Theo still works for Marcus. He filed a complaint ten days ago, and he's terrified it will cost him more than it costs anyone else.",
+    },
+    { image: "/portraits/untouchable/theo.jpg", line: "He keeps glancing at the door. This isn't a conversation he wanted to have." },
+  ],
+  sam: [
+    { image: "/portraits/untouchable/sam.jpg", line: "Sam is the one person in this building who isn't angry at anyone yet." },
+    {
+      image: "/portraits/untouchable/sam.jpg",
+      line: "He genuinely likes Marcus. He also genuinely believes Priya is acting in good faith. He hasn't had to choose between those two things before.",
+    },
+  ],
+};
+
+/**
  * Ambient reactivity — distinct from REVELATIONS' explicit, player-chosen
  * relay below. A believable "who'd plausibly talk to whom" graph: once
  * the player's approach tally with one witness crosses a threshold and a

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { WITNESSES, CAST_SCENE_IMAGE, CAST_SCENE_HOTSPOTS } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isProactiveContactEligible } from "../game/witnessEngine";
+import { DEMEANOR_HEX } from "../game/demeanor";
 import type { WitnessId } from "../game/types";
 import Portrait from "./Portrait";
 import DemeanorBadge from "./DemeanorBadge";
@@ -64,6 +65,8 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
             const hotspot = CAST_SCENE_HOTSPOTS[w.id];
             if (!hotspot) return null;
             const wantsToTalk = wantsToTalkFor(w);
+            const mood = demeanor[w.id];
+            const moodColor = mood ? DEMEANOR_HEX[mood] : undefined;
             return (
               <div
                 key={w.id}
@@ -79,6 +82,31 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
                     <span className="absolute inset-0 animate-pulse rounded-lg ring-2 ring-amber-300/70" />
                   )}
                 </button>
+
+                {/* Emotion star — Inside Out style: a small colored glow
+                    over each person showing their CURRENT mood, readable
+                    before you ever tap in. Same palette as DemeanorBadge
+                    elsewhere, just a glyph instead of a pill. */}
+                {moodColor && (
+                  <span
+                    className="pointer-events-none absolute left-1.5 top-1.5 text-lg"
+                    style={{ color: moodColor, textShadow: `0 0 10px ${moodColor}, 0 0 4px #000` }}
+                    aria-hidden="true"
+                  >
+                    {"★"}
+                  </span>
+                )}
+
+                {/* Notification badge — a real floating "wants to talk"
+                    indicator (chat bubble + a pulsing dot), not just an
+                    emoji tucked into the name label. */}
+                {wantsToTalk && (
+                  <span className="pointer-events-none absolute right-1.5 top-8 flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-base shadow-lg shadow-amber-400/40">
+                    {"💬"}
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-pulse rounded-full bg-red-500 ring-2 ring-[#0a0a0d]" />
+                  </span>
+                )}
+
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -92,7 +120,6 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
                 <div className="pointer-events-none mb-1.5 flex justify-center">
                   <span className="rounded-full bg-black/65 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
                     {w.name}
-                    {wantsToTalk && " 💬"}
                   </span>
                 </div>
               </div>

@@ -815,6 +815,7 @@ export const CONFRONT_OPENERS: Record<string, (state: unknown) => string> = {};
 export const CONFRONT_SCENE_IMAGE: string | undefined = undefined;
 export const CAST_SCENE_IMAGE: string | undefined = undefined;
 export const CAST_SCENE_HOTSPOTS: Record<string, { x: number; y: number; width: number; height: number }> = {};
+export const WITNESS_INTRO_SLIDES: Record<string, IntroSlide[]> = {};
 export const EVIDENCE_BY_ID: Record<string, EvidenceItem> = Object.fromEntries(EVIDENCE.map((e) => [e.id, e]));
 
 /**

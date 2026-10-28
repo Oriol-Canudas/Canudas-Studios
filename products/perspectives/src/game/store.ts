@@ -107,6 +107,13 @@ interface GameState {
    * exactly as it would for any other topic.
    */
   deliveredProactiveContacts: Record<WitnessId, Set<string>>;
+  /**
+   * Whether a witness's passive, movie-style intro beat (WITNESS_INTRO_SLIDES,
+   * case-authored — empty/unset for a case that doesn't write any) has
+   * already played. Checked once per witness, on first open, never again —
+   * not reset on leaving the conversation, only on a full `reset()`.
+   */
+  witnessIntroShown: Record<string, boolean>;
   /** Which proactive contacts have already played their one-time "just became eligible" alert (sound) — see emptyAlertedProactiveContacts. */
   alertedProactiveContacts: Record<WitnessId, Set<string>>;
   /** Guards duplicate submission while a free-form turn is in flight. */
@@ -146,6 +153,7 @@ interface GameState {
   discoverEvidence: (id: EvidenceId) => void;
   inspectEvidence: (id: EvidenceId) => void;
   focusEvidence: (id: EvidenceId) => void;
+  markWitnessIntroShown: (id: WitnessId) => void;
   clearEvidenceFocus: () => void;
   openWitness: (id: WitnessId) => void;
   markProactiveContactAlerted: (witnessId: WitnessId, topicId: string) => void;
@@ -954,6 +962,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   defensiveTopics: emptyDefensiveTopics(),
   deliveredProactiveContacts: emptyDeliveredProactiveContacts(),
   alertedProactiveContacts: emptyAlertedProactiveContacts(),
+  witnessIntroShown: {},
   pendingWitnesses: new Set(),
   conversationEventLog: [],
   witnessStages: emptyWitnessStages(),
@@ -1007,6 +1016,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   focusEvidence: (id) => set({ pendingEvidenceFocus: id }),
   clearEvidenceFocus: () => set({ pendingEvidenceFocus: null }),
+
+  markWitnessIntroShown: (id) =>
+    set((state) => ({ witnessIntroShown: { ...state.witnessIntroShown, [id]: true } })),
 
   openWitness: (id) => {
     track("witness_opened", { witnessId: id });
@@ -1403,6 +1415,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       defensiveTopics: emptyDefensiveTopics(),
       deliveredProactiveContacts: emptyDeliveredProactiveContacts(),
       alertedProactiveContacts: emptyAlertedProactiveContacts(),
+      witnessIntroShown: {},
       pendingWitnesses: new Set(),
       conversationEventLog: [],
       witnessStages: emptyWitnessStages(),

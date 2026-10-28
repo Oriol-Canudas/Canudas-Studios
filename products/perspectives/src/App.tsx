@@ -16,7 +16,7 @@ import BreakthroughToast from "./components/BreakthroughToast";
 import { useGameStore } from "./game/store";
 import { track } from "./game/analytics";
 import { playAmbient, stopAmbient } from "./game/audio";
-import { CASE_INTRO_MODE, CONFRONTATION_WITNESS_IDS, WITNESS_BY_ID } from "./game/caseData";
+import { CASE_INTRO_MODE, CONFRONTATION_WITNESS_IDS, WITNESS_BY_ID, WITNESS_INTRO_SLIDES } from "./game/caseData";
 import { CASE_INTRO_SLIDES, CHARACTER_INTRO_SLIDES } from "./game/introSlides";
 import type { WitnessId } from "./game/types";
 
@@ -28,6 +28,8 @@ export default function App() {
   const [activeWitness, setActiveWitness] = useState<WitnessId | null>(null);
   const [dossierWitness, setDossierWitness] = useState<WitnessId | null>(null);
   const board = useGameStore((s) => s.board);
+  const witnessIntroShown = useGameStore((s) => s.witnessIntroShown);
+  const markWitnessIntroShown = useGameStore((s) => s.markWitnessIntroShown);
 
   useEffect(() => {
     track("session_started", {});
@@ -108,7 +110,14 @@ export default function App() {
       <SoundToggle />
       <TimeClock />
       <BreakthroughToast />
-      {activeWitness ? (
+      {activeWitness && WITNESS_INTRO_SLIDES[activeWitness] && !witnessIntroShown[activeWitness] ? (
+        <IntroSequence
+          slides={WITNESS_INTRO_SLIDES[activeWitness]}
+          onDone={() => markWitnessIntroShown(activeWitness)}
+          autoPaceByWords
+          richControls
+        />
+      ) : activeWitness ? (
         <WitnessChat
           witnessId={activeWitness}
           onBack={() => setActiveWitness(null)}
