@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { EVIDENCE_BY_ID, REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
+import { CASE_META, EVIDENCE_BY_ID, REVELATIONS, WITNESS_BY_ID } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import { isRevelationKnown, isTopicReachable, suggestedEvidenceFor } from "../game/witnessEngine";
 import { prefersReducedMotion } from "../game/motion";
@@ -282,7 +282,9 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
               return (
                 <div key={i} className="flex justify-center">
                   <div className="max-w-[90%] rounded-xl border border-amber-300/25 bg-black/55 px-4 py-2.5 text-center text-sm text-amber-100/90 backdrop-blur-sm">
-                    {"\u{1F4C4} Presented: "}
+                    {"\u{1F4C4} "}
+                    {CASE_META.presentedLogLabel ?? "Presented"}
+                    {": "}
                     {m.text}
                   </div>
                 </div>
@@ -472,7 +474,7 @@ export default function WitnessChat({ witnessId, onBack, onInspect, onViewEviden
           <button
             type="button"
             onClick={() => setEvidencePickerOpen(true)}
-            aria-label="Present evidence"
+            aria-label={CASE_META.presentLabel ?? "Present evidence"}
             disabled={busy}
             className="shrink-0 rounded-full border border-white/15 bg-black/45 p-3 text-lg text-white/70 backdrop-blur-sm active:text-white disabled:opacity-50"
           >

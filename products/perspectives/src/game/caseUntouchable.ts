@@ -61,6 +61,12 @@ export const CASE_META = {
   examineLabel: "Records" as string | undefined,
   pendingLabel: "Review" as string | undefined,
   pendingCta: "Tap to review" as string | undefined,
+  // Same HR-not-crime reasoning, for the in-conversation document picker
+  // (EvidencePicker.tsx) and the chat-log tag it leaves behind — "Present
+  // evidence" reads like a courtroom exhibit, not an HR conversation.
+  presentLabel: "Share a document" as string | undefined,
+  presentCta: "Tap the specific line to share." as string | undefined,
+  presentedLogLabel: "Shared" as string | undefined,
 };
 
 /**

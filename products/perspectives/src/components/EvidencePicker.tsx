@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { EVIDENCE } from "../game/caseData";
+import { CASE_META, EVIDENCE } from "../game/caseData";
 import type { EvidenceId } from "../game/types";
 
 interface EvidencePickerProps {
@@ -12,6 +12,9 @@ export default function EvidencePicker({ discoveredIds, onPresent, onClose }: Ev
   const [openId, setOpenId] = useState<EvidenceId | null>(null);
   const available = EVIDENCE.filter((e) => discoveredIds.has(e.id));
   const openItem = available.find((e) => e.id === openId) ?? null;
+  const presentLabel = CASE_META.presentLabel ?? "Present evidence";
+  const presentCta = CASE_META.presentCta ?? "Tap the specific line to present.";
+  const pendingLabel = (CASE_META.pendingLabel ?? "Request").toLowerCase();
 
   return (
     <div className="fixed inset-0 z-40 flex items-end bg-black/70" onClick={onClose}>
@@ -23,13 +26,14 @@ export default function EvidencePicker({ discoveredIds, onPresent, onClose }: Ev
 
         {!openItem ? (
           <>
-            <p className="text-lg font-semibold text-white">Present evidence</p>
+            <p className="text-lg font-semibold text-white">{presentLabel}</p>
             <p className="mt-1 text-sm text-white/50">
-              Only what you've already requested from the record. Pick a document, then the specific line to put in front of them.
+              Only what you've already {pendingLabel}ed from the record. Pick a document, then the specific line to put in
+              front of them.
             </p>
             {available.length === 0 && (
               <p className="mt-6 text-center text-sm text-white/40">
-                You haven't requested any documents yet — check Examine.
+                You haven't pulled any documents from the record yet — check Examine.
               </p>
             )}
             <div className="mt-4 space-y-2">
@@ -51,7 +55,7 @@ export default function EvidencePicker({ discoveredIds, onPresent, onClose }: Ev
               {"← Back"}
             </button>
             <p className="mt-2 text-lg font-semibold text-white">{openItem.title}</p>
-            <p className="mt-1 text-sm text-white/50">Tap the specific line to present.</p>
+            <p className="mt-1 text-sm text-white/50">{presentCta}</p>
             <div className="mt-3 space-y-2">
               {openItem.details.map((d, i) => (
                 <button

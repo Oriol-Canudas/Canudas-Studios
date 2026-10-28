@@ -72,6 +72,9 @@ export const CASE_META = {
   examineLabel: undefined as string | undefined,
   pendingLabel: undefined as string | undefined,
   pendingCta: undefined as string | undefined,
+  presentLabel: undefined as string | undefined,
+  presentCta: undefined as string | undefined,
+  presentedLogLabel: undefined as string | undefined,
 };
 
 /**
