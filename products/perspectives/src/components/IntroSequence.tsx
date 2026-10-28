@@ -222,7 +222,7 @@ export default function IntroSequence({
             <p className="mb-1.5 text-xs uppercase tracking-[0.3em] text-amber-300/90">{slide.eyebrow}</p>
           )}
           {slide.title && (
-            <p className="mb-1 text-2xl font-semibold text-white drop-shadow-lg">{slide.title}</p>
+            <p className="mb-1 font-serif text-2xl font-semibold text-white drop-shadow-lg">{slide.title}</p>
           )}
           <p className="text-center text-lg font-medium leading-snug text-white drop-shadow-lg">{slide.line}</p>
           {slide.cue && (

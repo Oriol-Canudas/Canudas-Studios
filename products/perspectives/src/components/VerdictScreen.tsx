@@ -2,13 +2,14 @@ import { useState } from "react";
 import { CASE_META, EVIDENCE, VERDICT_AXES, VERDICT_HERO_IMAGE, WITNESSES } from "../game/caseData";
 import { useGameStore } from "../game/store";
 import type { PlayerVerdict } from "../game/types";
+import PhaseHeader from "./PhaseHeader";
 
 interface VerdictScreenProps {
   onBack: () => void;
   onSubmitted: () => void;
 }
 
-type Step = "statement" | "verdict";
+type Step = "statement" | "verdict" | "review";
 
 export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProps) {
   const submitVerdict = useGameStore((s) => s.submitVerdict);
@@ -34,9 +35,11 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
   // the verdict flow entirely. Step 2's back arrow instead returns to the
   // statement (never loses what was typed, since it's this component's
   // own state, not reset between steps) — closing a case is sequential,
-  // not just one more form field among several.
+  // not just one more form field among several. Step 3 (review) backs up
+  // to step 2 so every choice stays editable right up to the real submit.
   function handleBack() {
-    if (step === "verdict") setStep("statement");
+    if (step === "review") setStep("verdict");
+    else if (step === "verdict") setStep("statement");
     else onBack();
   }
 
@@ -51,7 +54,10 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="relative h-32 w-full overflow-hidden">
+          <div className="px-5 pt-4">
+            <PhaseHeader index={1} label="Your statement" />
+          </div>
+          <div className="relative mt-3 h-32 w-full overflow-hidden">
             <img src={VERDICT_HERO_IMAGE} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0d] via-[#0a0a0d]/20 to-transparent" />
           </div>
@@ -90,7 +96,8 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
     );
   }
 
-  return (
+  if (step === "verdict") {
+    return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 border-b border-white/10 bg-black/40 px-4 py-3">
         <button onClick={handleBack} className="text-2xl text-white/70 active:text-white">
@@ -101,7 +108,9 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
 
       <div className="flex-1 overflow-y-auto">
         <div className="px-5 pb-5 pt-5">
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5">
+          <PhaseHeader index={2} label="Your decision" />
+
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5">
             <span className="text-sm text-white/55">Where you stand right now</span>
             <span className="text-base font-medium text-white/80">
               {documentsRead}/{EVIDENCE.length} documents read · {witnessesQuestioned}/{WITNESSES.length} witnesses
@@ -155,11 +164,66 @@ export default function VerdictScreen({ onBack, onSubmitted }: VerdictScreenProp
 
       <div className="border-t border-white/10 bg-black/40 p-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
         <button
-          onClick={handleSubmit}
+          onClick={() => canSubmit && setStep("review")}
           disabled={!canSubmit}
           className="w-full rounded-2xl bg-amber-400 py-4 text-lg font-semibold text-black disabled:opacity-30 active:scale-[0.98] transition-transform"
         >
+          {canSubmit ? "Review your decision" : CASE_META.submitLabel}
+        </button>
+      </div>
+    </div>
+    );
+  }
+
+  // Step 3 — a consequence preview before the irreversible submit, modeled
+  // on Concert's own pre-decision gate ("An agreement isn't a performance
+  // yet."): what each choice actually means, spelled out, plus the cost
+  // line the app already had (CASE_META.finalWarning) now framed as the
+  // stakes of this specific action rather than a generic disclaimer — not
+  // a new disclaimer tacked onto the same screen as the choices themselves.
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-3 border-b border-white/10 bg-black/40 px-4 py-3">
+        <button onClick={handleBack} className="text-2xl text-white/70 active:text-white">
+          {"←"}
+        </button>
+        <p className="text-lg font-medium text-white">{CASE_META.decisionHeader}</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-5 pb-5 pt-5">
+          <PhaseHeader index={2} label="Your decision" status="Final" />
+
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.3em] text-amber-300/90">Before you decide</p>
+          <p className="mt-2 font-serif text-3xl leading-tight text-white">Make sure this is really your call.</p>
+
+          <div className="mt-5 divide-y divide-white/10 rounded-2xl border border-white/10 bg-white/[0.03]">
+            {VERDICT_AXES.map((axis) => {
+              const chosenLabel = axis.options.find((o) => o.id === choices[axis.id])?.label ?? "—";
+              return (
+                <div key={axis.id} className="px-4 py-3">
+                  <p className="text-sm text-white/50">{axis.shortLabel ?? axis.question}</p>
+                  <p className="mt-0.5 text-base font-medium text-white">{chosenLabel}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 border-l-2 border-amber-300/60 py-1 pl-3.5">
+            <p className="text-[15px] italic leading-relaxed text-amber-100/90">{CASE_META.finalWarning}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-white/10 bg-black/40 p-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+        <button
+          onClick={handleSubmit}
+          className="w-full rounded-2xl bg-amber-400 py-4 text-lg font-semibold text-black active:scale-[0.98] transition-transform"
+        >
           {CASE_META.submitLabel}
+        </button>
+        <button onClick={() => setStep("verdict")} className="mt-3 w-full text-center text-sm text-white/50 underline">
+          Change an answer
         </button>
       </div>
     </div>

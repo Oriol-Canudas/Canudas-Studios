@@ -83,44 +83,54 @@ export default function HearScreen({ onSelect, onInspect }: HearScreenProps) {
                   )}
                 </button>
 
-                {/* Emotion star — Inside Out style: a small colored glow
-                    over each person showing their CURRENT mood, readable
-                    before you ever tap in. Same palette as DemeanorBadge
-                    elsewhere, just a glyph instead of a pill. */}
-                {moodColor && (
-                  <span
-                    className="pointer-events-none absolute left-1.5 top-1.5 text-lg"
-                    style={{ color: moodColor, textShadow: `0 0 10px ${moodColor}, 0 0 4px #000` }}
-                    aria-hidden="true"
-                  >
-                    {"★"}
-                  </span>
-                )}
-
-                {/* Notification badge — a real floating "wants to talk"
-                    indicator (chat bubble + a pulsing dot), not just an
-                    emoji tucked into the name label. */}
-                {wantsToTalk && (
-                  <span className="pointer-events-none absolute right-1.5 top-8 flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-base shadow-lg shadow-amber-400/40">
-                    {"💬"}
-                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-pulse rounded-full bg-red-500 ring-2 ring-[#0a0a0d]" />
-                  </span>
-                )}
-
+                {/* Profile button — a plain person icon, not a text glyph,
+                    so it can never be misread as an alert/warning mark. */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onInspect(w.id);
                   }}
-                  aria-label={`Inspect ${w.name}`}
-                  className="pointer-events-auto absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-xs text-white/80 backdrop-blur-sm"
+                  aria-label={`View ${w.name}'s profile`}
+                  title={`View ${w.name}'s profile`}
+                  className="pointer-events-auto absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white/85 backdrop-blur-sm"
                 >
-                  i
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.2" />
+                    <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" />
+                  </svg>
                 </button>
-                <div className="pointer-events-none mb-1.5 flex justify-center">
+
+                {/* Status row — grouped with the name label instead of
+                    floating over the photo, so it reads as "this person's
+                    status" rather than an ambiguous icon on the scene
+                    itself. Mood is a plain colored dot (a presence
+                    indicator, not a star/rating); "wants to talk" spells
+                    itself out in words, not just an icon. */}
+                <div className="pointer-events-none mb-1.5 flex flex-col items-center gap-1">
                   <span className="rounded-full bg-black/65 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
                     {w.name}
                   </span>
+                  {(moodColor || wantsToTalk) && (
+                    <div className="flex items-center gap-1.5 rounded-full bg-black/65 px-2 py-0.5 backdrop-blur-sm">
+                      {moodColor && (
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: moodColor, boxShadow: `0 0 6px ${moodColor}` }}
+                          aria-hidden="true"
+                          title={mood ? `Mood: ${mood}` : undefined}
+                        />
+                      )}
+                      {wantsToTalk && (
+                        <span className="flex items-center gap-1 text-[11px] font-medium text-amber-300">
+                          <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+                          </span>
+                          Wants to talk
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

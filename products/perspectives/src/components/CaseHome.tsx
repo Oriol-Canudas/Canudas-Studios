@@ -57,7 +57,7 @@ export default function CaseHome({ onBegin }: CaseHomeProps) {
         </div>
 
         <div className="absolute inset-x-0 bottom-0 px-6 pb-7">
-          <h1 className="text-5xl font-semibold leading-[1.02] drop-shadow-lg" style={fadeUp(120)}>
+          <h1 className="font-serif text-5xl font-semibold leading-[1.02] drop-shadow-lg" style={fadeUp(120)}>
             {CASE_META.title}
           </h1>
           <p
@@ -112,7 +112,7 @@ export default function CaseHome({ onBegin }: CaseHomeProps) {
                 }
               >
                 <Portrait name={w.name} accentColor={w.accentColor} image={w.portraitImage} size="lg" />
-                <span className="max-w-[96px] truncate text-center text-sm text-white/80">{w.name}</span>
+                <span className="max-w-[96px] truncate text-center font-serif text-sm text-white/80">{w.name}</span>
               </div>
             ))}
           </div>

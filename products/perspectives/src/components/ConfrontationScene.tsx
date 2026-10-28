@@ -3,6 +3,8 @@ import { useGameStore } from "../game/store";
 import { WITNESS_BY_ID, CONFRONTATION_WITNESS_IDS, CONFRONT_SCENE_IMAGE } from "../game/caseData";
 import Portrait from "./Portrait";
 import TypewriterText from "./TypewriterText";
+import DemeanorBadge from "./DemeanorBadge";
+import PhaseHeader from "./PhaseHeader";
 
 interface ConfrontationSceneProps {
   onDone: () => void;
@@ -23,6 +25,7 @@ export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) 
   const confrontHistory = useGameStore((s) => s.confrontHistory);
   const confrontPending = useGameStore((s) => s.confrontPending);
   const confrontIndex = useGameStore((s) => s.confrontIndex);
+  const demeanor = useGameStore((s) => s.demeanor);
   const beginConfrontation = useGameStore((s) => s.beginConfrontation);
   const sendConfrontMessage = useGameStore((s) => s.sendConfrontMessage);
   const advanceConfrontation = useGameStore((s) => s.advanceConfrontation);
@@ -62,6 +65,7 @@ export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) 
       )}
       <div className="flex-1 overflow-y-auto px-5 py-8">
         <div className="mx-auto flex max-w-md flex-col gap-4">
+          <PhaseHeader index={3} label="The reckoning" status="Live" />
           <p className="text-center text-xs uppercase tracking-[0.3em] text-amber-300/80">The conversation that closes this</p>
           {CONFRONTATION_WITNESS_IDS.length > 1 && (
             <p className="text-center text-[11px] text-white/30">
@@ -71,7 +75,15 @@ export default function ConfrontationScene({ onDone }: ConfrontationSceneProps) 
           <div className="flex justify-center">
             <Portrait name={witness.name} accentColor={witness.accentColor} image={witness.portraitImage} size="lg" />
           </div>
-          <p className="text-center text-sm text-white/50">{witness.name}</p>
+          <div className="flex flex-col items-center gap-1.5">
+            <p className="text-center font-serif text-2xl text-white">{witness.name}</p>
+            {demeanor[activeId] && <DemeanorBadge demeanor={demeanor[activeId]} />}
+            {confrontHistory.length > 0 && (
+              <p className="text-center text-[11px] text-white/30">
+                Exchange {confrontHistory.filter((m) => m.role === "player").length}
+              </p>
+            )}
+          </div>
 
           <div className="mt-4 flex flex-col gap-3">
             {confrontHistory.map((m, i) => (

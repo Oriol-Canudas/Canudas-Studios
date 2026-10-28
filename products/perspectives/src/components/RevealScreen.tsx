@@ -151,7 +151,7 @@ export default function RevealScreen({ onReset }: RevealScreenProps) {
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 pb-16 pt-10 text-white">
       <p className="text-xs uppercase tracking-[0.3em] text-amber-300/80">{CASE_META.revealKicker}</p>
-      <h1 className="mt-2 text-3xl font-semibold leading-tight">{graded.headline}</h1>
+      <h1 className="mt-2 font-serif text-3xl font-semibold leading-tight">{graded.headline}</h1>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
         {VERDICT_AXES.map((axis) => {
