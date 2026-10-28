@@ -96,21 +96,27 @@ export default function CaseHome({ onBegin }: CaseHomeProps) {
           role line, and the CTA. No bordered cards. */}
       <div className="mx-auto w-full max-w-md flex-1 px-6 pb-8 pt-7">
         <p className="mb-3 text-xs uppercase tracking-[0.3em] text-white/45">Starring</p>
-        <div className="-mx-6 flex snap-x gap-5 overflow-x-auto px-6 pb-2">
-          {WITNESSES.map((w, i) => (
-            <div
-              key={w.id}
-              className="flex shrink-0 snap-start flex-col items-center gap-2"
-              style={
-                reduced
-                  ? undefined
-                  : { opacity: 0, animation: `caseHomeFadeUp 450ms ease-out ${300 + i * 180}ms forwards` }
-              }
-            >
-              <Portrait name={w.name} accentColor={w.accentColor} image={w.portraitImage} size="lg" />
-              <span className="max-w-[96px] truncate text-center text-sm text-white/80">{w.name}</span>
-            </div>
-          ))}
+        {/* relative wrapper + a right-edge fade signal there's more to
+            scroll — without it, whichever card lands on the viewport
+            edge just looks sliced off, not like a deliberate strip. */}
+        <div className="relative -mx-6">
+          <div className="flex snap-x gap-5 overflow-x-auto px-6 pb-2">
+            {WITNESSES.map((w, i) => (
+              <div
+                key={w.id}
+                className="flex shrink-0 snap-start flex-col items-center gap-2"
+                style={
+                  reduced
+                    ? undefined
+                    : { opacity: 0, animation: `caseHomeFadeUp 450ms ease-out ${300 + i * 180}ms forwards` }
+                }
+              >
+                <Portrait name={w.name} accentColor={w.accentColor} image={w.portraitImage} size="lg" />
+                <span className="max-w-[96px] truncate text-center text-sm text-white/80">{w.name}</span>
+              </div>
+            ))}
+          </div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#0a0a0d] to-transparent" />
         </div>
 
         <div className="mt-7 flex items-center gap-2.5 text-amber-100/90">
